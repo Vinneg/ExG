@@ -146,7 +146,7 @@ ExG.options = {
                 },
                 historyHeader2 = {
                     type = 'header',
-                    name = L['History Exchange'],
+                    name = L['History Pull Header'],
                     order = 30,
                 },
                 historyPlayer = {
@@ -167,7 +167,7 @@ ExG.options = {
                 },
                 historyExchange = {
                     type = 'execute',
-                    name = L['Exchange'],
+                    name = L['History Pull'],
                     order = 33,
                     disabled = function() return not store().history.source or not store().history.offset; end,
                     func = function() ExG:HistoryPull(); end,
@@ -511,7 +511,7 @@ function ExG:HistoryPull()
         return;
     end
 
-    self:Print(L['History pull']({ source = store().history.source, offset = store().history.offset }));
+    self:Print(L['History pulled']({ source = store().history.source, offset = store().history.offset }));
 
     local data = Serializer:Serialize({ offset = store().history.offset });
 
@@ -548,44 +548,6 @@ function ExG:handleHistoryShare(_, message, _, sender)
     end
 
     self:Print(L['History imported'](data));
-end
-
-function ExG:ClassColor(class)
-    if class == 'DEATHKNIGHT' then
-        return 0.77, 0.12, 0.23;
-    elseif class == 'DEMONHUNTER' then
-        return 0.64, 0.19, 0.79;
-    elseif class == 'DRUID' then
-        return 1.00, 0.49, 0.04;
-    elseif class == 'HUNTER' then
-        return 0.67, 0.83, 0.45;
-    elseif class == 'MAGE' then
-        return 0.25, 0.78, 0.92;
-    elseif class == 'MONK' then
-        return 0.00, 1.00, 0.59;
-    elseif class == 'PALADIN' then
-        return 0.96, 0.55, 0.73;
-    elseif class == 'PRIEST' then
-        return 1.00, 1.00, 1.00;
-    elseif class == 'ROGUE' then
-        return 1.00, 0.96, 0.41;
-    elseif class == 'SHAMAN' then
-        return 0.00, 0.44, 0.87;
-    elseif class == 'WARLOCK' then
-        return 0.53, 0.53, 0.93;
-    elseif class == 'WARRIOR' then
-        return 0.78, 0.61, 0.43;
-    end
-end
-
-function ExG:NameColor(name)
-    local info = self:GuildInfo(name);
-
-    if not info or not info.class then
-        return 0.9, 0.9, 0.9;
-    end
-
-    return ExG:ClassColor(info.class);
 end
 
 function ExG:ScanLoot()
@@ -647,6 +609,9 @@ function ExG:ImportHistory()
     local imported = 0;
 
     for _, v in ipairs(TRAFFIC) do
+        local target = v[1];
+        local master = v[2];
+
         local dt = tonumber(v[9] or 1000);
         local offset = 0;
 
@@ -656,10 +621,13 @@ function ExG:ImportHistory()
 
         dt = dt + offset / 1000;
 
+        local targetInfo = ExG:GuildInfo(target);
+        local masterInfo = ExG:GuildInfo(master);
+
         store().history.data[dt] = {
             type = 'old',
-            name = v[1],
-            master = v[2],
+            target = { name = target, class = targetInfo and targetInfo.class or strupper(target), },
+            master = { name = master, class = masterInfo and masterInfo.class or strupper(master) },
             desc = v[3],
             ep = { before = v[4], after = v[5] },
             gp = { before = v[6], after = v[7] },

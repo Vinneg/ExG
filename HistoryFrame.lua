@@ -49,20 +49,20 @@ local function renderRow(self, rec)
     dt:SetText(date('%d.%m', rec.dt));
     row:AddChild(dt);
 
-    local name = AceGUI:Create('Label');
-    name:SetFont(DEFAULT_FONT, 10);
-    name:SetRelativeWidth(0.12);
-    name:SetFullHeight(true);
-    name:SetColor(ExG:NameColor(rec.name));
-    name:SetText(rec.name);
-    row:AddChild(name);
+    local target = AceGUI:Create('Label');
+    target:SetFont(DEFAULT_FONT, 10);
+    target:SetRelativeWidth(0.12);
+    target:SetFullHeight(true);
+    target:SetColor(ExG:ClassColor(rec.target.class));
+    target:SetText(rec.target.name);
+    row:AddChild(target);
 
     local master = AceGUI:Create('Label');
     master:SetFont(DEFAULT_FONT, 10);
     master:SetRelativeWidth(0.12);
     master:SetFullHeight(true);
-    master:SetColor(ExG:NameColor(rec.master));
-    master:SetText(rec.master);
+    master:SetColor(ExG:ClassColor(rec.master.class));
+    master:SetText(rec.master.name);
     row:AddChild(master);
 
     local desc = AceGUI:Create('Label');

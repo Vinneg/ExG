@@ -2,6 +2,38 @@ local ExG = LibStub('AceAddon-3.0'):GetAddon('ExG');
 
 local store = function() return ExG.store.char; end;
 
+local CLASS_COLORS = {
+    DEATHKNIGHT = { 0.77, 0.12, 0.23 },
+    DEMONHUNTER = { 0.64, 0.19, 0.79 },
+    DRUID = { 1.00, 0.49, 0.04 },
+    HUNTER = { 0.67, 0.83, 0.45 },
+    MAGE = { 0.25, 0.78, 0.92 },
+    MONK = { 0.00, 1.00, 0.59 },
+    PALADIN = { 0.96, 0.55, 0.73 },
+    PRIEST = { 1.00, 1.00, 1.00 },
+    ROGUE = { 1.00, 0.96, 0.41 },
+    SHAMAN = { 0.00, 0.44, 0.87 },
+    WARLOCK = { 0.53, 0.53, 0.93 },
+    WARRIOR = { 0.78, 0.61, 0.43 },
+    RAID = { 1, 0.5, 0 },
+    GUILD = { 0.25, 1, 0.25 },
+    GROUP = { 0.67, 0.67, 1 },
+    SYSTEM = { 1, 1, 0 },
+    DEFAULT = { 1, 1, 0 },
+};
+
+function ExG:ClassColor(class)
+    local res = class and (CLASS_COLORS[class] or CLASS_COLORS['DEFAULT']) or CLASS_COLORS('DEFAULT');
+
+    return unpack(res);
+end
+
+function ExG:NameColor(name)
+    local info = self:GuildInfo(name);
+
+    return ExG:ClassColor(info and info.class or 'DEFAULT');
+end
+
 function ExG:Copy(target, source)
     target = target or {};
 
