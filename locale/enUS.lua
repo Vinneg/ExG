@@ -44,7 +44,7 @@ L['Description'] = true;
 L['EP'] = true;
 L['GP'] = true;
 L['History pull'] = function(data) return '|cff33ff99Pull history from ' .. (data.source or 'unknown') .. ' for last ' .. (data.offset or 0) .. ' days.|r'; end;
-L['History imported'] = function(data) return '|cff33ff99Imported ' .. (data.count or 0) .. ' history entries. From ' .. date('%d/%m', data.min) .. ' to ' .. date('%d/%m', data.max) .. '.|r'; end;
+L['History imported'] = function(data) return '|cff33ff99Imported ' .. (data.count or 0) .. ' history entries. From ' .. date('%d.%m %H:%M:%S', data.min) .. ' to ' .. date('%d.%m %H:%M:%S', data.max) .. '.|r'; end;
 L['Pretenders'] = function(roll, attend) return '|cff33ff99Pretenders ' .. (roll or 0) .. ' of ' .. (attend or 0) .. '|r'; end;
 L['Total imported'] = function(count) return 'Total history record imported: ' .. (count or 0); end;
 L['History EG'] = function(eg) if not eg then return '' end if (eg.before or 0) == (eg.after or 0) then return '' .. (eg.before or 0) else return '' .. (eg.before or 0) .. ' > ' .. (eg.after or 0) end end;
