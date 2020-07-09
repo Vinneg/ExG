@@ -1,0 +1,15 @@
+## Interface: 11304
+## Version: 0.1
+## Title: Extended EPGP (ExG)
+## Author: Vinneg
+## Notes: Extended EPGP system. Usage: /exg to see commands
+## SavedVariables: ExGStore
+
+embeds.xml
+locale\locale.xml
+Core.lua
+Utils.lua
+RollFrame.lua
+RosterFrame.lua
+InventoryFrame.lua
+HistoryFrame.lua
