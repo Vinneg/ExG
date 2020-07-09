@@ -2,7 +2,7 @@ local ExG = LibStub('AceAddon-3.0'):GetAddon('ExG');
 
 local store = function() return ExG.store.char; end;
 
-local CLASS_COLORS = {
+local COLORS = {
     DEATHKNIGHT = { 0.77, 0.12, 0.23 },
     DEMONHUNTER = { 0.64, 0.19, 0.79 },
     DRUID = { 1.00, 0.49, 0.04 },
@@ -23,7 +23,7 @@ local CLASS_COLORS = {
 };
 
 function ExG:ClassColor(class)
-    local res = class and (CLASS_COLORS[class] or CLASS_COLORS['DEFAULT']) or CLASS_COLORS('DEFAULT');
+    local res = class and (COLORS[class] or COLORS['DEFAULT']) or COLORS('DEFAULT');
 
     return unpack(res);
 end
