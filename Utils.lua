@@ -121,9 +121,17 @@ function ExG:GuildInfo(unit)
     return nil;
 end
 
-function ExG:ItemInfo(itemLink)
-    local itemString = string.match(itemLink, "item[%-?%d:]+");
-    local _, id = strsplit(':', itemString);
+function ExG:ItemInfo(linkOrId)
+    local id = 0;
+
+    if tonumber(linkOrId) then
+        id = tonumber(linkOrId);
+    else
+        local itemString = string.match(linkOrId, "item[%-?%d:]+");
+        local _, tmp = strsplit(':', itemString);
+        id = tmp;
+    end
+
     local name, link, rarity, level, minLevel, type, subtype, stackCount, loc, texture, sellPrice, classID, subClassID, bindType, expacID, setID, isCraftReg = GetItemInfo(id);
 
     return {
