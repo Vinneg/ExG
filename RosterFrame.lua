@@ -60,9 +60,9 @@ function ExG.RosterFrame:RenderList()
     for i = 1, ttlMembers do
         local name, rank, _, level, classLoc, _, _, offNote, isOnline, _, class = GetGuildRosterInfo(i);
 
-        local ep, gp = ExG:FromString(offNote);
+        local eg = ExG:FromString(offNote);
 
-        tinsert(roster, { name = Ambiguate(name, 'all'), rank = rank, level = level, class = class, classLoc = classLoc, offNote = offNote, isOnline = isOnline, ep = ep, gp = gp });
+        tinsert(roster, { name = Ambiguate(name, 'all'), rank = rank, level = level, class = class, classLoc = classLoc, offNote = offNote, isOnline = isOnline, ep = eg.ep, gp = eg.gp });
     end
 
     sort(roster, function(a, b) return (a.name or '') < (b.name or ''); end);

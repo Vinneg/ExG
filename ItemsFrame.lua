@@ -6,12 +6,9 @@ local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 
 local store = function() return ExG.store.char; end;
 
-local onClick = function(owner, link) return function() GameTooltip:SetOwner(owner, 'ANCHOR_CURSOR'); GameTooltip:SetHyperlink(link); GameTooltip:Show(); end; end;
-local onLeave = function() return function() GameTooltip:Hide(); end; end;
-
 local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
 
-ExG.HistoryFrame = {
+ExG.ItemsFrame = {
     frame = nil,
     headers = nil;
     list = nil,
@@ -21,12 +18,6 @@ ExG.HistoryFrame = {
 
 local function fillData(self)
     self.data = {};
-
-    for _, v in pairs(store().history.data) do
-        tinsert(self.data, v);
-    end
-
-    sort(self.data, function(a, b) return (a.dt or 0) > (b.dt or 0); end);
 end
 
 local function renderRow(self, rec)
@@ -48,75 +39,14 @@ local function renderRow(self, rec)
     dt:SetJustifyH('CENTER');
     dt:SetText(date('%d.%m', rec.dt));
     row:AddChild(dt);
-
-    local target = AceGUI:Create('Label');
-    target:SetFont(DEFAULT_FONT, 10);
-    target:SetRelativeWidth(0.12);
-    target:SetFullHeight(true);
-    target:SetColor(ExG:ClassColor(rec.target.class));
-    target:SetText(rec.target.name);
-    row:AddChild(target);
-
-    local master = AceGUI:Create('Label');
-    master:SetFont(DEFAULT_FONT, 10);
-    master:SetRelativeWidth(0.12);
-    master:SetFullHeight(true);
-    master:SetColor(ExG:ClassColor(rec.master.class));
-    master:SetText(rec.master.name);
-    row:AddChild(master);
-
-    local desc = AceGUI:Create('Label');
-    desc:SetFont(DEFAULT_FONT, 10);
-    desc:SetRelativeWidth(0.45);
-    desc:SetFullHeight(true);
-    desc:SetJustifyH('RIGHT');
-    desc:SetText(rec.desc);
-
-    if rec.link and not (rec.link == '') then
-        row.frame:SetScript("OnMouseDown", onClick(self.frame.frame, rec.link));
-        row.frame:SetScript("OnLeave", onLeave());
-
-        local link = desc.frame:CreateFontString(nil, "BACKGROUND", "GameFontHighlightSmall");
-        link:SetFont(DEFAULT_FONT, 10);
-        link:ClearAllPoints();
-        link:SetAllPoints();
-        link:SetJustifyH('LEFT');
-        link:SetText(rec.link);
-
-        desc.link = link;
-
-        desc.OnRelease = function(self) if self.link then self.link:ClearAllPoints(); self.link = nil; end end;
-    end
-
-    row:AddChild(desc);
-
-    local ep = AceGUI:Create('Label');
-    ep:SetFont(DEFAULT_FONT, 10);
-    ep:SetRelativeWidth(0.12);
-    ep:SetFullHeight(true);
-    ep:SetJustifyH('CENTER');
-    if not (rec.ep.before == "" and rec.ep.before == "") then
-        ep:SetText(L['History EG'](rec.ep));
-    end
-    row:AddChild(ep);
-
-    local gp = AceGUI:Create('Label');
-    gp:SetFont(DEFAULT_FONT, 10);
-    gp:SetRelativeWidth(0.12);
-    gp:SetFullHeight(true);
-    gp:SetJustifyH('CENTER');
-    if not (rec.ep.after == "" and rec.gp.after == "") then
-        gp:SetText(L['History EG'](rec.gp));
-    end
-    row:AddChild(gp);
 end
 
 local function renderList(self)
     self.list:ReleaseChildren();
 
-    local offset = self.page * store().history.pageSize;
+    local offset = self.page * store().items.pageSize;
 
-    for i = 1, store().history.pageSize do
+    for i = 1, store().items.pageSize do
         local rec = self.data[i + offset];
 
         if rec then
@@ -126,18 +56,18 @@ local function renderList(self)
 end
 
 local function totalPages(self)
-    return math.floor(#self.data / store().history.pageSize);
+    return math.floor(#self.data / store().items.pageSize);
 end
 
 local function goBack(self)
     self.page = math.max(0, self.page - 1);
-    self.frame:SetTitle(L['History Frame'](self.page, totalPages(self)));
+    self.frame:SetTitle(L['Items Frame'](self.page, totalPages(self)));
     renderList(self);
 end
 
 local function goForward(self)
     self.page = math.min(totalPages(self), self.page + 1);
-    self.frame:SetTitle(L['History Frame'](self.page, totalPages(self)));
+    self.frame:SetTitle(L['Items Frame'](self.page, totalPages(self)));
     renderList(self);
 end
 
@@ -145,11 +75,11 @@ local function goRefresh(self)
     fillData(self);
 
     self.page = 0;
-    self.frame:SetTitle(L['History Frame'](self.page, totalPages(self)));
+    self.frame:SetTitle(L['Items Frame'](self.page, totalPages(self)));
     renderList(self);
 end
 
-local function MakeButtons(self)
+local function makeButtons(self)
     local back = AceGUI:Create('Button');
     back:SetWidth(20);
     back:SetHeight(20);
@@ -178,7 +108,7 @@ local function MakeButtons(self)
     refresh:SetPoint('TOP', self.frame.frame, 'TOP', 0, -30);
 end
 
-local function MakeHeaders(self)
+local function makeHeaders(self)
     self.headers = AceGUI:Create('SimpleGroup');
     self.headers:SetFullWidth(true);
     self.headers:SetLayout('Flow');
@@ -242,42 +172,88 @@ local function MakeHeaders(self)
     self.headers:AddChild(gp);
 end
 
-function ExG.HistoryFrame:Create()
+local function parseLine(res, line)
+    local tmp = {};
+
+    gsub(line, '[^,]+', function(item) local value = gsub(item, '"', ''); tinsert(tmp, value); end);
+
+    tinsert(res, tmp);
+end
+
+local function parseCell(text)
+    local tmp = {};
+
+    gsub(text, '[^&]+', function(item) local left, right = strsplit('=', item, 2); tmp[strlower(left)] = right; end);
+
+    return tmp;
+end
+
+local function processImport(text)
+    local tmp = {};
+
+    gsub(text, '[^\r\n]+', function(line) parseLine(tmp, line); end);
+
+    if #tmp < 2 then
+        return;
+    end
+
+    local header = tmp[1];
+
+    for k = 2, #tmp do
+        local line = tmp[k];
+        local id = tonumber(line[1]);
+
+        store().items.data[id] = {};
+
+        for i = 2, #line do
+            store().items.data[id][header[i]] = parseCell(line[i]);
+            store().items.data[id].id = id;
+        end
+    end
+end
+
+function ExG.ItemsFrame:Create()
     self.frame = AceGUI:Create('Window');
-    self.frame:SetTitle(L['History Frame'](self.page, totalPages(self)));
+    self.frame:SetTitle(L['Items Frame'](self.page, totalPages(self)));
     self.frame:SetWidth(500);
     self.frame:SetWidth(750);
     self.frame:SetLayout(nil);
     self.frame:SetCallback('OnClose', function() self.data = {}; self.frame:Hide(); end)
     self.frame:Hide();
 
-    MakeButtons(self);
-    MakeHeaders(self);
+    makeButtons(self);
+    makeHeaders(self);
 
     local group = AceGUI:Create('SimpleGroup');
-    group:SetFullWidth(true);
-    group:SetFullHeight(true);
     group:SetLayout('Fill');
     self.frame:AddChild(group);
 
     group:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -69);
-    group:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -10, 30);
+    group:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -10, 119);
 
     self.list = AceGUI:Create('ScrollFrame');
     self.list:SetFullWidth(true);
     self.list:SetFullHeight(true);
     self.list:SetLayout('List');
     group:AddChild(self.list);
+
+    local box = AceGUI:Create('MultiLineEditBox');
+    box:SetLabel(L['Items import text']);
+    box:SetCallback('OnEnterPressed', function() processImport(box:GetText()); end);
+    self.frame:AddChild(box);
+
+    box:SetPoint('TOPLEFT', self.frame.frame, 'BOTTOMLEFT', 10, 117);
+    box:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -10, 10);
 end
 
-function ExG.HistoryFrame:Show()
+function ExG.ItemsFrame:Show()
     self.frame:Show();
 
     fillData(self);
-    self.frame:SetTitle(L['History Frame'](self.page, totalPages(self)));
+    self.frame:SetTitle(L['Items Frame'](self.page, totalPages(self)));
     renderList(self);
 end
 
-function ExG.HistoryFrame:Hide()
+function ExG.ItemsFrame:Hide()
     self.frame:Hide();
 end

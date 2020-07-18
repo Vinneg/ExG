@@ -13,3 +13,4 @@ RollFrame.lua
 RosterFrame.lua
 InventoryFrame.lua
 HistoryFrame.lua
+ItemsFrame.lua

@@ -1,4 +1,5 @@
 local ExG = LibStub('AceAddon-3.0'):GetAddon('ExG');
+local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 
 local store = function() return ExG.store.char; end;
 
@@ -65,6 +66,10 @@ function ExG:Size(table)
 end
 
 function ExG:IsMl(unit)
+    if store().debug then
+        return true;
+    end
+
     unit = unit or self.state.name;
 
     for i = 1, MAX_RAID_MEMBERS do
@@ -80,6 +85,14 @@ function ExG:IsMl(unit)
     end
 
     return false;
+end
+
+function ExG:IsInRaid()
+    if store().debug then
+        return true;
+    end
+
+    return IsInRaid();
 end
 
 function ExG:GuildInfo(unit)
@@ -158,16 +171,16 @@ end
 
 function ExG:FromString(offNote)
     if not offNote then
-        return tonumber(store().BaseEP), tonumber(store().BaseGP);
+        return { ep = tonumber(store().BaseEP), gp = tonumber(store().BaseGP), };
     end
 
     local ep, gp = string.match(offNote, 'cep{(-?%d+%.?%d*),(-?%d+%.?%d*)}');
 
     if ep and gp then
-        return tonumber(ep or store().BaseEP), tonumber(gp or store().BaseGP);
+        return { ep = tonumber(ep or store().BaseEP), gp = tonumber(gp or store().BaseGP) };
     end
 
-    return tonumber(store().BaseEP), tonumber(store().BaseGP);
+    return { ep = tonumber(store().BaseEP), gp = tonumber(store().BaseGP), };
 end
 
 function ExG:ToString(offNote, ep, gp)
@@ -186,6 +199,20 @@ function ExG:ToString(offNote, ep, gp)
     return newOffNote;
 end
 
+function ExG:SetString(info, ep, gp)
+    if not info.index then
+        return;
+    end
+
+    if store().debug then
+        self:Print(L['ExG SetEG'](info.name, info, ep, gp));
+    else
+        GuildRosterSetOfficerNote(info.index, self:ToString(info.officerNote, ep, gp));
+    end
+
+    return { ep = ep, gp = gp };
+end
+
 function ExG:GetEG(name)
     if not name then
         return;
@@ -193,9 +220,9 @@ function ExG:GetEG(name)
 
     local info = self:GuildInfo(name);
 
-    local ep, gp = self:FromString(info.officerNote);
+    local eg = self:FromString(info.officerNote);
 
-    return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100 };
+    return { ep = eg.ep, gp = eg.gp, pr = floor(eg.ep * 100 / eg.gp) / 100 };
 end
 
 function ExG:SetEG(name, ep, gp)
@@ -205,11 +232,7 @@ function ExG:SetEG(name, ep, gp)
 
     local info = self:GuildInfo(name);
 
-    if not info.index then
-        return;
-    end
-
-    GuildRosterSetOfficerNote(info.index, self:ToString(info.officerNote, ep, gp));
+    self:SetString(info, ep, gp);
 end
 
 function ExG:CalcGP(itemInfo)

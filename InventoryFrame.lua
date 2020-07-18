@@ -6,7 +6,7 @@ local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 
 local onEnter = function(owner, link) return function() GameTooltip:SetOwner(owner, 'ANCHOR_RIGHT'); GameTooltip:SetHyperlink(link); GameTooltip:Show(); end; end;
 local onLeave = function() return GameTooltip:Hide(); end;
-local onClick = function(item) return function() ExG:AnnounceItem(item); end; end;
+local onClick = function(item) return function() ExG:AnnounceItems({ item }); end; end;
 
 local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
 
@@ -31,8 +31,6 @@ local function scan(self)
 
                     if info and info.rarity > 3 then
                         self.items[info.id] = info;
-                        self.items[info.id].gp = ExG:ItemGP(info);
-                        self.items[info.id].buttons = ExG:ItemOptions(info);
                     end
                 end
             end
@@ -73,7 +71,7 @@ local function renderItem(self, item)
     this.button:SetText(L['Announce']);
     this.button:SetRelativeWidth(0.2);
     this.button:SetHeight(30);
-    this.button:SetCallback('OnClick', onClick(item));
+    this.button:SetCallback('OnClick', onClick(item.id));
     this.pane:AddChild(this.button);
 
     return this;

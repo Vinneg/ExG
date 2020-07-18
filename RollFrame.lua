@@ -14,138 +14,139 @@ local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
 
 ExG.RollFrame = {
     frame = nil,
-    panes = {},
     items = {},
 };
 
-function ExG.RollFrame:Create()
-    self.frame = AceGUI:Create('Window');
-    self.frame:SetTitle(L['Roll Frame']);
-    self.frame:SetWidth(400);
-    --    self.frame:SetHeight(500);
-    --    self.frame:OnHeightSet(500);
-    self.frame:SetLayout('Flow');
-    self.frame:EnableResize(false);
-    self.frame:SetCallback('OnClose', function() self.frame:Hide(); end);
-    self.frame:Hide();
+local function addPane(self, item)
+    local pane, new;
+
+    for i = 1, #self.frame.children do
+        local tmp = self.frame.children[i];
+
+        if tmp.itemId == item.id then
+            pane = tmp;
+        end
+    end
+
+    local new = not pane;
+
+    if not pane then
+        pane = AceGUI:Create('SimpleGroup');
+        pane:SetWidth(200);
+        pane:SetFullHeight(true);
+        pane:SetLayout('Flow');
+        self.frame:AddChild(pane);
+
+        if #self.frame.children == 1 then
+            pane:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -30);
+            pane:SetPoint('BOTTOMLEFT', self.frame.frame, 'BOTTOMLEFT', 10, 10);
+        else
+            pane:SetPoint('TOPLEFT', self.frame.children[#self.frame.children - 1].frame, 'TOPRIGHT', 5, 0);
+            pane:SetPoint('BOTTOMLEFT', self.frame.children[#self.frame.children - 1].frame, 'BOTTOMRIGHT', 5, 0);
+        end
+
+        pane.itemId = item.id;
+    end
+
+    self.frame:SetWidth(#self.frame.children * 205 + 15);
+
+    return new, pane;
 end
 
-function ExG.RollFrame:Show()
-    self.frame:Show();
-end
+local function removePane(self, itemId)
+    local pane, right, idx;
 
-function ExG.RollFrame:Hide()
-    self.frame:Hide();
-end
+    for i = 1, #self.frame.children do
+        local tmp = self.frame.children[i];
 
-function ExG.RollFrame:AddItem(item)
-    self.items[item.id] = self.items[item.id] or { accepted = 0, rolls = {} };
+        if tmp.itemId == itemId then
+            idx = i;
+            pane = tmp;
+            right = self.frame.children[math.min(i + 1, #self.frame.children)];
+        end
+    end
 
-    local tmp = self.items[item.id];
-    tmp.id = item.id;
-    tmp.name = item.name;
-    tmp.rarity = item.rarity;
-    tmp.type = item.type;
-    tmp.subtype = item.subtype;
-    tmp.loc = item.loc;
-    tmp.link = item.link;
-    tmp.texture = item.texture;
-    tmp.count = (tmp.count or 0) + 1;
-    tmp.buttons = item.buttons or {};
-
-    self:RenderItem(tmp);
-end
-
-function ExG.RollFrame:RenderItem(item)
-    local this = self.panes[item.id];
-
-    if this then
+    if not right then
         return;
     end
 
-    self.panes[item.id] = self.panes[item.id] or {};
-    this = self.panes[item.id];
+    for i = 1, pane:GetNumPoints() do
+        right:SetPoint(pane:GetPoint(i));
+    end
 
-    this.pane = AceGUI:Create('SimpleGroup');
-    this.pane:SetWidth(300);
-    this.pane:SetFullHeight(true);
-    this.pane:SetLayout('Flow');
-    self.frame:AddChild(this.pane);
+    AceGUI:Release(pane);
+    tremove(self.frame.children, idx);
 
-    local icon = AceGUI:Create('Icon');
-    icon:SetImage(item.texture);
-    icon:SetImageSize(50, 50);
-    icon:SetFullWidth(true);
-    icon:SetCallback('OnEnter', onEnter(icon.frame, item.link));
-    icon:SetCallback('OnLeave', onLeave);
-    this.pane:AddChild(icon);
+    self.items[itemId] = nil;
 
-    local name = AceGUI:Create('InteractiveLabel');
-    name:SetFont(DEFAULT_FONT, 14, 'OUTLINE');
-    name:SetText(item.link);
-    name:SetFullWidth(true);
-    name:SetCallback('OnEnter', onEnter(name.frame, item.link));
-    name:SetCallback('OnLeave', onLeave);
-    this.pane:AddChild(name);
+    if #self.frame.children == 0 then
+        self.frame:Hide();
+    else
+        self.frame:SetWidth(#self.frame.children * 205 + 15);
+    end
+end
 
+local function renderButons(self, pane, item)
     sort(item.buttons, function(a, b) return a.id < b.id; end);
 
     for _, v in ipairs(item.buttons) do
-        local btn = AceGUI:Create('Button');
-        btn:SetText(v.text);
-        btn:SetRelativeWidth(0.5);
-        btn:SetCallback('OnClick', onClick({ id = item.id, option = v.id }));
-        this.pane:AddChild(btn);
+        if v.enabled then
+            local btn = AceGUI:Create('Button');
+            btn:SetText(v.text);
+            btn:SetRelativeWidth(0.5);
+            btn:SetCallback('OnClick', onClick({ id = item.id, option = v.id }));
+            pane:AddChild(btn);
+        end
     end
 
     if ExG:IsMl() then
         local btn = AceGUI:Create('Button');
-        btn:SetText('Disenchant');
+        btn:SetText(L['Disenchant']);
         btn:SetFullWidth(true);
-        this.pane:AddChild(btn);
+        btn:SetCallback('OnClick', function() self:DisenchantItem(item.id); end);
+        pane:AddChild(btn);
     end
-
-    this.accepted = AceGUI:Create('Label');
-    this.accepted:SetText('-');
-    this.accepted:SetFullWidth(true);
-    this.pane:AddChild(this.accepted);
-
-    this.rolls = {};
 end
 
-function ExG.RollFrame:AcceptItem(itemId)
-    local item = self.items[itemId];
+local function renderItem(self, item)
+    local new, pane = addPane(self, item);
 
-    if not item then
-        return;
+    if new then
+        pane.icon = AceGUI:Create('Icon');
+        pane.icon:SetImage(item.texture);
+        pane.icon:SetImageSize(50, 50);
+        pane.icon:SetFullWidth(true);
+        pane.icon:SetCallback('OnEnter', onEnter(pane.icon.frame, item.link));
+        pane.icon:SetCallback('OnLeave', onLeave);
+        pane:AddChild(pane.icon);
+
+        pane.name = AceGUI:Create('InteractiveLabel');
+        pane.name:SetFont(DEFAULT_FONT, 14, 'OUTLINE');
+        pane.name:SetJustifyH('CENTER');
+        pane.name:SetText(item.link);
+        pane.name:SetFullWidth(true);
+        pane.name:SetCallback('OnEnter', onEnter(pane.name.frame, item.link));
+        pane.name:SetCallback('OnLeave', onLeave);
+        pane:AddChild(pane.name);
+
+        renderButons(self, pane, item);
+
+        pane.accepted = AceGUI:Create('Label');
+        pane.accepted:SetText('-');
+        pane.accepted:SetFullWidth(true);
+        pane:AddChild(pane.accepted);
+
+        pane.rolls = {};
+
+        item.pane = pane;
     end
-
-    item.accepted = (item.accepted or 0) + 1;
-
-    self.panes[item.id].accepted:SetText(L['Pretenders'](#item.rolls, item.accepted));
 end
 
-function ExG.RollFrame:RollItem(data, unit)
-    local item = self.items[data.id];
-
-    if not item then
-        return;
-    end
-
-    item.rolls[unit] = item.rolls[unit] or {};
-    item.rolls[unit].name = unit;
-    item.rolls[unit].option = data.option;
-
-    self.panes[item.id].accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), item.accepted));
-
-    self:RenderRolls(item);
-end
-
-function ExG.RollFrame:RenderRolls(item)
+local function renderRolls(self, item)
     local rolls = {};
 
     for _, v in pairs(item.rolls) do
-        if v.option < 'button5' then
+        if v.option < 'button6' then
             tinsert(rolls, { name = v.name, option = v.option, pr = ExG:GetEG(v.name).pr });
         end
     end
@@ -153,11 +154,11 @@ function ExG.RollFrame:RenderRolls(item)
     sort(rolls, function(a, b) if a.option < b.option then return true elseif a.option == b.option then return a.pr < a.pr; end; return false; end);
 
     for i, v in ipairs(rolls) do
-        local roll = self.panes[item.id].rolls[i];
+        local roll = item.pane.rolls[i];
 
         if not roll then
-            self.panes[item.id].rolls[i] = self.panes[item.id].rolls[i] or {};
-            roll = self.panes[item.id].rolls[i];
+            item.pane.rolls[i] = item.pane.rolls[i] or {};
+            roll = item.pane.rolls[i];
 
             roll.pane = AceGUI:Create('SimpleGroup');
             roll.pane:SetFullWidth(true);
@@ -169,21 +170,23 @@ function ExG.RollFrame:RenderRolls(item)
             highlight:SetAllPoints(true);
             highlight:SetBlendMode("ADD");
 
-            self.panes[item.id].pane:AddChild(roll.pane);
+            item.pane:AddChild(roll.pane);
 
             roll.name = AceGUI:Create('Label');
             roll.name:SetFont(DEFAULT_FONT, 12);
-            roll.name:SetRelativeWidth(0.6);
+            roll.name:SetRelativeWidth(0.4);
             roll.pane:AddChild(roll.name);
 
             roll.option = AceGUI:Create('Label');
             roll.option:SetFont(DEFAULT_FONT, 12);
-            roll.option:SetRelativeWidth(0.2);
+            roll.option:SetJustifyH('CENTER');
+            roll.option:SetRelativeWidth(0.3);
             roll.pane:AddChild(roll.option);
 
             roll.pr = AceGUI:Create('Label');
             roll.pr:SetFont(DEFAULT_FONT, 12);
-            roll.pr:SetRelativeWidth(0.2);
+            roll.pr:SetJustifyH('RIGHT');
+            roll.pr:SetRelativeWidth(0.3);
             roll.pane:AddChild(roll.pr);
         else
             roll.pane.frame:Show();
@@ -195,12 +198,12 @@ function ExG.RollFrame:RenderRolls(item)
         roll.pr:SetText(v.pr);
     end
 
-    for i = #rolls + 1, #self.panes[item.id].rolls do
-        self.panes[item.id].rolls[i].pane.frame:Hide();
+    for i = #rolls + 1, #item.pane.rolls do
+        item.pane.rolls[i].pane.frame:Hide();
     end
 end
 
-function ExG.RollFrame:GiveBag(player)
+local function giveBag(player)
     if not ExG.state.looting then
         return;
     end
@@ -230,4 +233,81 @@ function ExG.RollFrame:GiveBag(player)
     end
 
     GiveMasterLoot(lootIndex, playerIndex);
+end
+
+function ExG.RollFrame:Create()
+    self.frame = AceGUI:Create('Window');
+    self.frame:SetTitle(L['Roll Frame']);
+    self.frame:SetWidth(300);
+    --    self.frame:SetHeight(500);
+    --    self.frame:OnHeightSet(500);
+    self.frame:SetLayout(nil);
+    self.frame:EnableResize(false);
+    self.frame:SetCallback('OnClose', function() self.frame:Hide(); end);
+    self.frame:Hide();
+end
+
+function ExG.RollFrame:Show()
+    self.frame:Show();
+end
+
+function ExG.RollFrame:Hide()
+    self.frame:Hide();
+end
+
+function ExG.RollFrame:AddItems(items)
+    for _, item in ipairs(items) do
+        self.items[item.id] = self.items[item.id] or { accepted = {}, rolls = {} };
+
+        local tmp = self.items[item.id];
+        tmp.id = item.id;
+        tmp.name = item.name;
+        tmp.rarity = item.rarity;
+        tmp.type = item.type;
+        tmp.subtype = item.subtype;
+        tmp.loc = item.loc;
+        tmp.link = item.link;
+        tmp.texture = item.texture;
+        tmp.count = (tmp.count or 0) + 1;
+        tmp.buttons = item.buttons or {};
+
+        renderItem(self, tmp);
+
+        ExG:AcceptItem(item.id);
+    end
+end
+
+function ExG.RollFrame:AcceptItem(itemId, source)
+    local item = self.items[itemId];
+
+    if not item then
+        return;
+    end
+
+    item.accepted[source] = true;
+
+    item.pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
+end
+
+function ExG.RollFrame:GiveItem(itemId)
+end
+
+function ExG.RollFrame:DisenchantItem(itemId)
+    removePane(self, itemId);
+end
+
+function ExG.RollFrame:RollItem(data, unit)
+    local item = self.items[data.id];
+
+    if not item then
+        return;
+    end
+
+    item.rolls[unit] = item.rolls[unit] or {};
+    item.rolls[unit].name = unit;
+    item.rolls[unit].option = data.option;
+
+    item.pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
+
+    renderRolls(self, item);
 end
