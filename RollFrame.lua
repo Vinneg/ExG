@@ -147,7 +147,9 @@ local function renderRolls(self, item)
 
     for _, v in pairs(item.rolls) do
         if v.option < 'button6' then
-            tinsert(rolls, { name = v.name, option = v.option, pr = ExG:GetEG(v.name).pr });
+            local info = ExG:GuildInfo(v.name);
+
+            tinsert(rolls, { name = v.name, option = v.option, pr = ExG:GetEG(info.officerNote).pr });
         end
     end
 

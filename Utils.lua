@@ -3,6 +3,22 @@ local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 
 local store = function() return ExG.store.char; end;
 
+local function toString(offNote, ep, gp)
+    local newEPGP = 'cep{' .. (tonumber(ep) or store().BaseEP) .. ',' .. (tonumber(gp) or store().BaseGP) .. '}';
+
+    if not offNote then
+        return newEPGP;
+    end
+
+    local newOffNote, subs = string.gsub(offNote, 'cep{[^}]*}', newEPGP);
+
+    if subs == 0 then
+        newOffNote = newEPGP + offNote;
+    end
+
+    return newOffNote;
+end
+
 local COLORS = {
     DEATHKNIGHT = { 0.77, 0.12, 0.23 },
     DEMONHUNTER = { 0.64, 0.19, 0.79 },
@@ -70,29 +86,17 @@ function ExG:IsMl(unit)
         return true;
     end
 
-    unit = unit or self.state.name;
-
-    for i = 1, MAX_RAID_MEMBERS do
-        local name, _, _, _, _, _, _, _, _, _, isML = GetRaidRosterInfo(i);
-
-        if name then
-            name = Ambiguate(name, 'all');
-
-            if unit == name then
-                return isML;
-            end
-        end
+    if not IsInRaid() then
+        return false;
     end
 
-    return false;
-end
+    local info = self:RaidInfo(unit);
 
-function ExG:IsInRaid()
-    if store().debug then
-        return true;
+    if info then
+        return info.isMl;
+    else
+        return false;
     end
-
-    return IsInRaid();
 end
 
 function ExG:GuildInfo(unit)
@@ -134,14 +138,64 @@ function ExG:GuildInfo(unit)
     return nil;
 end
 
+function ExG:RaidInfo(unit)
+    if not IsInRaid() then
+        return nil;
+    end
+
+    unit = unit or self.state.name;
+
+    for i = 1, MAX_RAID_MEMBERS do
+        local name, rank, subgroup, level, classDisplayName, class, zone, online, isDead, role, isMl, combatRole = GetRaidRosterInfo(i);
+
+        if name then
+            name = Ambiguate(name, 'all');
+
+            if unit == name then
+                return {
+                    index = i,
+                    name = name,
+                    rank = rank,
+                    subgroup = subgroup,
+                    level = level,
+                    classDisplayName = classDisplayName,
+                    class = class,
+                    zone = zone,
+                    online = online,
+                    isDead = isDead,
+                    role = role,
+                    isMl = isMl,
+                    combatRole = combatRole,
+                };
+            end
+        end
+    end
+
+    return nil;
+end
+
 function ExG:ItemInfo(linkOrId)
+    if not linkOrId then
+        return nil;
+    end
+
     local id = 0;
 
     if tonumber(linkOrId) then
         id = tonumber(linkOrId);
     else
         local itemString = string.match(linkOrId, "item[%-?%d:]+");
+
+        if not itemString then
+            return nil;
+        end
+
         local _, tmp = strsplit(':', itemString);
+
+        if not tmp then
+            return nil;
+        end
+
         id = tmp;
     end
 
@@ -169,70 +223,42 @@ function ExG:ItemInfo(linkOrId)
     };
 end
 
-function ExG:FromString(offNote)
+function ExG:GetEG(offNote)
+    local ep, gp;
+
     if not offNote then
-        return { ep = tonumber(store().BaseEP), gp = tonumber(store().BaseGP), };
+        ep, gp = store().BaseEP, store().BaseGP;
+
+        return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100, };
     end
 
     local ep, gp = string.match(offNote, 'cep{(-?%d+%.?%d*),(-?%d+%.?%d*)}');
 
     if ep and gp then
-        return { ep = tonumber(ep or store().BaseEP), gp = tonumber(gp or store().BaseGP) };
+        ep, gp = tonumber(ep) or store().BaseEP, tonumber(gp) or store().BaseGP;
+
+        return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100, };
     end
 
-    return { ep = tonumber(store().BaseEP), gp = tonumber(store().BaseGP), };
+    ep, gp = store().BaseEP, store().BaseGP;
+
+    return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100, };
 end
 
-function ExG:ToString(offNote, ep, gp)
-    local newEPGP = 'cep{' .. (tonumber(ep or store().BaseEP)) .. ',' .. (tonumber(gp or store().BaseGP)) .. '}';
-
-    if not offNote then
-        return newEPGP;
-    end
-
-    local newOffNote, subs = string.gsub(offNote, 'cep{[^}]*}', newEPGP);
-
-    if subs == 0 then
-        newOffNote = newEPGP + offNote;
-    end
-
-    return newOffNote;
-end
-
-function ExG:SetString(info, ep, gp)
+function ExG:SetEG(info, ep, gp)
     if not info.index then
         return;
     end
 
+    ep, gp = tonumber(ep) or store().BaseEP, tonumber(gp) or store().BaseGP;
+
     if store().debug then
         self:Print(L['ExG SetEG'](info.name, info, ep, gp));
     else
-        GuildRosterSetOfficerNote(info.index, self:ToString(info.officerNote, ep, gp));
+        GuildRosterSetOfficerNote(info.index, toString(info.officerNote, ep, gp));
     end
 
-    return { ep = ep, gp = gp };
-end
-
-function ExG:GetEG(name)
-    if not name then
-        return;
-    end
-
-    local info = self:GuildInfo(name);
-
-    local eg = self:FromString(info.officerNote);
-
-    return { ep = eg.ep, gp = eg.gp, pr = floor(eg.ep * 100 / eg.gp) / 100 };
-end
-
-function ExG:SetEG(name, ep, gp)
-    if not name then
-        return;
-    end
-
-    local info = self:GuildInfo(name);
-
-    self:SetString(info, ep, gp);
+    return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100, };
 end
 
 function ExG:CalcGP(itemInfo)

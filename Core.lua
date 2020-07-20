@@ -759,6 +759,24 @@ ExG.options = {
                             name = L['ExG Bosses AK20'],
                             order = 10,
                         },
+                        boss718enable = bosses.enable(11, 718),
+                        boss718bonus = bosses.bonus(12, 718),
+                        boss718filler = bosses.filler(13),
+                        boss719enable = bosses.enable(21, 719),
+                        boss719bonus = bosses.bonus(22, 719),
+                        boss719filler = bosses.filler(23),
+                        boss720enable = bosses.enable(31, 720),
+                        boss720bonus = bosses.bonus(32, 720),
+                        boss720filler = bosses.filler(33),
+                        boss721enable = bosses.enable(41, 721),
+                        boss721bonus = bosses.bonus(42, 721),
+                        boss721filler = bosses.filler(43),
+                        boss722enable = bosses.enable(51, 722),
+                        boss722bonus = bosses.bonus(52, 722),
+                        boss722filler = bosses.filler(53),
+                        boss723enable = bosses.enable(61, 723),
+                        boss723bonus = bosses.bonus(62, 723),
+                        boss723filler = bosses.filler(63),
                     },
                 },
                 ak40 = {
@@ -771,6 +789,33 @@ ExG.options = {
                             name = L['ExG Bosses AK40'],
                             order = 10,
                         },
+                        boss709enable = bosses.enable(11, 709),
+                        boss709bonus = bosses.bonus(12, 709),
+                        boss709filler = bosses.filler(13),
+                        boss710enable = bosses.enable(21, 710),
+                        boss710bonus = bosses.bonus(22, 710),
+                        boss710filler = bosses.filler(23),
+                        boss711enable = bosses.enable(31, 711),
+                        boss711bonus = bosses.bonus(32, 711),
+                        boss711filler = bosses.filler(33),
+                        boss712enable = bosses.enable(41, 712),
+                        boss712bonus = bosses.bonus(42, 712),
+                        boss712filler = bosses.filler(43),
+                        boss713enable = bosses.enable(51, 713),
+                        boss713bonus = bosses.bonus(52, 713),
+                        boss713filler = bosses.filler(53),
+                        boss714enable = bosses.enable(61, 714),
+                        boss714bonus = bosses.bonus(62, 714),
+                        boss714filler = bosses.filler(63),
+                        boss715enable = bosses.enable(71, 715),
+                        boss715bonus = bosses.bonus(72, 715),
+                        boss715filler = bosses.filler(73),
+                        boss716enable = bosses.enable(81, 716),
+                        boss716bonus = bosses.bonus(82, 716),
+                        boss716filler = bosses.filler(83),
+                        boss717enable = bosses.enable(91, 717),
+                        boss717bonus = bosses.bonus(92, 717),
+                        boss717filler = bosses.filler(93),
                     },
                 },
                 naxx = {
@@ -783,6 +828,51 @@ ExG.options = {
                             name = L['ExG Bosses NAXX'],
                             order = 10,
                         },
+                        boss1107enable = bosses.enable(11, 1107),
+                        boss1107bonus = bosses.bonus(12, 1107),
+                        boss1107filler = bosses.filler(13),
+                        boss1110enable = bosses.enable(21, 1110),
+                        boss1110bonus = bosses.bonus(22, 1110),
+                        boss1110filler = bosses.filler(23),
+                        boss1116enable = bosses.enable(31, 1116),
+                        boss1116bonus = bosses.bonus(32, 1116),
+                        boss1116filler = bosses.filler(33),
+                        boss1117enable = bosses.enable(41, 1117),
+                        boss1117bonus = bosses.bonus(42, 1117),
+                        boss1117filler = bosses.filler(43),
+                        boss1112enable = bosses.enable(51, 1112),
+                        boss1112bonus = bosses.bonus(52, 1112),
+                        boss1112filler = bosses.filler(53),
+                        boss1115enable = bosses.enable(61, 1115),
+                        boss1115bonus = bosses.bonus(62, 1115),
+                        boss1115filler = bosses.filler(63),
+                        boss1113enable = bosses.enable(71, 1113),
+                        boss1113bonus = bosses.bonus(72, 1113),
+                        boss1113filler = bosses.filler(73),
+                        boss1109enable = bosses.enable(81, 1109),
+                        boss1109bonus = bosses.bonus(82, 1109),
+                        boss1109filler = bosses.filler(83),
+                        boss1121enable = bosses.enable(91, 1121),
+                        boss1121bonus = bosses.bonus(92, 1121),
+                        boss1121filler = bosses.filler(93),
+                        boss1118enable = bosses.enable(101, 1118),
+                        boss1118bonus = bosses.bonus(102, 1118),
+                        boss1118filler = bosses.filler(103),
+                        boss1111enable = bosses.enable(111, 1111),
+                        boss1111bonus = bosses.bonus(112, 1111),
+                        boss1111filler = bosses.filler(113),
+                        boss1108enable = bosses.enable(121, 1108),
+                        boss1108bonus = bosses.bonus(122, 1108),
+                        boss1108filler = bosses.filler(123),
+                        boss1120enable = bosses.enable(131, 1120),
+                        boss1120bonus = bosses.bonus(132, 1120),
+                        boss1120filler = bosses.filler(133),
+                        boss1119enable = bosses.enable(141, 1119),
+                        boss1119bonus = bosses.bonus(142, 1119),
+                        boss1119filler = bosses.filler(143),
+                        boss1114enable = bosses.enable(151, 1114),
+                        boss1114bonus = bosses.bonus(152, 1114),
+                        boss1114filler = bosses.filler(153),
                     },
                 },
                 other = {
@@ -795,6 +885,9 @@ ExG.options = {
                             name = L['ExG Bosses OTHER'],
                             order = 10,
                         },
+                        boss1084enable = bosses.enable(11, 1084),
+                        boss1084bonus = bosses.bonus(12, 1084),
+                        boss1084filler = bosses.filler(13),
                     },
                 },
             },
@@ -881,7 +974,11 @@ end
 function ExG:AnnounceItems(items)
     local data = Serializer:Serialize(items);
 
-    self:SendCommMessage(self.messages.prefix.announce, data, self.messages.raid);
+    if store().debug and not IsInRaid() then
+        self:SendCommMessage(self.messages.prefix.announce, data, self.messages.whisper, self.state.name);
+    else
+        self:SendCommMessage(self.messages.prefix.announce, data, self.messages.raid);
+    end
 end
 
 function ExG:handleAnnounceItems(_, message, _, sender)
@@ -902,7 +999,11 @@ end
 function ExG:AcceptItem(itemId)
     local data = Serializer:Serialize(itemId);
 
-    self:SendCommMessage(self.messages.prefix.accept, data, self.messages.raid);
+    if store().debug and not IsInRaid() then
+        self:SendCommMessage(self.messages.prefix.accept, data, self.messages.whisper, self.state.name);
+    else
+        self:SendCommMessage(self.messages.prefix.accept, data, self.messages.raid);
+    end
 end
 
 function ExG:handleAcceptItem(_, message, _, sender)
@@ -918,7 +1019,11 @@ end
 function ExG:RollItem(item)
     local data = Serializer:Serialize(item);
 
-    self:SendCommMessage(self.messages.prefix.roll, data, self.messages.raid);
+    if store().debug and not IsInRaid() then
+        self:SendCommMessage(self.messages.prefix.roll, data, self.messages.whisper, self.state.name);
+    else
+        self:SendCommMessage(self.messages.prefix.roll, data, self.messages.raid);
+    end
 end
 
 function ExG:handleRollItem(_, message, _, sender)
@@ -958,7 +1063,11 @@ end
 function ExG:HistoryShare(source, target)
     local data = Serializer:Serialize(source);
 
-    self:SendCommMessage(self.messages.prefix.share, data, self.messages.whisper, target);
+    if not target then
+        self:SendCommMessage(self.messages.prefix.share, data, self.messages.guild);
+    else
+        self:SendCommMessage(self.messages.prefix.share, data, self.messages.whisper, target);
+    end
 end
 
 function ExG:handleHistoryShare(_, message, _, sender)
@@ -972,27 +1081,9 @@ function ExG:handleHistoryShare(_, message, _, sender)
         store().history.data[i] = v;
     end
 
-    self:Print(L['History imported'](data));
-end
-
-function ExG:ScanLoot()
-    local result = {};
-
-    local count = GetNumLootItems();
-
-    for i = 1, count do
-        local link = GetLootSlotLink(i);
-
-        if link then
-            local tmp = self:ItemInfo(link);
-
-            if tmp.rarity > 3 then
-                result[tmp.id] = tmp;
-            end
-        end
+    if data.count and data.min and data.max then
+        self:Print(L['History imported'](data));
     end
-
-    return result;
 end
 
 function ExG:ItemOptions(itemInfo)
@@ -1011,23 +1102,29 @@ function ExG:ItemGP(itemInfo)
 end
 
 function ExG:ENCOUNTER_END(_, id, _, _, _, success)
-    self:Print('ENCOUNTER_END: id = ', id, ', success = ', success);
-
     if not success then
         return;
     end
 
     local boss = store().bosses[id];
 
-    local dt = time();
+    if not boss then
+        return;
+    end
+
+    local dt, offset = time(), 0;
+
+    while store().history.data[dt + offset / 1000] do
+        offset = offset + 1;
+    end
+
+    dt = dt + offset / 1000;
 
     store().history.data[dt] = {
         type = 'boss',
         target = { name = L['ExG History RAID'], class = 'RAID', },
         master = { name = self.state.name, class = self.state.class, },
         desc = L['ExG History Boss End'](L['ExG Boss ' .. id], boss.ep),
-        ep = {},
-        gp = {},
         dt = dt,
         details = {},
     };
@@ -1041,15 +1138,12 @@ function ExG:ENCOUNTER_END(_, id, _, _, _, success)
             name = Ambiguate(name, 'all');
 
             local st = dt + i / 1000;
-            self:Print('st = ', st);
-
             local info = self:GuildInfo(name);
-            local old = self:FromString(info.officerNote);
-            local new = self:SetString(info, old.ep + boss.ep, old.gp);
+            local old = self:GetEG(info.officerNote);
+            local new = self:SetEG(info, old.ep + boss.ep, old.gp);
 
             details[st] = {
                 target = { name = name, class = class, },
-                desc = L['ExG History Boss End Personal'](L['ExG Boss ' .. id], boss.ep),
                 ep = { before = old.ep, after = new.ep, },
                 gp = { before = old.gp, after = new.gp, },
                 dt = st,
@@ -1058,27 +1152,27 @@ function ExG:ENCOUNTER_END(_, id, _, _, _, success)
     end
 
     store().history.data[dt].details = details;
+
+    self:HistoryShare({ data = { dt = store().history.data[dt] } });
 end
 
 function ExG:LOOT_OPENED()
     self.state.looting = true;
 
-    if not self:IsInRaid() then
+    if not self:IsMl() then
         return;
     end
-
-    self:Print('GetNumLootItems = ' .. GetNumLootItems());
 
     local links = {};
     local count = GetNumLootItems();
 
     for i = 1, count do
-        self:Print('LOOT_OPENED, ' .. i);
-
         if LootSlotHasItem(i) then
-            local ItemInfo = self:ItemInfo(GetLootSlotLink(i));
+            local itemInfo = self:ItemInfo(GetLootSlotLink(i));
 
-            tinsert(links, ItemInfo);
+            if itemInfo then
+                tinsert(links, itemInfo);
+            end
         end
     end
 
@@ -1106,8 +1200,7 @@ function ExG:ImportHistory()
         local target = v[1];
         local master = v[2];
 
-        local dt = tonumber(v[9] or 1000);
-        local offset = 0;
+        local dt, offset = tonumber(v[9] or 1000), 0;
 
         while store().history.data[dt + offset / 1000] do
             offset = offset + 1;
@@ -1123,11 +1216,20 @@ function ExG:ImportHistory()
             target = { name = target, class = targetInfo and targetInfo.class or strupper(target), },
             master = { name = master, class = masterInfo and masterInfo.class or strupper(master), },
             desc = v[3],
-            ep = { before = v[4], after = v[5], },
-            gp = { before = v[6], after = v[7], },
-            link = v[8] or '',
             dt = dt,
         };
+
+        if not (v[4] == '' and v[5] == '') then
+            store().history.data[dt].ep = { before = v[4], after = v[5], };
+        end
+
+        if not (v[6] == '' and v[7] == '') then
+            store().history.data[dt].gp = { before = v[6], after = v[7], };
+        end
+
+        if not v[8] == '' then
+            store().history.data[dt].link = v[8];
+        end
 
         imported = imported + 1;
     end

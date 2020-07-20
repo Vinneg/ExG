@@ -56,7 +56,7 @@ local function renderList(self)
 end
 
 local function totalPages(self)
-    return math.floor(#self.data / store().items.pageSize);
+    return math.ceil(#self.data / store().items.pageSize);
 end
 
 local function goBack(self)

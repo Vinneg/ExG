@@ -35,10 +35,10 @@ local function renderRow(self, rec)
     row:SetLayout('Flow');
     row.frame:EnableMouse(true);
 
-    local highlight = row.frame:CreateTexture(nil, "HIGHLIGHT");
+    local highlight = row.frame:CreateTexture(nil, 'HIGHLIGHT');
     highlight:SetTexture('Interface\\Buttons\\UI-Listbox-Highlight');
     highlight:SetAllPoints(true);
-    highlight:SetBlendMode("ADD");
+    highlight:SetBlendMode('ADD');
     self.list:AddChild(row);
 
     local dt = AceGUI:Create('Label');
@@ -73,10 +73,10 @@ local function renderRow(self, rec)
     desc:SetText(rec.desc);
 
     if rec.link and not (rec.link == '') then
-        row.frame:SetScript("OnMouseDown", onClick(self.frame.frame, rec.link));
-        row.frame:SetScript("OnLeave", onLeave());
+        row.frame:SetScript('OnMouseDown', onClick(self.frame.frame, rec.link));
+        row.frame:SetScript('OnLeave', onLeave());
 
-        local link = desc.frame:CreateFontString(nil, "BACKGROUND", "GameFontHighlightSmall");
+        local link = desc.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
         link:SetFont(DEFAULT_FONT, 10);
         link:ClearAllPoints();
         link:SetAllPoints();
@@ -95,7 +95,7 @@ local function renderRow(self, rec)
     ep:SetRelativeWidth(0.12);
     ep:SetFullHeight(true);
     ep:SetJustifyH('CENTER');
-    if not (rec.ep.before == "" and rec.ep.before == "") then
+    if rec.ep and (rec.ep.before or rec.ep.before) then
         ep:SetText(L['History EG'](rec.ep));
     end
     row:AddChild(ep);
@@ -105,7 +105,7 @@ local function renderRow(self, rec)
     gp:SetRelativeWidth(0.12);
     gp:SetFullHeight(true);
     gp:SetJustifyH('CENTER');
-    if not (rec.ep.after == "" and rec.gp.after == "") then
+    if rec.gp and (rec.gp.after or rec.gp.after) then
         gp:SetText(L['History EG'](rec.gp));
     end
     row:AddChild(gp);
@@ -126,7 +126,7 @@ local function renderList(self)
 end
 
 local function totalPages(self)
-    return math.floor(#self.data / store().history.pageSize);
+    return math.ceil(#self.data / store().history.pageSize);
 end
 
 local function goBack(self)
