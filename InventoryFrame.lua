@@ -4,6 +4,8 @@ local AceGUI = LibStub('AceGUI-3.0');
 local LSM = LibStub('LibSharedMedia-3.0');
 local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 
+local store = function() return ExG.store.char; end;
+
 local onEnter = function(owner, link) return function() GameTooltip:SetOwner(owner, 'ANCHOR_RIGHT'); GameTooltip:SetHyperlink(link); GameTooltip:Show(); end; end;
 local onLeave = function() return GameTooltip:Hide(); end;
 local onClick = function(item) return function() ExG:AnnounceItems({ item }); end; end;
@@ -24,12 +26,14 @@ local function scan(self)
 
         if slots ~= 0 then
             for j = 1, slots do
-                local link = GetContainerItemLink(i, j);
+                local info = ExG:ItemInfo(GetContainerItemLink(i, j));
 
-                if (link) then
-                    local info = ExG:ItemInfo(link);
+                if info then
+                    local itemData = store().items.data[info.id];
 
-                    if info and info.rarity > 3 then
+                    if itemData then
+                        self.items[info.id] = info;
+                    elseif info.rarity >= store().items.threshold then
                         self.items[info.id] = info;
                     end
                 end
