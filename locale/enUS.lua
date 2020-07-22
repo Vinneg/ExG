@@ -99,6 +99,13 @@ L['Pretenders'] = function(roll, attend) return '|cff33ff99Pretenders ' .. (roll
 L['Total imported'] = function(count) return 'Total history record imported: ' .. (count or 0); end;
 L['History EG'] = function(eg) if not eg then return '' end if (eg.before or 0) == (eg.after or 0) then return '' .. (eg.before or '') else return '' .. (eg.before or 0) .. ' > ' .. (eg.after or 0) end end;
 
+L['Poor'] = '|cff9d9d9dPoor|r';
+L['Common'] = '|cffffffffCommon|r';
+L['Uncommon'] = '|cff1eff00Uncommon|r';
+L['Rare'] = '|cff0070ddRare|r';
+L['Epic'] = '|cffa335eeEpic|r';
+L['Legendary'] = '|cffff8000Legendary|r';
+L['Artifact'] = '|cffe6cc80Artifact|r';
 L['ExG Boss 785'] = 'High Priestess Jeklik';
 L['ExG Boss 784'] = 'High Priest Venoxis';
 L['ExG Boss 786'] = 'High Priestess Mar\'li';

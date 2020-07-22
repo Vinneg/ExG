@@ -86,17 +86,33 @@ local function removePane(self, itemId)
     end
 end
 
-local function renderButons(self, pane, item)
-    sort(item.buttons, function(a, b) return a.id < b.id; end);
+local function renderButons(self, pane, item, settings)
+    local btns = {};
 
-    for _, v in ipairs(item.buttons) do
+    for _, v in pairs(store().buttons.data) do
         if v.enabled then
-            local btn = AceGUI:Create('Button');
-            btn:SetText(v.text);
-            btn:SetRelativeWidth(0.5);
-            btn:SetCallback('OnClick', onClick({ id = item.id, option = v.id }));
-            pane:AddChild(btn);
+            tinsert(btns, v);
         end
+    end
+
+    sort(btns, function(a, b) return a.id < b.id; end);
+
+    for _, v in ipairs(btns) do
+        local enabled = true;
+
+        if settings and v.id ~= 'button6' then
+            local class = settings[ExG.state.class] or {};
+            local def = settings['DEFAULT'] or {};
+
+            enabled = class[v.id] or def[v.id];
+        end
+
+        local btn = AceGUI:Create('Button');
+        btn:SetText(enabled and v.text or '');
+        btn:SetDisabled(not enabled);
+        btn:SetRelativeWidth(0.5);
+        btn:SetCallback('OnClick', onClick({ id = item.id, option = v.id }));
+        pane:AddChild(btn);
     end
 
     if ExG:IsMl() then
@@ -112,9 +128,14 @@ local function renderItem(self, item)
     local new, pane = addPane(self, item);
 
     if new then
+        local settings = store().items.data[item.id];
+        local class = (settings or {})[ExG.state.class] or {};
+        local def = (settings or {})['DEFAULT'] or {};
+
         pane.icon = AceGUI:Create('Icon');
         pane.icon:SetImage(item.texture);
         pane.icon:SetImageSize(50, 50);
+        pane.icon:SetLabel(((class.gp or def.gp) or item.gp) .. ' GP');
         pane.icon:SetFullWidth(true);
         pane.icon:SetCallback('OnEnter', onEnter(pane.icon.frame, item.link));
         pane.icon:SetCallback('OnLeave', onLeave);
@@ -129,7 +150,7 @@ local function renderItem(self, item)
         pane.name:SetCallback('OnLeave', onLeave);
         pane:AddChild(pane.name);
 
-        renderButons(self, pane, item);
+        renderButons(self, pane, item, settings);
 
         pane.accepted = AceGUI:Create('Label');
         pane.accepted:SetText('-');
@@ -196,7 +217,7 @@ local function renderRolls(self, item)
 
         roll.name:SetColor(ExG:NameColor(v.name));
         roll.name:SetText(v.name);
-        roll.option:SetText(store().buttons[v.option].text);
+        roll.option:SetText(store().buttons.data[v.option].text);
         roll.pr:SetText(v.pr);
     end
 
@@ -245,7 +266,7 @@ function ExG.RollFrame:Create()
     --    self.frame:OnHeightSet(500);
     self.frame:SetLayout(nil);
     self.frame:EnableResize(false);
-    self.frame:SetCallback('OnClose', function() self.frame:Hide(); end);
+    self.frame:SetCallback('OnClose', function() for id in pairs(self.items) do removePane(ExG.RollFrame, id); end self.frame:Hide(); end);
     self.frame:Hide();
 end
 
@@ -257,25 +278,27 @@ function ExG.RollFrame:Hide()
     self.frame:Hide();
 end
 
-function ExG.RollFrame:AddItems(items)
-    for _, item in ipairs(items) do
-        self.items[item.id] = self.items[item.id] or { accepted = {}, rolls = {} };
+function ExG.RollFrame:AddItems(gps)
+    for id, gp in pairs(gps) do
+        self.items[id] = self.items[id] or { accepted = {}, rolls = {} };
 
-        local tmp = self.items[item.id];
-        tmp.id = item.id;
-        tmp.name = item.name;
-        tmp.rarity = item.rarity;
-        tmp.type = item.type;
-        tmp.subtype = item.subtype;
-        tmp.loc = item.loc;
-        tmp.link = item.link;
-        tmp.texture = item.texture;
+        local tmp = self.items[id];
+        local info = ExG:ItemInfo(id);
+        tmp.id = id;
+        tmp.gp = gp;
+        tmp.name = info.name;
+        tmp.rarity = info.rarity;
+        tmp.type = info.type;
+        tmp.subtype = info.subtype;
+        tmp.loc = info.loc;
+        tmp.link = info.link;
+        tmp.texture = info.texture;
         tmp.count = (tmp.count or 0) + 1;
-        tmp.buttons = item.buttons or {};
+        tmp.buttons = info.buttons or {};
 
         renderItem(self, tmp);
 
-        ExG:AcceptItem(item.id);
+        ExG:AcceptItem(id);
     end
 end
 

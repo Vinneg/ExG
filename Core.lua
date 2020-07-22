@@ -20,10 +20,10 @@ local buttons = {
         return true;
     end,
     getText = function(btnId)
-        return function() return store().buttons[btnId].text; end;
+        return function() return store().buttons.data[btnId].text; end;
     end,
     setText = function(btnId)
-        return function(_, value) store().buttons[btnId].text = value; end;
+        return function(_, value) store().buttons.data[btnId].text = value; end;
     end,
     validateRatio = function(_, value)
         if not tonumber(value) then
@@ -32,16 +32,16 @@ local buttons = {
         return true;
     end,
     getRatio = function(btnId)
-        return function() return tostring(store().buttons[btnId].ratio); end;
+        return function() return tostring(store().buttons.data[btnId].ratio); end;
     end,
     setRatio = function(btnId)
-        return function(_, value) store().buttons[btnId].ratio = tonumber(value); end;
+        return function(_, value) store().buttons.data[btnId].ratio = tonumber(value); end;
     end,
     getRoll = function(btnId)
-        return function() return store().buttons[btnId].roll; end;
+        return function() return store().buttons.data[btnId].roll; end;
     end,
     setRoll = function(btnId)
-        return function(_, value) store().buttons[btnId].roll = value; end;
+        return function(_, value) store().buttons.data[btnId].roll = value; end;
     end,
 };
 
@@ -162,12 +162,14 @@ ExG.defaults = {
         },
         buttons = {
             count = 2,
-            button1 = { enabled = true, id = 'button1', text = 'need', ratio = 1, roll = false },
-            button2 = { enabled = false, id = 'button2', text = 'greed', ratio = 0.5, roll = false },
-            button3 = { enabled = false, id = 'button3', text = 'offspec', ratio = 0.3, roll = false },
-            button4 = { enabled = false, id = 'button4', text = 'gold', ratio = 0, roll = true },
-            button5 = { enabled = false, id = 'button5', text = 'free', ratio = 0, roll = true },
-            button6 = { enabled = true, id = 'button6', text = 'pass', ratio = 0, roll = false },
+            data = {
+                button1 = { enabled = true, id = 'button1', text = 'need', ratio = 1, roll = false },
+                button2 = { enabled = false, id = 'button2', text = 'greed', ratio = 0.5, roll = false },
+                button3 = { enabled = false, id = 'button3', text = 'offspec', ratio = 0.3, roll = false },
+                button4 = { enabled = false, id = 'button4', text = 'gold', ratio = 0, roll = true },
+                button5 = { enabled = false, id = 'button5', text = 'free', ratio = 0, roll = true },
+                button6 = { enabled = true, id = 'button6', text = 'pass', ratio = 0, roll = false },
+            },
         },
         history = {
             pageSize = 50,
@@ -304,7 +306,7 @@ ExG.options = {
                     order = 11,
                     width = 0.5,
                     style = "dropdown",
-                    values = { [0] = '|cff9d9d9dPoor|r', [1] = '|cffffffffCommon|r', [2] = '|cff1eff00Uncommon|r', [3] = '|cff0070ddRare|r', [4] = '|cffa335eeEpic|r', [5] = '|cffff8000Legendary|r', [6] = '|cffe6cc80Artifact|r' },
+                    values = { [0] = L['Poor'], [1] = L['Common'], [2] = L['Uncommon'], [3] = L['Rare'], [4] = L['Epic'], [5] = L['Legendary'], [6] = L['Artifact'], },
                     get = function() return store().items.threshold; end,
                     set = function(_, value) store().items.threshold = value; end,
                 },
@@ -468,7 +470,7 @@ ExG.options = {
                     max = 6,
                     step = 1,
                     get = function() return store().buttons.count; end,
-                    set = function(_, value) local btns = store().buttons; btns.count = value; btns.button2.enabled = (value > 2); btns.button3.enabled = (value > 3); btns.button4.enabled = (value > 4); btns.button5.enabled = (value > 5); end,
+                    set = function(_, value) local btns = store().buttons; btns.count = value; btns.data.button2.enabled = (value > 2); btns.data.button3.enabled = (value > 3); btns.data.button4.enabled = (value > 4); btns.data.button5.enabled = (value > 5); end,
                 },
                 button1Header = {
                     type = 'header',
@@ -479,6 +481,7 @@ ExG.options = {
                     type = 'input',
                     name = L['Button Text'],
                     order = 11,
+                    width = 0.7,
                     validate = buttons.validateText,
                     get = buttons.getText('button1'),
                     set = buttons.setText('button1'),
@@ -510,6 +513,7 @@ ExG.options = {
                     type = 'input',
                     name = L['Button Text'],
                     order = 21,
+                    width = 0.7,
                     validate = buttons.validateText,
                     get = buttons.getText('button2'),
                     set = buttons.setText('button2'),
@@ -543,6 +547,7 @@ ExG.options = {
                     type = 'input',
                     name = L['Button Text'],
                     order = 31,
+                    width = 0.7,
                     validate = buttons.validateText,
                     get = buttons.getText('button3'),
                     set = buttons.setText('button3'),
@@ -576,6 +581,7 @@ ExG.options = {
                     type = 'input',
                     name = L['Button Text'],
                     order = 41,
+                    width = 0.7,
                     validate = buttons.validateText,
                     get = buttons.getText('button4'),
                     set = buttons.setText('button4'),
@@ -609,6 +615,7 @@ ExG.options = {
                     type = 'input',
                     name = L['Button Text'],
                     order = 51,
+                    width = 0.7,
                     validate = buttons.validateText,
                     get = buttons.getText('button5'),
                     set = buttons.setText('button5'),
@@ -640,6 +647,7 @@ ExG.options = {
                     type = 'input',
                     name = L['Button Text'],
                     order = 61,
+                    width = 0.7,
                     validate = buttons.validateText,
                     get = buttons.getText('button6'),
                     set = buttons.setText('button6'),
@@ -925,14 +933,7 @@ function ExG:HandleChatCommand(input)
     if arg == 'ony' then
         self:ENCOUNTER_END(0, 1084, 0, 0, 0, true)
     elseif arg == 'announce' then
-        local tmp1 = self:ItemInfo(GetInventoryItemLink('player', 1));
-        tmp1.buttons = self:ItemOptions(tmp1);
-        tmp1.gp = self:ItemGP(tmp1);
-        local tmp2 = self:ItemInfo(GetInventoryItemLink('player', 2));
-        tmp2.buttons = self:ItemOptions(tmp2);
-        tmp2.gp = self:ItemGP(tmp2);
-
-        self:AnnounceItems({ tmp1, tmp2 })
+        self:AnnounceItems({ 19438, 18820, 15138, 19812 })
     elseif arg == 'his' then
         self.HistoryFrame:Show();
     elseif arg == 'inv' then
@@ -993,8 +994,17 @@ function ExG:PostInit()
     self:Print('|cff33ff99Version ', version, ' loaded!|r');
 end
 
-function ExG:AnnounceItems(items)
-    local data = Serializer:Serialize(items);
+function ExG:AnnounceItems(ids)
+    local gps = {};
+    local settings = {};
+
+    for _, v in ipairs(ids) do
+        settings[v] = store().items.data[v] or false;
+
+        gps[v] = settings[v] and 0 or self:CalcGP(v);
+    end
+
+    local data = Serializer:Serialize(gps, settings, store().buttons);
 
     if store().debug and not IsInRaid() then
         self:SendCommMessage(self.messages.prefix.announce, data, self.messages.whisper, self.state.name);
@@ -1008,13 +1018,19 @@ function ExG:handleAnnounceItems(_, message, _, sender)
         return;
     end
 
-    local success, data = Serializer:Deserialize(message);
+    local success, gps, settings, buttons = Serializer:Deserialize(message);
 
     if not success then
         return
     end
 
-    self.RollFrame:AddItems(data);
+    for i, v in pairs(settings) do
+        store().items.data[i] = v or nil;
+    end
+
+    store().buttons = buttons;
+
+    self.RollFrame:AddItems(gps);
     self.RollFrame:Show();
 end
 
@@ -1049,13 +1065,13 @@ function ExG:RollItem(item)
 end
 
 function ExG:handleRollItem(_, message, _, sender)
-    local success, data = Serializer:Deserialize(message);
+    local success, item = Serializer:Deserialize(message);
 
     if not success then
         return
     end
 
-    self.RollFrame:RollItem(data, sender);
+    self.RollFrame:RollItem(item, sender);
 end
 
 function ExG:HistoryPull()
@@ -1093,34 +1109,19 @@ function ExG:HistoryShare(source, target)
 end
 
 function ExG:handleHistoryShare(_, message, _, sender)
-    local success, data = Serializer:Deserialize(message);
+    local success, source = Serializer:Deserialize(message);
 
     if not success then
         return
     end
 
-    for i, v in pairs(data.data) do
+    for i, v in pairs(source.data) do
         store().history.data[i] = v;
     end
 
-    if data.count and data.min and data.max then
-        self:Print(L['History imported'](data));
+    if source.count and source.min and source.max then
+        self:Print(L['History imported'](source));
     end
-end
-
-function ExG:ItemOptions(itemInfo)
-    return {
-        store().buttons.button1,
-        store().buttons.button2,
-        store().buttons.button3,
-        store().buttons.button4,
-        store().buttons.button5,
-        store().buttons.button6,
-    };
-end
-
-function ExG:ItemGP(itemInfo)
-    return self:CalcGP(itemInfo);
 end
 
 function ExG:ENCOUNTER_END(_, id, _, _, _, success)
@@ -1196,12 +1197,16 @@ function ExG:LOOT_OPENED()
                 local itemData = store().items.data[info.id];
 
                 if itemData then
-                    tinsert(links, info);
+                    tinsert(links, info.id);
                 elseif info.rarity >= store().items.threshold then
-                    tinsert(links, info);
+                    tinsert(links, info.id);
                 end
             end
         end
+    end
+
+    if #links == 0 then
+        return;
     end
 
     self:AnnounceItems(links);
@@ -1287,4 +1292,3 @@ function ExG:ClearHistory()
     store().history.bak = store().history.data;
     store().history.data = {};
 end
-

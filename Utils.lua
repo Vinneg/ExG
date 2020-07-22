@@ -179,11 +179,9 @@ function ExG:ItemInfo(linkOrId)
         return nil;
     end
 
-    local id = 0;
+    local id = tonumber(linkOrId);
 
-    if tonumber(linkOrId) then
-        id = tonumber(linkOrId);
-    else
+    if not id then
         local itemString = string.match(linkOrId, "item[%-?%d:]+");
 
         if not itemString then
@@ -261,6 +259,14 @@ function ExG:SetEG(info, ep, gp)
     return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100, };
 end
 
-function ExG:CalcGP(itemInfo)
+function ExG:CalcGP(infoOrId)
+    local id = tonumber(infoOrId);
+
+    print(id);
+
+    if not id then
+        id = 0;
+    end
+
     return 10;
 end
