@@ -19,6 +19,99 @@ local function toString(offNote, ep, gp)
     return newOffNote;
 end
 
+local LOCS = {
+    INVTYPE_AMMO = { 0 },
+    INVTYPE_HEAD = { 1 },
+    INVTYPE_NECK = { 2 },
+    INVTYPE_SHOULDER = { 3 },
+    INVTYPE_BODY = { 4 },
+    INVTYPE_CHEST = { 5 },
+    INVTYPE_ROBE = { 5 },
+    INVTYPE_WAIST = { 5 },
+    INVTYPE_LEGS = { 7 },
+    INVTYPE_FEET = { 8 },
+    INVTYPE_WRIST = { 9 },
+    INVTYPE_HAND = { 10 },
+    INVTYPE_FINGER = { 11, 12 },
+    INVTYPE_TRINKET = { 13, 14 },
+    INVTYPE_CLOAK = { 15 },
+    INVTYPE_WEAPON = { 16, 17 },
+    INVTYPE_SHIELD = { 17 },
+    INVTYPE_2HWEAPON = { 16 },
+    INVTYPE_WEAPONMAINHAND = { 16 },
+    INVTYPE_WEAPONOFFHAND = { 17 },
+    INVTYPE_HOLDABLE = { 17 },
+    INVTYPE_RANGED = { 18 },
+    INVTYPE_THROWN = { 18 },
+    INVTYPE_RANGEDRIGHT = { 18 },
+    INVTYPE_RELIC = { 18 },
+    INVTYPE_TABARD = { 19 },
+};
+
+local TOKENS = {
+    [18423] = 'INVTYPE_TRINKET', -- of Onyxia (Alliance) -- Can also be a neck and ring
+    [18422] = 'INVTYPE_TRINKET', -- of Onyxia (Horde) -- Same deal
+    [19802] = 'INVTYPE_TRINKET', -- Heart of Hakkar
+    [22520] = 'INVTYPE_TRINKET', -- Phylactery of Kel'Thuzad
+    [21220] = 'INVTYPE_NECK', -- of Ossirian the Unscarred
+    [21221] = 'INVTYPE_NECK', -- Eye of C'Thun -- Can also be a cloak or ring
+    [19003] = 'INVTYPE_HOLDABLE', -- of Nefarian (Alliance) -- Can also be neck and ring
+    [19002] = 'INVTYPE_HOLDABLE', -- of Nefarian (Horde) -- Same deal
+    [19717] = 'INVTYPE_WRIST', -- Armsplint
+    [19716] = 'INVTYPE_WRIST', -- Bindings
+    [19718] = 'INVTYPE_WRIST', -- Stanchion
+    [19719] = 'INVTYPE_WAIST', -- Girdle
+    [19720] = 'INVTYPE_WAIST', -- Sash
+    [19724] = 'INVTYPE_CHEST', -- Aegis
+    [19723] = 'INVTYPE_CHEST', -- Kossack
+    [19722] = 'INVTYPE_CHEST', -- Tabard
+    [19721] = 'INVTYPE_SHOULDER', -- Shawl
+    [20885] = 'INVTYPE_CLOAK', -- Martial Drake
+    [20889] = 'INVTYPE_CLOAK', -- Regal Drape
+    [20888] = 'INVTYPE_FINGER', -- Ceremonial Ring
+    [20884] = 'INVTYPE_FINGER', -- Magisterial Ring
+    [20886] = 'INVTYPE_WEAPONOFFHAND', -- Spiked Hilt -- Exceptions apply - Paladin / Shaman weapon are main hand
+    [21232] = 'INVTYPE_WEAPONOFFHAND', -- Imperial Qiraji Armaments -- Can also be a ranged weapon or shield
+    [20890] = 'INVTYPE_WEAPONMAINHAND', -- Ornate Hilt
+    [21237] = 'INVTYPE_2HWEAPON', -- Imperial Qiraji Regalia -- Can also be a one-handed weapon
+    [20928] = 'INVTYPE_FEET', -- Qiraji Bindings of Command -- Can also be shoulders
+    [20932] = 'INVTYPE_FEET', -- Qiraji Bindings of Dominance -- same deal
+    [20933] = 'INVTYPE_CHEST', -- Husk of the Old God
+    [20929] = 'INVTYPE_CHEST', -- Carapace of the Old God
+    [20927] = 'INVTYPE_LEGS', -- Ouro's Intact Hide
+    [20931] = 'INVTYPE_LEGS', -- Skin of the Great Sandworm
+    [22368] = 'INVTYPE_SHOULDER', -- Shoulderpads
+    [22354] = 'INVTYPE_SHOULDER', -- Pauldrons
+    [22361] = 'INVTYPE_SHOULDER', -- Spaulders
+    [22372] = 'INVTYPE_FEET', -- Sandals
+    [22365] = 'INVTYPE_FEET', -- Boots
+    [22358] = 'INVTYPE_FEET', -- Sabatons
+    [22369] = 'INVTYPE_WRIST', -- Bindings
+    [22362] = 'INVTYPE_WRIST', -- Wristguards
+    [22355] = 'INVTYPE_WRIST', -- Bracers
+    [22357] = 'INVTYPE_HAND', -- Gauntlets
+    [22364] = 'INVTYPE_HAND', -- Handguards
+    [22371] = 'INVTYPE_HAND', -- Gloves
+    [22363] = 'INVTYPE_WAIST', -- Girdle
+    [22370] = 'INVTYPE_WAIST', -- Belt
+    [22356] = 'INVTYPE_WAIST', -- Waistguard
+    [22359] = 'INVTYPE_LEGS', -- Legguards
+    [22352] = 'INVTYPE_LEGS', -- Legplates
+    [22366] = 'INVTYPE_LEGS', -- Leggings
+    [22367] = 'INVTYPE_HEAD', -- Circlet
+    [22360] = 'INVTYPE_HEAD', -- Headpiece
+    [22353] = 'INVTYPE_HEAD', -- Helmet
+    [22350] = 'INVTYPE_CHEST', -- Tunic
+    [22351] = 'INVTYPE_CHEST', -- Robe
+    [22349] = 'INVTYPE_CHEST', -- Breastplate
+};
+
+local function toSlots(item)
+    local token = TOKENS[item.id];
+
+    return token and LOCS[token] or LOCS[item.loc];
+end
+
 local COLORS = {
     DEATHKNIGHT = { 0.77, 0.12, 0.23 },
     DEMONHUNTER = { 0.64, 0.19, 0.79 },
@@ -40,7 +133,7 @@ local COLORS = {
 };
 
 function ExG:ClassColor(class)
-    local res = class and (COLORS[class] or COLORS['DEFAULT']) or COLORS('DEFAULT');
+    local res = class and (COLORS[class] or COLORS['DEFAULT']) or COLORS['DEFAULT'];
 
     return unpack(res);
 end
@@ -182,7 +275,7 @@ function ExG:ItemInfo(linkOrId)
     local id = tonumber(linkOrId);
 
     if not id then
-        local itemString = string.match(linkOrId, "item[%-?%d:]+");
+        local itemString = string.match(linkOrId, 'item[%-?%d:]+');
 
         if not itemString then
             return nil;
@@ -199,7 +292,7 @@ function ExG:ItemInfo(linkOrId)
 
     local name, link, rarity, level, minLevel, type, subtype, stackCount, loc, texture, sellPrice, classID, subClassID, bindType, expacID, setID, isCraftReg = GetItemInfo(id);
 
-    return {
+    local item = {
         id = id,
         link = link,
         name = name,
@@ -219,6 +312,28 @@ function ExG:ItemInfo(linkOrId)
         setID = setID,
         isCraftReg = isCraftReg
     };
+
+    item.slots = toSlots(item);
+
+    return item;
+end
+
+function ExG:Equipped(slots)
+    local res = {};
+
+    if not slots then
+        return nil;
+    end
+
+    for _, v in ipairs(slots) do
+        local link = GetInventoryItemLink('player', v);
+
+        local info = self:ItemInfo(link);
+
+        tinsert(res, info and info.id);
+    end
+
+    return unpack(res);
 end
 
 function ExG:GetEG(offNote)
@@ -261,8 +376,6 @@ end
 
 function ExG:CalcGP(infoOrId)
     local id = tonumber(infoOrId);
-
-    print(id);
 
     if not id then
         id = 0;
