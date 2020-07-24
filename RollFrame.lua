@@ -14,6 +14,7 @@ local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
 ExG.RollFrame = {
     frame = nil,
     items = {},
+    panes
 };
 
 local function count(self)
@@ -28,7 +29,7 @@ local function count(self)
     return res;
 end
 
-local function getButtons(pane)
+local function getButtons(self, pane)
     local points = {
         { point = 'TOPLEFT', frame = pane.name.frame, rel = 'BOTTOMLEFT', x = 5, y = -5 },
         { point = 'TOPRIGHT', frame = pane.name.frame, rel = 'BOTTOMRIGHT', x = -5, y = -5 },
@@ -95,10 +96,10 @@ local function getRolls(pane)
         roll.pane:SetLayout(nil);
         roll.pane.frame:EnableMouse(true);
 
-        local highlight = roll.pane.frame:CreateTexture(nil, "HIGHLIGHT");
+        local highlight = roll.pane.frame:CreateTexture(nil, 'HIGHLIGHT');
         highlight:SetTexture('Interface\\Buttons\\UI-Listbox-Highlight');
         highlight:SetAllPoints(true);
-        highlight:SetBlendMode("ADD");
+        highlight:SetBlendMode('ADD');
 
         pane:AddChild(roll.pane);
 
@@ -154,17 +155,21 @@ local function getRolls(pane)
 end
 
 local function getPane(self, itemId)
-    local pane;
+    local pane, blank;
 
     for i = 1, #self.frame.children do
         local tmp = self.frame.children[i];
 
-        if tmp.itemId == itemId then
-            pane = tmp;
-        end
+        pane = (tmp.itemId == itemId) and tmp or pane;
+        blank = not tmp.itemId and tmp or blank;
     end
 
-    if not pane then
+    print('count = ', #self.frame.children, ', pane = ', pane, ', blank = ', blank);
+
+    if not pane and blank then
+        pane = blank;
+        pane.itemId = itemId;
+    elseif not pane then
         pane = AceGUI:Create('SimpleGroup');
         pane:SetWidth(250);
         pane:SetFullHeight(true);
@@ -183,28 +188,25 @@ local function getPane(self, itemId)
         pane.icon = AceGUI:Create('Icon');
         pane.icon:SetImageSize(50, 50);
         pane.icon:SetLabel('0 GP');
-        pane.icon:SetFullWidth(true);
         pane.icon:SetCallback('OnLeave', onLeave);
-        pane.icon.label:SetPoint("TOPLEFT");
-        pane.icon.label:SetPoint("BOTTOMRIGHT");
-        pane.icon.label:SetJustifyH("RIGHT");
-        pane.icon.label:SetJustifyV("CENTER");
+        pane.icon.label:SetAllPoints();
+        pane.icon.label:SetJustifyH('RIGHT');
+        pane.icon.label:SetJustifyV('CENTER');
         pane:AddChild(pane.icon);
 
         pane.icon:SetPoint('TOPLEFT', pane.frame, 'TOPLEFT', 0, 0);
-        pane.icon:SetPoint('BOTTOMRIGHT', pane.frame, 'TOPRIGHT', 0, -54);
+        pane.icon:SetPoint('BOTTOMRIGHT', pane.frame, 'TOPRIGHT', 0, -55);
 
         pane.name = AceGUI:Create('InteractiveLabel');
         pane.name:SetFont(DEFAULT_FONT, 14, 'OUTLINE');
         pane.name:SetJustifyH('CENTER');
-        pane.name:SetFullWidth(true);
         pane.name:SetCallback('OnLeave', onLeave);
         pane:AddChild(pane.name);
 
         pane.name:SetPoint('TOPLEFT', pane.icon.frame, 'BOTTOMLEFT', 0, -5);
         pane.name:SetPoint('BOTTOMRIGHT', pane.icon.frame, 'BOTTOMRIGHT', 0, -38);
 
-        local last = getButtons(pane);
+        local last = getButtons(self, pane);
 
         pane.accepted = AceGUI:Create('Label');
         pane.accepted:SetText('none');
@@ -220,39 +222,6 @@ local function getPane(self, itemId)
     self.frame:SetWidth(count(self) * 255 + 15);
 
     return pane;
-end
-
-local function removePane(self, itemId)
-    local pane, right, idx;
-
-    for i = 1, #self.frame.children do
-        local tmp = self.frame.children[i];
-
-        if tmp.itemId == itemId then
-            idx = i;
-            pane = tmp;
-            right = self.frame.children[math.min(i + 1, #self.frame.children)];
-        end
-    end
-
-    if not right then
-        return;
-    end
-
-    for i = 1, pane:GetNumPoints() do
-        right:SetPoint(pane:GetPoint(i));
-    end
-
-    AceGUI:Release(pane);
-    tremove(self.frame.children, idx);
-
-    self.items[itemId] = nil;
-
-    if #self.frame.children == 0 then
-        self.frame:Hide();
-    else
-        self.frame:SetWidth(#self.frame.children * 205 + 15);
-    end
 end
 
 local function renderButons(self, pane, item, settings)
@@ -278,7 +247,15 @@ local function renderButons(self, pane, item, settings)
 end
 
 local function renderItem(self, pane)
+    if not pane or not pane.itemId then
+        return;
+    end
+
     local item = self.items[pane.itemId];
+
+    if not item then
+        return;
+    end
 
     local settings = store().items.data[item.id];
     local class = (settings or {})[ExG.state.class] or {};
@@ -292,6 +269,8 @@ local function renderItem(self, pane)
 
     pane.name:SetText(item.link);
     pane.name:SetCallback('OnEnter', onEnter(pane.name.frame, item.link));
+
+    pane.frame:Show();
 end
 
 local function renderItems(self)
@@ -302,7 +281,17 @@ local function renderItems(self)
     end
 end
 
-local function renderRolls(self, pane, item)
+local function renderRolls(self, pane)
+    local item = self.items[pane.itemId];
+
+    if not item then
+        for i = 1, #pane.rolls do
+            pane.rolls[i].pane.frame:Hide();
+        end
+
+        return
+    end
+
     local rolls = {};
 
     for _, v in pairs(item.rolls) do
@@ -334,6 +323,39 @@ local function renderRolls(self, pane, item)
 
     for i = #rolls + 1, #pane.rolls do
         pane.rolls[i].pane.frame:Hide();
+    end
+end
+
+local function removePane(self, itemId)
+    local found = false;
+
+    self.items[itemId] = nil;
+
+    for i = 1, #self.frame.children do
+        local pane = self.frame.children[i];
+
+        if pane.itemId == itemId or found then
+            pane.itemId = nil;
+            found = true;
+
+            if i < #self.frame.children then
+                local right = self.frame.children[i + 1];
+
+                pane.itemId = right.itemId;
+                right.itemId = nil;
+
+                if pane.itemId then
+                    renderItem(self, pane);
+                    renderRolls(self, pane);
+                else
+                    pane.frame:Hide();
+                end
+            else
+                pane.frame:Hide();
+            end
+
+            self.frame:SetWidth(count(self) * 255 + 15);
+        end
     end
 end
 
@@ -449,5 +471,5 @@ function ExG.RollFrame:RollItem(data, unit)
 
     pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
 
-    renderRolls(self, pane, item);
+    renderRolls(self, pane);
 end
