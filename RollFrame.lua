@@ -161,7 +161,9 @@ local function getPane(self, itemId)
         local tmp = self.frame.children[i];
 
         pane = (tmp.itemId == itemId) and tmp or pane;
-        blank = not tmp.itemId and tmp or blank;
+        if not tmp.itemId and not blank then
+            blank = tmp;
+        end
     end
 
     print('count = ', #self.frame.children, ', pane = ', pane, ', blank = ', blank);
@@ -246,41 +248,6 @@ local function renderButons(self, pane, item, settings)
     end
 end
 
-local function renderItem(self, pane)
-    if not pane or not pane.itemId then
-        return;
-    end
-
-    local item = self.items[pane.itemId];
-
-    if not item then
-        return;
-    end
-
-    local settings = store().items.data[item.id];
-    local class = (settings or {})[ExG.state.class] or {};
-    local def = (settings or {})['DEFAULT'] or {};
-
-    pane.icon:SetImage(item.texture);
-    pane.icon:SetLabel(((class.gp or def.gp) or item.gp) .. ' GP');
-    pane.icon:SetCallback('OnEnter', onEnter(pane.icon.frame, item.link));
-
-    renderButons(self, pane, item, settings);
-
-    pane.name:SetText(item.link);
-    pane.name:SetCallback('OnEnter', onEnter(pane.name.frame, item.link));
-
-    pane.frame:Show();
-end
-
-local function renderItems(self)
-    for id, item in pairs(self.items) do
-        local pane = getPane(self, id);
-
-        renderItem(self, pane);
-    end
-end
-
 local function renderRolls(self, pane)
     local item = self.items[pane.itemId];
 
@@ -326,10 +293,45 @@ local function renderRolls(self, pane)
     end
 end
 
+local function renderItem(self, pane)
+    if not pane or not pane.itemId then
+        return;
+    end
+
+    local item = self.items[pane.itemId];
+
+    if not item then
+        return;
+    end
+
+    local settings = store().items.data[item.id];
+    local class = (settings or {})[ExG.state.class] or {};
+    local def = (settings or {})['DEFAULT'] or {};
+
+    pane.icon:SetImage(item.texture);
+    pane.icon:SetLabel(((class.gp or def.gp) or item.gp) .. ' GP');
+    pane.icon:SetCallback('OnEnter', onEnter(pane.icon.frame, item.link));
+
+    renderButons(self, pane, item, settings);
+
+    pane.name:SetText(item.link);
+    pane.name:SetCallback('OnEnter', onEnter(pane.name.frame, item.link));
+
+    pane.frame:Show();
+
+    renderRolls(self, pane);
+end
+
+local function renderItems(self)
+    for id, item in pairs(self.items) do
+        local pane = getPane(self, id);
+
+        renderItem(self, pane);
+    end
+end
+
 local function removePane(self, itemId)
     local found = false;
-
-    self.items[itemId] = nil;
 
     for i = 1, #self.frame.children do
         local pane = self.frame.children[i];
@@ -343,19 +345,24 @@ local function removePane(self, itemId)
 
                 pane.itemId = right.itemId;
                 right.itemId = nil;
+            end
 
-                if pane.itemId then
-                    renderItem(self, pane);
-                    renderRolls(self, pane);
-                else
-                    pane.frame:Hide();
-                end
+            if pane.itemId then
+                renderItem(self, pane);
             else
                 pane.frame:Hide();
             end
 
             self.frame:SetWidth(count(self) * 255 + 15);
         end
+    end
+
+    self.items[itemId] = nil;
+
+    self.frame:SetWidth(count(self) * 255 + 15);
+
+    if count(self) == 0 then
+        self.frame:Hide();
     end
 end
 
