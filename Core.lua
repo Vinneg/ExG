@@ -131,6 +131,7 @@ ExG.defaults = {
         items = {
             pageSize = 50,
             threshold = 4,
+            closeOnPass = true,
             formula = {
                 coef = 7,
                 base = 1.5,
@@ -316,15 +317,23 @@ ExG.options = {
                     order = 12,
                     width = 1.7,
                 },
+                closeOnPass = {
+                    type = 'toggle',
+                    name = L['Close item on pass'],
+                    order = 20,
+                    width = 1.2,
+                    get = function() return store().items.closeOnPass; end,
+                    set = function(_, value) store().items.closeOnPass = value; end,
+                },
                 itemsHeader2 = {
                     type = 'header',
                     name = L['Items Formula'],
-                    order = 20,
+                    order = 120,
                 },
                 itemsFormula = {
                     type = 'description',
                     name = L['Items Formula Desc'],
-                    order = 21,
+                    order = 121,
                     width = 'full',
                 },
                 itemsHeader3 = {
@@ -933,7 +942,7 @@ function ExG:HandleChatCommand(input)
     if arg == 'ony' then
         self:ENCOUNTER_END(0, 1084, 0, 0, 0, true)
     elseif arg == 'announce' then
-        self:AnnounceItems({ 19438, 18820, 15138, 19812 })
+        self:AnnounceItems({ 19438, 18820, 19019, 15138, 19812 })
     elseif arg == 'his' then
         self.HistoryFrame:Show();
     elseif arg == 'inv' then

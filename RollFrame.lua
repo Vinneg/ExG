@@ -14,7 +14,6 @@ local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
 ExG.RollFrame = {
     frame = nil,
     items = {},
-    panes
 };
 
 local function count(self)
@@ -31,14 +30,14 @@ end
 
 local function getButtons(self, pane)
     local points = {
-        { point = 'TOPLEFT', frame = pane.name.frame, rel = 'BOTTOMLEFT', x = 5, y = -5 },
-        { point = 'TOPRIGHT', frame = pane.name.frame, rel = 'BOTTOMRIGHT', x = -5, y = -5 },
-        { point = 'TOPLEFT', frame = pane.name.frame, rel = 'BOTTOMLEFT', x = 5, y = -30 },
-        { point = 'TOPRIGHT', frame = pane.name.frame, rel = 'BOTTOMRIGHT', x = -5, y = -30 },
-        { point = 'TOPLEFT', frame = pane.name.frame, rel = 'BOTTOMLEFT', x = 5, y = -55 },
-        { point = 'TOPRIGHT', frame = pane.name.frame, rel = 'BOTTOMRIGHT', x = -5, y = -55 },
-        { point = 'TOPRIGHT', frame = pane.name.frame, rel = 'BOTTOMRIGHT', x = -5, y = -80 },
-        { point = 'TOPRIGHT', frame = pane.name.frame, rel = 'BOTTOMRIGHT', x = -5, y = -105 },
+        { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -5 },
+        { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -5 },
+        { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -30 },
+        { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -30 },
+        { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -55 },
+        { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -55 },
+        { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -80 },
+        { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -105 },
     };
 
     local btns, idx, last = {}, 1, nil;
@@ -166,8 +165,6 @@ local function getPane(self, itemId)
         end
     end
 
-    print('count = ', #self.frame.children, ', pane = ', pane, ', blank = ', blank);
-
     if not pane and blank then
         pane = blank;
         pane.itemId = itemId;
@@ -187,26 +184,31 @@ local function getPane(self, itemId)
             pane:SetPoint('BOTTOMLEFT', self.frame.children[#self.frame.children - 1].frame, 'BOTTOMRIGHT', 5, 0);
         end
 
-        pane.icon = AceGUI:Create('Icon');
-        pane.icon:SetImageSize(50, 50);
-        pane.icon:SetLabel('0 GP');
-        pane.icon:SetCallback('OnLeave', onLeave);
-        pane.icon.label:SetAllPoints();
-        pane.icon.label:SetJustifyH('RIGHT');
-        pane.icon.label:SetJustifyV('CENTER');
-        pane:AddChild(pane.icon);
+        pane.head = AceGUI:Create('Icon');
+        pane.head:SetImageSize(50, 50);
+        pane.head:SetLabel('');
+        pane.head:SetCallback('OnLeave', onLeave);
 
-        pane.icon:SetPoint('TOPLEFT', pane.frame, 'TOPLEFT', 0, 0);
-        pane.icon:SetPoint('BOTTOMRIGHT', pane.frame, 'TOPRIGHT', 0, -55);
+        pane.cost = pane.head.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+        pane.cost:SetFont(DEFAULT_FONT, 10);
+        pane.cost:ClearAllPoints();
+        pane.cost:SetPoint('LEFT', 20, 0);
+        pane.cost:SetJustifyH('LEFT');
+        pane.cost:SetJustifyV('CENTER');
+        pane.cost:SetText('0 GP');
 
-        pane.name = AceGUI:Create('InteractiveLabel');
-        pane.name:SetFont(DEFAULT_FONT, 14, 'OUTLINE');
-        pane.name:SetJustifyH('CENTER');
-        pane.name:SetCallback('OnLeave', onLeave);
-        pane:AddChild(pane.name);
+        pane.count = pane.head.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+        pane.count:SetFont(DEFAULT_FONT, 10);
+        pane.count:ClearAllPoints();
+        pane.count:SetPoint('RIGHT', -20, 0);
+        pane.count:SetJustifyH('RIGHT');
+        pane.count:SetJustifyV('CENTER');
+        pane.count:SetText('x 1');
 
-        pane.name:SetPoint('TOPLEFT', pane.icon.frame, 'BOTTOMLEFT', 0, -5);
-        pane.name:SetPoint('BOTTOMRIGHT', pane.icon.frame, 'BOTTOMRIGHT', 0, -38);
+        pane:AddChild(pane.head);
+
+        pane.head:SetPoint('TOPLEFT');
+        pane.head:SetPoint('TOPRIGHT');
 
         local last = getButtons(self, pane);
 
@@ -243,7 +245,11 @@ local function renderButons(self, pane, item, settings)
 
             pane[v.id]:SetText(enabled and v.text or '');
             pane[v.id]:SetDisabled(not enabled);
-            pane[v.id]:SetCallback('OnClick', function() ExG:RollItem({ id = pane.itemId, option = v.id, slot1 = id1, slot2 = id2 }); end);
+            if v.id == 'button6' then
+                pane[v.id]:SetCallback('OnClick', function() ExG:RollItem({ id = pane.itemId, option = v.id, slot1 = id1, slot2 = id2 }); if store().items.closeOnPass and not ExG:IsMl() then self:RemovePane(pane.itemId); end end);
+            else
+                pane[v.id]:SetCallback('OnClick', function() ExG:RollItem({ id = pane.itemId, option = v.id, slot1 = id1, slot2 = id2 }); end);
+            end
         end
     end
 end
@@ -308,18 +314,16 @@ local function renderItem(self, pane)
     local class = (settings or {})[ExG.state.class] or {};
     local def = (settings or {})['DEFAULT'] or {};
 
-    pane.icon:SetImage(item.texture);
-    pane.icon:SetLabel(((class.gp or def.gp) or item.gp) .. ' GP');
-    pane.icon:SetCallback('OnEnter', onEnter(pane.icon.frame, item.link));
+    pane.head:SetImage(item.texture);
+    pane.cost:SetText(((class.gp or def.gp) or item.gp) .. ' GP');
+    pane.count:SetText('x ' .. (item.count or 0));
+    pane.head:SetLabel(item.link);
+    pane.head:SetCallback('OnEnter', onEnter(pane.head.frame, item.link));
 
     renderButons(self, pane, item, settings);
-
-    pane.name:SetText(item.link);
-    pane.name:SetCallback('OnEnter', onEnter(pane.name.frame, item.link));
+    renderRolls(self, pane);
 
     pane.frame:Show();
-
-    renderRolls(self, pane);
 end
 
 local function renderItems(self)
@@ -327,42 +331,6 @@ local function renderItems(self)
         local pane = getPane(self, id);
 
         renderItem(self, pane);
-    end
-end
-
-local function removePane(self, itemId)
-    local found = false;
-
-    for i = 1, #self.frame.children do
-        local pane = self.frame.children[i];
-
-        if pane.itemId == itemId or found then
-            pane.itemId = nil;
-            found = true;
-
-            if i < #self.frame.children then
-                local right = self.frame.children[i + 1];
-
-                pane.itemId = right.itemId;
-                right.itemId = nil;
-            end
-
-            if pane.itemId then
-                renderItem(self, pane);
-            else
-                pane.frame:Hide();
-            end
-
-            self.frame:SetWidth(count(self) * 255 + 15);
-        end
-    end
-
-    self.items[itemId] = nil;
-
-    self.frame:SetWidth(count(self) * 255 + 15);
-
-    if count(self) == 0 then
-        self.frame:Hide();
     end
 end
 
@@ -402,7 +370,7 @@ function ExG.RollFrame:Create()
     self.frame = AceGUI:Create('Window');
     self.frame:SetTitle(L['Roll Frame']);
     self.frame:SetLayout(nil);
-    self.frame:SetCallback('OnClose', function() for id in pairs(self.items) do removePane(ExG.RollFrame, id); end self.frame:Hide(); end);
+    self.frame:SetCallback('OnClose', function() for id in pairs(self.items) do self:RemovePane(self, id); end self.frame:Hide(); end);
     self.frame:SetHeight(477);
     self.frame:EnableResize(false);
     self.frame:Hide();
@@ -455,10 +423,53 @@ function ExG.RollFrame:AcceptItem(itemId, source)
 end
 
 function ExG.RollFrame:GiveItem(itemId)
+    if not ExG.state.looting then
+        return;
+    end
 end
 
 function ExG.RollFrame:DisenchantItem(itemId)
-    removePane(self, itemId);
+    if not ExG.state.looting then
+        return;
+    end
+
+    self:RemovePane(self, itemId);
+end
+
+function ExG.RollFrame:RemovePane(itemId)
+    local found = false;
+
+    for i = 1, #self.frame.children do
+        local pane = self.frame.children[i];
+
+        if pane.itemId == itemId or found then
+            pane.itemId = nil;
+            found = true;
+
+            if i < #self.frame.children then
+                local right = self.frame.children[i + 1];
+
+                pane.itemId = right.itemId;
+                right.itemId = nil;
+            end
+
+            if pane.itemId then
+                renderItem(self, pane);
+            else
+                pane.frame:Hide();
+            end
+
+            self.frame:SetWidth(count(self) * 255 + 15);
+        end
+    end
+
+    self.items[itemId] = nil;
+
+    self.frame:SetWidth(count(self) * 255 + 15);
+
+    if count(self) == 0 then
+        self.frame:Hide();
+    end
 end
 
 function ExG.RollFrame:RollItem(data, unit)

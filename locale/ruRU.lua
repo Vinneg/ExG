@@ -17,6 +17,7 @@ L['Items import text'] = 'Текст для импорта';
 L['Items Loot Settings'] = 'Настройки лута';
 L['Loot Threshold'] = 'Порог лута';
 L['Loot Threshold Desc'] = 'Порог для распределения лута - выбранное качество и выше';
+L['Close item on pass'] = 'Закрывать предметы при пасе';
 L['Items Formula'] = 'Формула GP';
 L['Items Formula Desc'] = '|cff33ff99КОЭФ * БАЗА ^ [ (УРОВЕНЬ / 26 + КАЧЕСТВО - 4) ] * СЛОТ * МОД|r';
 L['Items Formula Coef'] = 'Коэффициенты формулы';

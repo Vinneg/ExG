@@ -17,6 +17,7 @@ L['Items import text'] = true;
 L['Items Loot Settings'] = 'Loot Settings';
 L['Loot Threshold'] = true;
 L['Loot Threshold Desc'] = 'Loot distribution threshold - selected quality and higher';
+L['Close item on pass'] = true;
 L['Items Formula'] = 'GP formula';
 L['Items Formula Desc'] = '|cff33ff99COEF * BASE ^ [ (LEVEL / 26 + RARITY - 4) ] * SLOT * MOD|r';
 L['Items Formula Coef'] = 'Formula coefficients';
