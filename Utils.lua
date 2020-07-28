@@ -197,9 +197,7 @@ function ExG:GuildInfo(unit)
         return nil;
     end
 
-    local ttlMembers = GetNumGuildMembers();
-
-    for i = 1, ttlMembers do
+    for i = 1, GetNumGuildMembers() do
         local name, rankName, rankIndex, level, classDisplayName, zone, publicNote, officerNote, isOnline, status, class, achievementPoints, achievementRank, isMobile, canSoR, repStanding, GUID = GetGuildRosterInfo(i);
 
         name = Ambiguate(name, 'all');
@@ -287,10 +285,18 @@ function ExG:ItemInfo(linkOrId)
             return nil;
         end
 
-        id = tmp;
+        id = tonumber(tmp);
+    end
+
+    if not id then
+        return nil;
     end
 
     local name, link, rarity, level, minLevel, type, subtype, stackCount, loc, texture, sellPrice, classID, subClassID, bindType, expacID, setID, isCraftReg = GetItemInfo(id);
+
+    if not name then
+        return nil;
+    end
 
     local item = {
         id = id,
@@ -319,16 +325,14 @@ function ExG:ItemInfo(linkOrId)
 end
 
 function ExG:Equipped(slots)
-    local res = {};
-
     if not slots then
         return nil;
     end
 
-    for _, v in ipairs(slots) do
-        local link = GetInventoryItemLink('player', v);
+    local res = {};
 
-        local info = self:ItemInfo(link);
+    for _, v in ipairs(slots) do
+        local info = self:ItemInfo(GetInventoryItemLink('player', v));
 
         tinsert(res, info and info.id);
     end
@@ -382,4 +386,14 @@ function ExG:CalcGP(infoOrId)
     end
 
     return 10;
+end
+
+function ExG:LootIndex(link)
+    for i = 1, GetNumLootItems() do
+        if link == GetLootSlotLink(i) then
+            return i;
+        end
+    end
+
+    return nil;
 end

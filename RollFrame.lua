@@ -11,6 +11,8 @@ local onLeave = function() return GameTooltip:Hide(); end;
 
 local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
 
+local MAX_ROLLS = 10;
+
 ExG.RollFrame = {
     frame = nil,
     items = {},
@@ -69,7 +71,7 @@ local function getButtons(self, pane)
         pane.dis = AceGUI:Create('Button');
         pane.dis:SetText(L['Disenchant']);
         pane.dis:SetWidth(pane.frame:GetWidth() - 10);
-        pane.dis:SetCallback('OnClick', function() self:DisenchantItem(pane.itemId); end);
+        pane.dis:SetCallback('OnClick', function() self:GiveItem(ExG.state.name, ExG.state.class, pane.itemId); end);
         pane:AddChild(pane.dis);
 
         local point = points[ceil(idx / 2) * 2 + 1];
@@ -85,7 +87,7 @@ end
 local function getRolls(pane)
     pane.rolls = {};
 
-    for i = 1, 10 do
+    for i = 1, MAX_ROLLS do
         pane.rolls[i] = pane.rolls[i] or {};
 
         local roll = pane.rolls[i];
@@ -240,15 +242,16 @@ local function renderButons(self, pane, item, settings)
                 enabled = class[v.id] or def[v.id];
             end
 
-            local info = ExG:ItemInfo(pane.itemId);
-            local id1, id2 = ExG:Equipped(info.slots);
-
             pane[v.id]:SetText(enabled and v.text or '');
             pane[v.id]:SetDisabled(not enabled);
+
             if v.id == 'button6' then
-                pane[v.id]:SetCallback('OnClick', function() ExG:RollItem({ id = pane.itemId, option = v.id, slot1 = id1, slot2 = id2 }); if store().items.closeOnPass and not ExG:IsMl() then self:RemovePane(pane.itemId); end end);
+                pane[v.id]:SetCallback('OnClick', function() ExG:RollItem({ id = pane.itemId, class = ExG.state.class, option = v.id, }); if store().items.closeOnPass and not ExG:IsMl() then self:RemoveItem(pane.itemId); end end);
             else
-                pane[v.id]:SetCallback('OnClick', function() ExG:RollItem({ id = pane.itemId, option = v.id, slot1 = id1, slot2 = id2 }); end);
+                local info = ExG:ItemInfo(pane.itemId);
+                local id1, id2 = ExG:Equipped(info.slots);
+
+                pane[v.id]:SetCallback('OnClick', function() ExG:RollItem({ id = pane.itemId, class = ExG.state.class, option = v.id, slot1 = id1, slot2 = id2, rnd = random(1, 100) }); end);
             end
         end
     end
@@ -270,28 +273,39 @@ local function renderRolls(self, pane)
     for _, v in pairs(item.rolls) do
         if v.option < 'button6' then
             local info = ExG:GuildInfo(v.name);
+            local button = v.option and store().buttons.data[v.option];
+            local pr = button and button.roll and v.rnd or ExG:GetEG(info.officerNote).pr;
 
-            tinsert(rolls, { name = v.name, class = v.class, option = v.option, pr = ExG:GetEG(info.officerNote).pr, slot1 = v.slot1, slot2 = v.slot2, });
+            v.pr = pr;
+
+            tinsert(rolls, { name = v.name, class = v.class, option = v.option, pr = pr, slot1 = v.slot1, slot2 = v.slot2, rnd = v.rnd });
         end
     end
 
     sort(rolls, function(a, b) if a.option < b.option then return true elseif a.option == b.option then return a.pr < a.pr; end; return false; end);
 
     for i, v in ipairs(rolls) do
-        local roll = pane.rolls[i];
+        if i <= MAX_ROLLS then
+            local roll = pane.rolls[i];
+            local button = v.option and store().buttons.data[v.option];
 
-        roll.name:SetVertexColor(ExG:ClassColor(v.class));
-        roll.name:SetText(v.name);
-        roll.option:SetText(store().buttons.data[v.option].text);
-        roll.pr:SetText(v.pr);
-        roll.item1:SetImage(v.slot1 and v.slot1.texture);
-        roll.item1:SetCallback('OnEnter', onEnter(roll.item1.frame, v.slot1 and v.slot1.link));
-        roll.item1:SetCallback('OnLeave', onLeave);
-        roll.item2:SetImage(v.slot2 and v.slot2.texture);
-        roll.item2:SetCallback('OnEnter', onEnter(roll.item2.frame, v.slot2 and v.slot2.link));
-        roll.item2:SetCallback('OnLeave', onLeave);
+            roll.name:SetVertexColor(ExG:ClassColor(v.class));
+            roll.name:SetText(v.name);
+            roll.option:SetText(store().buttons.data[v.option].text);
+            roll.pr:SetText(v.pr);
+            roll.item1:SetImage(v.slot1 and v.slot1.texture);
+            roll.item1:SetCallback('OnEnter', onEnter(roll.item1.frame, v.slot1 and v.slot1.link));
+            roll.item1:SetCallback('OnLeave', onLeave);
+            roll.item2:SetImage(v.slot2 and v.slot2.texture);
+            roll.item2:SetCallback('OnEnter', onEnter(roll.item2.frame, v.slot2 and v.slot2.link));
+            roll.item2:SetCallback('OnLeave', onLeave);
 
-        roll.pane.frame:Show();
+            if ExG:IsMl() then
+                roll.pane.frame:SetScript('OnMouseDown', function() print('OnClick'); self:GiveItem(v.name, v.class, pane.itemId, v.option); end);
+            end
+
+            roll.pane.frame:Show();
+        end
     end
 
     for i = #rolls + 1, #pane.rolls do
@@ -315,7 +329,7 @@ local function renderItem(self, pane)
     local def = (settings or {})['DEFAULT'] or {};
 
     pane.head:SetImage(item.texture);
-    pane.cost:SetText(((class.gp or def.gp) or item.gp) .. ' GP');
+    pane.cost:SetText(((class.gp or def.gp) or item.gp or 0) .. ' GP');
     pane.count:SetText('x ' .. (item.count or 0));
     pane.head:SetLabel(item.link);
     pane.head:SetCallback('OnEnter', onEnter(pane.head.frame, item.link));
@@ -327,50 +341,94 @@ local function renderItem(self, pane)
 end
 
 local function renderItems(self)
-    for id, item in pairs(self.items) do
+    for id in pairs(self.items) do
         local pane = getPane(self, id);
 
         renderItem(self, pane);
     end
 end
 
-local function giveBag(player)
-    if not ExG.state.looting then
-        return;
+local function disenchantHistory(self, itemId)
+    print('disenchant');
+
+    local item = self.items[itemId];
+    local dt, offset = time(), 0;
+
+    while store().history.data[dt + offset / 1000] do
+        offset = offset + 1;
     end
 
-    local lootIndex = ExG:BagLootIndex();
+    dt = dt + offset / 1000;
 
-    if not lootIndex then
-        return;
+    store().history.data[dt] = {
+        type = 'dis',
+        master = { name = ExG.state.name, class = ExG.state.class, },
+        desc = L['ExG History Item Disenchant'],
+        link = item.link;
+        dt = dt,
+    };
+
+    ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
+end
+
+local function appendHistory(self, unit, class, itemId, option)
+    print('give');
+
+    local item = self.items[itemId];
+    local button = option and store().buttons.data[option];
+    local dt, offset = time(), 0;
+
+    while store().history.data[dt + offset / 1000] do
+        offset = offset + 1;
     end
 
-    local playerIndex;
+    dt = dt + offset / 1000;
 
-    for i = 1, MAX_RAID_MEMBERS do
-        local name = GetMasterLootCandidate(lootIndex, i);
+    store().history.data[dt] = {
+        type = 'item',
+        target = { name = unit, class = class, },
+        master = { name = ExG.state.name, class = ExG.state.class, },
+        link = item.link;
+        dt = dt,
+        details = {},
+    };
 
-        if name then
-            name = Ambiguate(name, 'all');
+    local gp = item.gp * button.ratio;
 
-            if name == player then
-                playerIndex = i;
-            end
-        end
+    local info = ExG:GuildInfo(unit);
+    local old = ExG:GetEG(info.officerNote);
+    local new = ExG:SetEG(info, old.ep, old.gp + gp);
+
+    store().history.data[dt].gp = { before = old.gp, after = new.gp, };
+    store().history.data[dt].desc = L['ExG History Item'](gp, button.text);
+
+    local i, details = 1, {};
+
+    for unit, v in pairs(item.rolls) do
+        local st = dt + i / 1000;
+
+        button = store().buttons.data[v.text];
+
+        details[st] = {
+            target = { name = unit, class = v.class, },
+            option = v.option,
+            pr = v.pr,
+            dt = st,
+        };
+
+        i = i + 1;
     end
 
-    if not playerIndex then
-        return;
-    end
+    store().history.data[dt].details = details;
 
-    GiveMasterLoot(lootIndex, playerIndex);
+    ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
 end
 
 function ExG.RollFrame:Create()
     self.frame = AceGUI:Create('Window');
     self.frame:SetTitle(L['Roll Frame']);
     self.frame:SetLayout(nil);
-    self.frame:SetCallback('OnClose', function() for id in pairs(self.items) do self:RemovePane(self, id); end self.frame:Hide(); end);
+    self.frame:SetCallback('OnClose', function() for id in pairs(self.items) do self:RemoveItem(self, id); end self.frame:Hide(); end);
     self.frame:SetHeight(477);
     self.frame:EnableResize(false);
     self.frame:Hide();
@@ -384,23 +442,26 @@ function ExG.RollFrame:Hide()
     self.frame:Hide();
 end
 
-function ExG.RollFrame:AddItems(gps)
-    for id, gp in pairs(gps) do
-        self.items[id] = self.items[id] or { accepted = {}, rolls = {} };
+function ExG.RollFrame:AddItems(ids)
+    for id, v in pairs(ids) do
+        self.items[id] = self.items[id] or { count = 1, accepted = {}, rolls = {} };
 
         local tmp = self.items[id];
         local info = ExG:ItemInfo(id);
+
+        local settings = store().items.data[id];
+        local class = (settings or {})[ExG.state.class];
+        local def = (settings or {})['DEFAULT'];
+
         tmp.id = id;
-        tmp.gp = gp;
-        tmp.name = info.name;
-        tmp.rarity = info.rarity;
-        tmp.type = info.type;
-        tmp.subtype = info.subtype;
-        tmp.loc = info.loc;
-        tmp.link = info.link;
-        tmp.texture = info.texture;
-        tmp.count = (tmp.count or 0) + 1;
-        tmp.buttons = info.buttons or {};
+        tmp.name = v.name;
+        tmp.loc = v.loc;
+        tmp.link = v.link;
+        tmp.texture = v.texture;
+        tmp.count = v.count;
+
+        tmp.settings = class or def;
+        tmp.gp = tmp.settings and tmp.settings.gp or v.gp;
 
         ExG:AcceptItem(id);
     end
@@ -422,21 +483,71 @@ function ExG.RollFrame:AcceptItem(itemId, source)
     pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
 end
 
-function ExG.RollFrame:GiveItem(itemId)
-    if not ExG.state.looting then
-        return;
-    end
-end
+function ExG.RollFrame:GiveItem(unit, class, itemId, option)
+    print('GiveItem');
 
-function ExG.RollFrame:DisenchantItem(itemId)
     if not ExG.state.looting then
         return;
     end
 
-    self:RemovePane(self, itemId);
+    local info = ExG:ItemInfo(itemId);
+
+    if not info then
+        return;
+    end
+
+    local lootIndex, unitIndex
+
+    for i = 1, GetNumLootItems() do
+        local tmp = ExG:ItemInfo(GetLootSlotLink(i));
+
+        print('info.link = ', info and info.id, ', GetLootSlotLink = ', tmp and tmp.id, ', eq = ', (info and info.id) == (tmp and tmp.id));
+
+        lootIndex = tmp and info.id == tmp.id and i or lootIndex;
+
+        --        if info.link == GetLootSlotLink(i) then
+        --            lootIndex = i;
+        --        end
+    end
+
+    print('lootIndex = ', lootIndex);
+
+    if not lootIndex then
+        return;
+    end
+
+    for i = 1, MAX_RAID_MEMBERS do
+        local name = GetMasterLootCandidate(lootIndex, i);
+
+        unitIndex = name and unit == Ambiguate(name, 'all') and i or unitIndex;
+
+        --        if name then
+        --            name = Ambiguate(name, 'all');
+        --
+        --            if name == unit then
+        --                unitIndex = i;
+        --            end
+        --        end
+    end
+
+    print('unitIndex = ', unitIndex);
+
+    if not unitIndex then
+        return;
+    end
+
+    GiveMasterLoot(lootIndex, unitIndex);
+
+    if not option then
+        disenchantHistory(self, itemId);
+    else
+        appendHistory(self, unit, class, itemId, option);
+    end
+
+    ExG:DistributeItem(unit, itemId);
 end
 
-function ExG.RollFrame:RemovePane(itemId)
+function ExG.RollFrame:RemoveItem(itemId)
     local found = false;
 
     for i = 1, #self.frame.children do
@@ -451,6 +562,8 @@ function ExG.RollFrame:RemovePane(itemId)
 
                 pane.itemId = right.itemId;
                 right.itemId = nil;
+            else
+                pane.itemId = nil;
             end
 
             if pane.itemId then
@@ -481,7 +594,9 @@ function ExG.RollFrame:RollItem(data, unit)
 
     item.rolls[unit] = item.rolls[unit] or {};
     item.rolls[unit].name = unit;
+    item.rolls[unit].class = data.class;
     item.rolls[unit].option = data.option;
+    item.rolls[unit].rnd = item.rolls[unit].rnd or data.rnd;
     item.rolls[unit].slot1 = ExG:ItemInfo(data.slot1);
     item.rolls[unit].slot2 = ExG:ItemInfo(data.slot2);
 
@@ -490,4 +605,27 @@ function ExG.RollFrame:RollItem(data, unit)
     pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
 
     renderRolls(self, pane);
+end
+
+function ExG.RollFrame:DistributeItem(unit, itemId)
+    print('DistributeItem unit = ', unit);
+
+    local item = self.items[itemId];
+
+    if not item then
+        return;
+    end
+
+    item.count = item.count - 1;
+
+    if not item.count or item.count == 0 then
+        print('DistributeItem ', not item.count, ', item.count = ', item.count);
+
+        self:RemoveItem(itemId);
+    else
+        print('DistributeItem ', not item.count, ', item.count = ', item.count);
+
+        item.rolls[unit] = nil;
+        renderItems(self);
+    end
 end

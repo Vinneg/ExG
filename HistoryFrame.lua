@@ -72,7 +72,7 @@ local function renderRow(self, rec)
     desc:SetJustifyH('RIGHT');
     desc:SetText(rec.desc);
 
-    if rec.link and not (rec.link == '') then
+    if rec.link and rec.link ~= '' then
         row.frame:SetScript('OnMouseDown', onClick(self.frame.frame, rec.link));
         row.frame:SetScript('OnLeave', onLeave());
 

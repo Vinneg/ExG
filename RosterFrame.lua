@@ -86,7 +86,7 @@ function ExG.RosterFrame:RenderItem(item)
     name:SetRelativeWidth(0.4);
     name:SetFullHeight(true);
     name:SetHighlight('Interface\\BUTTONS\\UI-Listbox-Highlight.blp')
-    name:SetCallback('OnClick', function() self:GiveBag(item.name) end);
+    name:SetCallback('OnClick', function() end);
     row:AddChild(name);
 
     local ep = AceGUI:Create('Label');

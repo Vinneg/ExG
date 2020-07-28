@@ -104,6 +104,7 @@ ExG.messages = {
         announce = 'ExG_Announce',
         accept = 'ExG_Accept',
         roll = 'ExG_Roll',
+        distribute = 'ExG_Distribute',
         pull = 'ExG_Pull',
         share = 'ExG_Share',
     },
@@ -307,7 +308,7 @@ ExG.options = {
                     order = 11,
                     width = 0.5,
                     style = 'dropdown',
-                    values = { [0] = L['Poor'], [1] = L['Common'], [2] = L['Uncommon'], [3] = L['Rare'], [4] = L['Epic'], [5] = L['Legendary'], [6] = L['Artifact'], },
+                    values = { [2] = L['Uncommon'], [3] = L['Rare'], [4] = L['Epic'], [5] = L['Legendary'], [6] = L['Artifact'], },
                     get = function() return store().items.threshold; end,
                     set = function(_, value) store().items.threshold = value; end,
                 },
@@ -942,7 +943,7 @@ function ExG:HandleChatCommand(input)
     if arg == 'ony' then
         self:ENCOUNTER_END(0, 1084, 0, 0, 0, true)
     elseif arg == 'announce' then
-        self:AnnounceItems({ 19438, 18820, 19019, 15138, 19812 })
+        self:AnnounceItems({ [19438] = { count = 1 }, [18820] = { count = 2 }, [19019] = { count = 1 }, [15138] = { count = 1 }, [19812] = { count = 2 }, [22351] = { count = 1 }, });
     elseif arg == 'his' then
         self.HistoryFrame:Show();
     elseif arg == 'inv' then
@@ -967,8 +968,9 @@ function ExG:OnInitialize()
     self.store = AceDB:New('ExGStore', self.defaults, true);
 
     self:RegisterComm(self.messages.prefix.announce, 'handleAnnounceItems');
-    self:RegisterComm(self.messages.prefix.roll, 'handleRollItem');
     self:RegisterComm(self.messages.prefix.accept, 'handleAcceptItem');
+    self:RegisterComm(self.messages.prefix.roll, 'handleRollItem');
+    self:RegisterComm(self.messages.prefix.distribute, 'handleDistributeItem');
     self:RegisterComm(self.messages.prefix.pull, 'handleHistoryPull');
     self:RegisterComm(self.messages.prefix.share, 'handleHistoryShare');
 
@@ -1004,16 +1006,26 @@ function ExG:PostInit()
 end
 
 function ExG:AnnounceItems(ids)
-    local gps = {};
-    local settings = {};
+    local settings, items = {}, {};
 
-    for _, v in ipairs(ids) do
-        settings[v] = store().items.data[v] or false;
+    for id, v in pairs(ids) do
+        settings[id] = store().items.data[id] or false;
 
-        gps[v] = settings[v] and 0 or self:CalcGP(v);
+        local info = self:ItemInfo(id);
+
+        if info then
+            items[id] = v;
+            items[id].gp = self:CalcGP(id);
+            items[id].name = info.name;
+            items[id].loc = info.loc;
+            items[id].link = info.link;
+            items[id].texture = info.texture;
+        else
+            v = nil;
+        end
     end
 
-    local data = Serializer:Serialize(gps, settings, store().buttons);
+    local data = Serializer:Serialize(items, settings, store().buttons);
 
     if store().debug and not IsInRaid() then
         self:SendCommMessage(self.messages.prefix.announce, data, self.messages.whisper, self.state.name);
@@ -1083,6 +1095,24 @@ function ExG:handleRollItem(_, message, _, sender)
     self.RollFrame:RollItem(item, sender);
 end
 
+function ExG:DistributeItem(unit, itemId)
+    local data = Serializer:Serialize(unit, itemId);
+
+    if store().debug and not IsInRaid() then
+        self:SendCommMessage(self.messages.prefix.distribute, data, self.messages.whisper, self.state.name);
+    else
+        self:SendCommMessage(self.messages.prefix.distribute, data, self.messages.raid);
+    end
+end
+
+function ExG:handleDistributeItem(_, message, _, sender)
+    print('handleDistributeItem');
+
+    local success, unit, itemId = Serializer:Deserialize(message);
+
+    self.RollFrame:DistributeItem(unit, itemId);
+end
+
 function ExG:HistoryPull()
     if not store().history.source or not store().history.offset then
         return;
@@ -1110,10 +1140,12 @@ end
 function ExG:HistoryShare(source, target)
     local data = Serializer:Serialize(source);
 
-    if not target then
-        self:SendCommMessage(self.messages.prefix.share, data, self.messages.guild);
-    else
+    if target then
         self:SendCommMessage(self.messages.prefix.share, data, self.messages.whisper, target);
+    elseif store().debug then
+        self:SendCommMessage(self.messages.prefix.share, data, self.messages.whisper, self.state.name);
+    else
+        self:SendCommMessage(self.messages.prefix.share, data, self.messages.guild);
     end
 end
 
@@ -1177,7 +1209,6 @@ function ExG:ENCOUNTER_END(_, id, _, _, _, success)
             details[st] = {
                 target = { name = name, class = class, },
                 ep = { before = old.ep, after = new.ep, },
-                gp = { before = old.gp, after = new.gp, },
                 dt = st,
             };
         end
@@ -1185,7 +1216,7 @@ function ExG:ENCOUNTER_END(_, id, _, _, _, success)
 
     store().history.data[dt].details = details;
 
-    self:HistoryShare({ data = { dt = store().history.data[dt] } });
+    self:HistoryShare({ data = { [dt] = store().history.data[dt] } });
 end
 
 function ExG:LOOT_OPENED()
@@ -1205,16 +1236,15 @@ function ExG:LOOT_OPENED()
             if info then
                 local itemData = store().items.data[info.id];
 
-                if itemData then
-                    tinsert(links, info.id);
-                elseif info.rarity >= store().items.threshold then
-                    tinsert(links, info.id);
+                if info.rarity >= store().items.threshold or itemData then
+                    links[info.id] = links[info.id] or { count = 0 };
+                    links[info.id].count = links[info.id].count + 1;
                 end
             end
         end
     end
 
-    if #links == 0 then
+    if self:Size(links) == 0 then
         return;
     end
 
@@ -1261,15 +1291,15 @@ function ExG:ImportHistory()
             dt = dt,
         };
 
-        if not (v[4] == '' and v[5] == '') then
+        if v[4] ~= '' or v[5] ~= '' then
             store().history.data[dt].ep = { before = v[4], after = v[5], };
         end
 
-        if not (v[6] == '' and v[7] == '') then
+        if v[6] ~= '' and v[7] ~= '' then
             store().history.data[dt].gp = { before = v[6], after = v[7], };
         end
 
-        if not v[8] == '' then
+        if v[8] ~= '' then
             store().history.data[dt].link = v[8];
         end
 
