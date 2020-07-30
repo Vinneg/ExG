@@ -418,6 +418,14 @@ function ExG:CalcGP(linkOrId)
         return 0;
     end
 
+    local settings = store().items.data[info.id];
+    local class = settings and settings[ExG.state.class] or {};
+    local def = settings and settings['DEFAULT'] or {};
+
+    if class.gp or def.gp then
+        return class.gp or def.gp;
+    end
+
     local loc = TOKENS[info.id] and TOKENS[info.id].loc or info.loc;
     local lvl = TOKENS[info.id] and TOKENS[info.id].level or info.level;
     local slot = store().items.formula[LOCS_OVER[loc] or loc];
