@@ -53,8 +53,8 @@ local function renderRow(self, rec)
     target:SetFont(DEFAULT_FONT, 10);
     target:SetRelativeWidth(0.12);
     target:SetFullHeight(true);
-    target:SetColor(ExG:ClassColor(rec.target.class));
-    target:SetText(rec.target.name);
+    target:SetColor(ExG:ClassColor(rec.target and rec.target.class));
+    target:SetText(rec.target and rec.target.name);
     row:AddChild(target);
 
     local master = AceGUI:Create('Label');

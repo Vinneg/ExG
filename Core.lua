@@ -7,6 +7,42 @@ local Serializer = LibStub('AceSerializer-3.0');
 local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 
 local store = function() return ExG.store.char; end;
+local isNumber = function(_, value) if not tonumber(value) then return L['Value must be a number']; end return true; end;
+
+local function tooltipGp(self)
+    if not store().showGp then
+        return;
+    end
+
+    local _, link = self:GetItem();
+    local info = ExG:ItemInfo(link);
+
+    if not info then
+        return;
+    end
+
+    local gp = ExG:CalcGP(info.id);
+
+    GameTooltip:AddLine(L['ExG Tooltip GP value'](gp), { 1, 1, 1 });
+end
+
+local function hyperlinkGp(self, iString)
+    if not string.find(iString, "item:") or not CEPGP_gp_tooltips then return; end
+    local id = CEPGP_getItemID(iString);
+    local name = GetItemInfo(id);
+    if not name and CEPGP_itemExists(tonumber(id)) then
+        local item = Item:CreateFromItemID(tonumber(id));
+        item:ContinueOnItemLoad(function()
+            local gp = CEPGP_calcGP(_, 1, id);
+            ItemRefTooltip:AddLine("GP Value: " .. gp, { 1, 1, 1 });
+            ItemRefTooltip:Show();
+        end);
+    else
+        local gp = CEPGP_calcGP(_, 1, id);
+        ItemRefTooltip:AddLine("GP Value: " .. gp, { 1, 1, 1 });
+        ItemRefTooltip:Show();
+    end
+end
 
 local buttons = {
     validateText = function(_, value)
@@ -65,7 +101,7 @@ local items = {
             set = function(_, value) store().items.formula[name] = tonumber(value); end,
         }
     end
-}
+};
 
 local bosses = {
     filler = function(order)
@@ -97,7 +133,7 @@ local bosses = {
             set = function(_, value) store().bosses[id].ep = tonumber(value); end,
         };
     end,
-}
+};
 
 ExG.messages = {
     prefix = {
@@ -129,6 +165,16 @@ ExG.defaults = {
         baseEP = 10,
         baseGP = 10,
         debug = false,
+        showGp = true,
+        mass = {
+            decay = 0.15,
+            raidEp = 10,
+            raidGp = 10,
+            raidDesc = '',
+            guildEp = 10,
+            guildGp = 10,
+            guildDesc = '',
+        },
         items = {
             pageSize = 50,
             threshold = 4,
@@ -137,28 +183,27 @@ ExG.defaults = {
                 coef = 7,
                 base = 1.5,
                 mod = 1,
-                head = 0.85,
-                neck = 0.75,
-                shoulder = 0.75,
-                back = 0.75,
-                chest = 0.9,
-                wrist = 0.75,
-                hands = 0.75,
-                waist = 0.75,
-                legs = 0.9,
-                feet = 0.75,
-                finger = 0.75,
-                trinket = 0.75,
-                weaponMH = 1.5,
-                weaponOH = 1.3,
-                holdableOH = 0.7,
-                weapon1H = 1.5,
-                weapon2H = 1.8,
-                shield = 0.7,
-                wand = 0.5,
-                ranged = 0.6,
-                relic = 0.5,
-                thrown = 0.6,
+                INVTYPE_HEAD = 0.85,
+                INVTYPE_NECK = 0.75,
+                INVTYPE_SHOULDER = 0.75,
+                INVTYPE_CLOAK = 0.75,
+                INVTYPE_CHEST = 0.9,
+                INVTYPE_WRIST = 0.75,
+                INVTYPE_HAND = 0.75,
+                INVTYPE_WAIST = 0.75,
+                INVTYPE_LEGS = 0.9,
+                INVTYPE_FEET = 0.75,
+                INVTYPE_FINGER = 0.75,
+                INVTYPE_TRINKET = 0.75,
+                INVTYPE_WEAPONMAINHAND = 1.5,
+                INVTYPE_WEAPONOFFHAND = 1.3,
+                INVTYPE_HOLDABLE = 0.7,
+                INVTYPE_WEAPON = 1.5,
+                INVTYPE_2HWEAPON = 1.8,
+                INVTYPE_SHIELD = 0.7,
+                INVTYPE_RANGED = 0.6,
+                INVTYPE_RELIC = 0.5,
+                INVTYPE_THROWN = 0.6,
             },
             data = {},
         },
@@ -258,7 +303,7 @@ ExG.options = {
                     type = 'input',
                     name = L['ExG BaseEP'],
                     order = 0,
-                    validate = function(_, value) if not tonumber(value) then return L['Value must be a number']; end return true; end,
+                    validate = isNumber,
                     get = function() return tostring(store().baseEP); end,
                     set = function(_, value) store().baseEP = tonumber(value); end,
                 },
@@ -266,21 +311,136 @@ ExG.options = {
                     type = 'input',
                     name = L['ExG BaseGP'],
                     order = 10,
-                    validate = function(_, value) if not tonumber(value) then return L['Value must be a number']; end return true; end,
+                    validate = isNumber,
                     get = function() return tostring(store().baseGP); end,
                     set = function(_, value) store().baseGP = tonumber(value); end,
+                },
+                showGp = {
+                    type = 'toggle',
+                    name = L['ExG Show GP'],
+                    order = 15,
+                    width = 'full',
+                    get = function() return store().showGp; end,
+                    set = function(_, value) store().showGp = value; end,
+                },
+                massHeader = {
+                    type = 'header',
+                    name = L['Mass Operations'],
+                    order = 20,
+                },
+                guildEp = {
+                    type = 'input',
+                    name = 'EP',
+                    order = 21,
+                    width = 0.2,
+                    validate = isNumber,
+                    get = function() return tostring(store().mass.guildEp); end,
+                    set = function(_, value) store().mass.guildEp = tonumber(value); end,
+                },
+                guildGp = {
+                    type = 'input',
+                    name = 'GP',
+                    order = 22,
+                    width = 0.2,
+                    validate = isNumber,
+                    get = function() return tostring(store().mass.guildGp); end,
+                    set = function(_, value) store().mass.guildGp = tonumber(value); end,
+                },
+                guildDesc = {
+                    type = 'input',
+                    name = L['Description'],
+                    order = 23,
+                    width = 0.5,
+                    get = function() return store().mass.guildDesc; end,
+                    set = function(_, value) store().mass.guildDesc = value; end,
+                },
+                guildEx = {
+                    type = 'execute',
+                    name = L['Add Guild EPGP'],
+                    order = 24,
+                    func = function() ExG:GuidEG(); end,
+                },
+                guildFiller = {
+                    type = 'description',
+                    name = '',
+                    order = 25,
+                    width = 'full',
+                },
+                raidEp = {
+                    type = 'input',
+                    name = 'EP',
+                    order = 31,
+                    width = 0.2,
+                    validate = isNumber,
+                    get = function() return tostring(store().mass.raidEp); end,
+                    set = function(_, value) store().mass.raidEp = tonumber(value); end,
+                },
+                raidGp = {
+                    type = 'input',
+                    name = 'GP',
+                    order = 32,
+                    width = 0.2,
+                    validate = isNumber,
+                    get = function() return tostring(store().mass.raidGp); end,
+                    set = function(_, value) store().mass.raidGp = tonumber(value); end,
+                },
+                raidDesc = {
+                    type = 'input',
+                    name = L['Description'],
+                    order = 33,
+                    width = 0.5,
+                    get = function() return store().mass.raidDesc; end,
+                    set = function(_, value) store().mass.raidDesc = value; end,
+                },
+                raidEx = {
+                    type = 'execute',
+                    name = L['Add Raid EPGP'],
+                    order = 34,
+                    func = function() ExG:RaidEG(); end,
+                },
+                raidFiller = {
+                    type = 'description',
+                    name = '',
+                    order = 35,
+                    width = 'full',
+                },
+                decay = {
+                    type = 'input',
+                    name = '',
+                    order = 41,
+                    width = 0.5,
+                    validate = isNumber,
+                    get = function() return tostring(store().mass.decay); end,
+                    set = function(_, value) store().mass.decay = tonumber(value); end,
+                },
+                decayEx = {
+                    type = 'execute',
+                    name = L['Guild Decay'],
+                    order = 42,
+                    func = function() ExG:GuidDecay(); end,
+                },
+                decayFiller = {
+                    type = 'description',
+                    name = '',
+                    order = 43,
+                    width = 'full',
+                },
+                debugHeader = {
+                    type = 'header',
+                    name = L['ExG Debug'],
+                    order = 70,
                 },
                 debug = {
                     type = 'toggle',
                     name = L['ExG Debug'],
-                    order = 70,
+                    order = 71,
                     get = function() return store().debug; end,
                     set = function(_, value) store().debug = value; end,
                 },
                 debugFiller = {
                     type = 'description',
                     name = L['ExG Debug Desc'],
-                    order = 71,
+                    order = 72,
                     width = 'full',
                 },
             },
@@ -348,49 +508,47 @@ ExG.options = {
                 itemsFiller2 = items.filler(134),
                 itemsMod = items.type(135, 'mod'),
                 itemsFiller3 = items.filler(136, 'full'),
-                itemsHead = items.type(137, 'head'),
+                itemsHead = items.type(137, 'INVTYPE_HEAD'),
                 itemsFiller4 = items.filler(138),
-                itemsHands = items.type(139, 'hands'),
+                itemsHands = items.type(139, 'INVTYPE_HAND'),
                 itemsFiller22 = items.filler(140),
-                itemsWeapon1H = items.type(141, 'weapon1H'),
+                itemsWeapon1H = items.type(141, 'INVTYPE_WEAPON'),
                 itemsFiller25 = items.filler(142),
-                itemsShield = items.type(143, 'shield'),
+                itemsShield = items.type(143, 'INVTYPE_SHIELD'),
                 itemsFiller6 = items.filler(144, 'full'),
-                itemsNeck = items.type(145, 'neck'),
+                itemsNeck = items.type(145, 'INVTYPE_NECK'),
                 itemsFiller7 = items.filler(146),
-                itemsWaist = items.type(147, 'waist'),
+                itemsWaist = items.type(147, 'INVTYPE_WAIST'),
                 itemsFiller24 = items.filler(148),
-                itemsWeapon2H = items.type(149, 'weapon2H'),
-                itemsFiller21 = items.filler(150),
-                itemsWand = items.type(151, 'wand'),
+                itemsWeapon2H = items.type(149, 'INVTYPE_2HWEAPON'),
                 itemsFiller9 = items.filler(152, 'full'),
-                itemsShoulder = items.type(153, 'shoulder'),
+                itemsShoulder = items.type(153, 'INVTYPE_SHOULDER'),
                 itemsFiller10 = items.filler(154),
-                itemsLegs = items.type(155, 'legs'),
+                itemsLegs = items.type(155, 'INVTYPE_LEGS'),
                 itemsFiller5 = items.filler(156),
-                itemsWeaponMH = items.type(157, 'weaponMH'),
+                itemsWeaponMH = items.type(157, 'INVTYPE_WEAPONMAINHAND'),
                 itemsFiller17 = items.filler(158),
-                itemsHoldableOH = items.type(159, 'holdableOH'),
+                itemsHoldableOH = items.type(159, 'INVTYPE_HOLDABLE'),
                 itemsFiller23 = items.filler(160, 'full'),
-                itemsBack = items.type(161, 'back'),
+                itemsBack = items.type(161, 'INVTYPE_CLOAK'),
                 itemsFiller13 = items.filler(162),
-                itemsFeet = items.type(163, 'feet'),
+                itemsFeet = items.type(163, 'INVTYPE_FEET'),
                 itemsFiller8 = items.filler(164),
-                itemsWeaponOH = items.type(165, 'weaponOH'),
+                itemsWeaponOH = items.type(165, 'INVTYPE_WEAPONOFFHAND'),
                 itemsFiller20 = items.filler(166),
-                itemsRelic = items.type(167, 'relic'),
+                itemsRelic = items.type(167, 'INVTYPE_RELIC'),
                 itemsFiller15 = items.filler(168, 'full'),
-                itemsChest = items.type(169, 'chest'),
+                itemsChest = items.type(169, 'INVTYPE_CHEST'),
                 itemsFiller16 = items.filler(170),
-                itemsFinger = items.type(171, 'finger'),
+                itemsFinger = items.type(171, 'INVTYPE_FINGER'),
                 itemsFiller11 = items.filler(172, 0.7),
-                itemsThrown = items.type(173, 'thrown'),
+                itemsThrown = items.type(173, 'INVTYPE_THROWN'),
                 itemsFiller18 = items.filler(174, 'full'),
-                itemsWrist = items.type(175, 'wrist'),
+                itemsWrist = items.type(175, 'INVTYPE_WRIST'),
                 itemsFiller19 = items.filler(176),
-                itemsTrinket = items.type(177, 'trinket'),
+                itemsTrinket = items.type(177, 'INVTYPE_TRINKET'),
                 itemsFiller14 = items.filler(178, 0.7),
-                itemsRanged = items.type(179, 'ranged'),
+                itemsRanged = items.type(179, 'INVTYPE_RANGED'),
                 itemsFiller12 = items.filler(180, 'full'),
             },
         },
@@ -1000,6 +1158,9 @@ function ExG:PostInit()
     tmp.name = self.state.name;
     tmp.class = self.state.class;
 
+    GameTooltip:HookScript("OnTooltipSetItem", tooltipGp);
+    --    hooksecurefunc("ChatFrame_OnHyperlinkShow", hyperlinkGp);
+
     local version = GetAddOnMetadata(self.name, 'Version');
 
     self:Print('|cff33ff99Version ', version, ' loaded!|r');
@@ -1106,8 +1267,6 @@ function ExG:DistributeItem(unit, itemId)
 end
 
 function ExG:handleDistributeItem(_, message, _, sender)
-    print('handleDistributeItem');
-
     local success, unit, itemId = Serializer:Deserialize(message);
 
     self.RollFrame:DistributeItem(unit, itemId);
@@ -1253,81 +1412,4 @@ end
 
 function ExG:LOOT_CLOSED()
     self.state.looting = false;
-end
-
-function ExG:ImportHistory()
-    local tmp = {};
-
-    for i, v in pairs(store().history.data) do
-        if not v.type == 'old' then
-            tmp[i] = v;
-        end
-    end
-
-    store().history.data = tmp;
-
-    local imported = 0;
-
-    for _, v in ipairs(TRAFFIC) do
-        local target = v[1];
-        local master = v[2];
-
-        local dt, offset = tonumber(v[9] or 1000), 0;
-
-        while store().history.data[dt + offset / 1000] do
-            offset = offset + 1;
-        end
-
-        dt = dt + offset / 1000;
-
-        local targetInfo = ExG:GuildInfo(target);
-        local masterInfo = ExG:GuildInfo(master);
-
-        store().history.data[dt] = {
-            type = 'old',
-            target = { name = target, class = targetInfo and targetInfo.class or strupper(target), },
-            master = { name = master, class = masterInfo and masterInfo.class or strupper(master), },
-            desc = v[3],
-            dt = dt,
-        };
-
-        if v[4] ~= '' or v[5] ~= '' then
-            store().history.data[dt].ep = { before = v[4], after = v[5], };
-        end
-
-        if v[6] ~= '' and v[7] ~= '' then
-            store().history.data[dt].gp = { before = v[6], after = v[7], };
-        end
-
-        if v[8] ~= '' then
-            store().history.data[dt].link = v[8];
-        end
-
-        imported = imported + 1;
-    end
-
-    self:Print(L['Total imported'](imported));
-end
-
-function ExG:CopyHistory(settings)
-    local res = {};
-    local min, max, count = nil, nil, 0;
-    local limit = time() - settings.offset * 86400;
-
-    for i, v in pairs(store().history.data) do
-        if (i >= limit) then
-            res[i] = v;
-
-            min = math.min(min or i, i);
-            max = math.max(max or i, i);
-            count = count + 1;
-        end
-    end
-
-    return { data = res, count = count, min = min, max = max };
-end
-
-function ExG:ClearHistory()
-    store().history.bak = store().history.data;
-    store().history.data = {};
 end

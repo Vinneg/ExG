@@ -301,7 +301,7 @@ local function renderRolls(self, pane)
             roll.item2:SetCallback('OnLeave', onLeave);
 
             if ExG:IsMl() then
-                roll.pane.frame:SetScript('OnMouseDown', function() print('OnClick'); self:GiveItem(v.name, v.class, pane.itemId, v.option); end);
+                roll.pane.frame:SetScript('OnMouseDown', function() self:GiveItem(v.name, v.class, pane.itemId, v.option); end);
             end
 
             roll.pane.frame:Show();
@@ -349,8 +349,6 @@ local function renderItems(self)
 end
 
 local function disenchantHistory(self, itemId)
-    print('disenchant');
-
     local item = self.items[itemId];
     local dt, offset = time(), 0;
 
@@ -372,8 +370,6 @@ local function disenchantHistory(self, itemId)
 end
 
 local function appendHistory(self, unit, class, itemId, option)
-    print('give');
-
     local item = self.items[itemId];
     local button = option and store().buttons.data[option];
     local dt, offset = time(), 0;
@@ -484,8 +480,6 @@ function ExG.RollFrame:AcceptItem(itemId, source)
 end
 
 function ExG.RollFrame:GiveItem(unit, class, itemId, option)
-    print('GiveItem');
-
     if not ExG.state.looting then
         return;
     end
@@ -501,16 +495,8 @@ function ExG.RollFrame:GiveItem(unit, class, itemId, option)
     for i = 1, GetNumLootItems() do
         local tmp = ExG:ItemInfo(GetLootSlotLink(i));
 
-        print('info.link = ', info and info.id, ', GetLootSlotLink = ', tmp and tmp.id, ', eq = ', (info and info.id) == (tmp and tmp.id));
-
         lootIndex = tmp and info.id == tmp.id and i or lootIndex;
-
-        --        if info.link == GetLootSlotLink(i) then
-        --            lootIndex = i;
-        --        end
     end
-
-    print('lootIndex = ', lootIndex);
 
     if not lootIndex then
         return;
@@ -520,17 +506,7 @@ function ExG.RollFrame:GiveItem(unit, class, itemId, option)
         local name = GetMasterLootCandidate(lootIndex, i);
 
         unitIndex = name and unit == Ambiguate(name, 'all') and i or unitIndex;
-
-        --        if name then
-        --            name = Ambiguate(name, 'all');
-        --
-        --            if name == unit then
-        --                unitIndex = i;
-        --            end
-        --        end
     end
-
-    print('unitIndex = ', unitIndex);
 
     if not unitIndex then
         return;
@@ -608,8 +584,6 @@ function ExG.RollFrame:RollItem(data, unit)
 end
 
 function ExG.RollFrame:DistributeItem(unit, itemId)
-    print('DistributeItem unit = ', unit);
-
     local item = self.items[itemId];
 
     if not item then
@@ -618,13 +592,9 @@ function ExG.RollFrame:DistributeItem(unit, itemId)
 
     item.count = item.count - 1;
 
-    if not item.count or item.count == 0 then
-        print('DistributeItem ', not item.count, ', item.count = ', item.count);
-
+    if (item.count or 0) == 0 then
         self:RemoveItem(itemId);
     else
-        print('DistributeItem ', not item.count, ', item.count = ', item.count);
-
         item.rolls[unit] = nil;
         renderItems(self);
     end

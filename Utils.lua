@@ -4,7 +4,7 @@ local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 local store = function() return ExG.store.char; end;
 
 local function toString(offNote, ep, gp)
-    local newEPGP = 'cep{' .. (tonumber(ep) or store().BaseEP) .. ',' .. (tonumber(gp) or store().BaseGP) .. '}';
+    local newEPGP = 'cep{' .. (tonumber(ep) or store().baseEP) .. ',' .. (tonumber(gp) or store().baseGP) .. '}';
 
     if not offNote then
         return newEPGP;
@@ -18,6 +18,10 @@ local function toString(offNote, ep, gp)
 
     return newOffNote;
 end
+
+local LOCS_OVER = {
+    INVTYPE_ROBE = 'INVTYPE_ROBE',
+};
 
 local LOCS = {
     INVTYPE_AMMO = { 0 },
@@ -49,65 +53,65 @@ local LOCS = {
 };
 
 local TOKENS = {
-    [18423] = 'INVTYPE_TRINKET', -- of Onyxia (Alliance) -- Can also be a neck and ring
-    [18422] = 'INVTYPE_TRINKET', -- of Onyxia (Horde) -- Same deal
-    [19802] = 'INVTYPE_TRINKET', -- Heart of Hakkar
-    [22520] = 'INVTYPE_TRINKET', -- Phylactery of Kel'Thuzad
-    [21220] = 'INVTYPE_NECK', -- of Ossirian the Unscarred
-    [21221] = 'INVTYPE_NECK', -- Eye of C'Thun -- Can also be a cloak or ring
-    [19003] = 'INVTYPE_HOLDABLE', -- of Nefarian (Alliance) -- Can also be neck and ring
-    [19002] = 'INVTYPE_HOLDABLE', -- of Nefarian (Horde) -- Same deal
-    [19717] = 'INVTYPE_WRIST', -- Armsplint
-    [19716] = 'INVTYPE_WRIST', -- Bindings
-    [19718] = 'INVTYPE_WRIST', -- Stanchion
-    [19719] = 'INVTYPE_WAIST', -- Girdle
-    [19720] = 'INVTYPE_WAIST', -- Sash
-    [19724] = 'INVTYPE_CHEST', -- Aegis
-    [19723] = 'INVTYPE_CHEST', -- Kossack
-    [19722] = 'INVTYPE_CHEST', -- Tabard
-    [19721] = 'INVTYPE_SHOULDER', -- Shawl
-    [20885] = 'INVTYPE_CLOAK', -- Martial Drake
-    [20889] = 'INVTYPE_CLOAK', -- Regal Drape
-    [20888] = 'INVTYPE_FINGER', -- Ceremonial Ring
-    [20884] = 'INVTYPE_FINGER', -- Magisterial Ring
-    [20886] = 'INVTYPE_WEAPONOFFHAND', -- Spiked Hilt -- Exceptions apply - Paladin / Shaman weapon are main hand
-    [21232] = 'INVTYPE_WEAPONOFFHAND', -- Imperial Qiraji Armaments -- Can also be a ranged weapon or shield
-    [20890] = 'INVTYPE_WEAPONMAINHAND', -- Ornate Hilt
-    [21237] = 'INVTYPE_2HWEAPON', -- Imperial Qiraji Regalia -- Can also be a one-handed weapon
-    [20928] = 'INVTYPE_FEET', -- Qiraji Bindings of Command -- Can also be shoulders
-    [20932] = 'INVTYPE_FEET', -- Qiraji Bindings of Dominance -- same deal
-    [20933] = 'INVTYPE_CHEST', -- Husk of the Old God
-    [20929] = 'INVTYPE_CHEST', -- Carapace of the Old God
-    [20927] = 'INVTYPE_LEGS', -- Ouro's Intact Hide
-    [20931] = 'INVTYPE_LEGS', -- Skin of the Great Sandworm
-    [22368] = 'INVTYPE_SHOULDER', -- Shoulderpads
-    [22354] = 'INVTYPE_SHOULDER', -- Pauldrons
-    [22361] = 'INVTYPE_SHOULDER', -- Spaulders
-    [22372] = 'INVTYPE_FEET', -- Sandals
-    [22365] = 'INVTYPE_FEET', -- Boots
-    [22358] = 'INVTYPE_FEET', -- Sabatons
-    [22369] = 'INVTYPE_WRIST', -- Bindings
-    [22362] = 'INVTYPE_WRIST', -- Wristguards
-    [22355] = 'INVTYPE_WRIST', -- Bracers
-    [22357] = 'INVTYPE_HAND', -- Gauntlets
-    [22364] = 'INVTYPE_HAND', -- Handguards
-    [22371] = 'INVTYPE_HAND', -- Gloves
-    [22363] = 'INVTYPE_WAIST', -- Girdle
-    [22370] = 'INVTYPE_WAIST', -- Belt
-    [22356] = 'INVTYPE_WAIST', -- Waistguard
-    [22359] = 'INVTYPE_LEGS', -- Legguards
-    [22352] = 'INVTYPE_LEGS', -- Legplates
-    [22366] = 'INVTYPE_LEGS', -- Leggings
-    [22367] = 'INVTYPE_HEAD', -- Circlet
-    [22360] = 'INVTYPE_HEAD', -- Headpiece
-    [22353] = 'INVTYPE_HEAD', -- Helmet
-    [22350] = 'INVTYPE_CHEST', -- Tunic
-    [22351] = 'INVTYPE_CHEST', -- Robe
-    [22349] = 'INVTYPE_CHEST', -- Breastplate
+    [18423] = { loc = 'INVTYPE_TRINKET', level = 74 }, -- of Onyxia (Alliance) -- Can also be a neck and ring
+    [18422] = { loc = 'INVTYPE_TRINKET', level = 74 }, -- of Onyxia (Horde) -- Same deal
+    [19802] = { loc = 'INVTYPE_TRINKET', level = 68 }, -- Heart of Hakkar
+    [22520] = { loc = 'INVTYPE_TRINKET', level = 90 }, -- Phylactery of Kel'Thuzad
+    [21220] = { loc = 'INVTYPE_NECK', level = 70 }, -- of Ossirian the Unscarred
+    [21221] = { loc = 'INVTYPE_NECK', level = 88 }, -- Eye of C'Thun -- Can also be a cloak or ring
+    [19003] = { loc = 'INVTYPE_HOLDABLE', level = 83 }, -- of Nefarian (Alliance) -- Can also be neck and ring
+    [19002] = { loc = 'INVTYPE_HOLDABLE', level = 83 }, -- of Nefarian (Horde) -- Same deal
+    [19717] = { loc = 'INVTYPE_WRIST', level = 61 }, -- Armsplint
+    [19716] = { loc = 'INVTYPE_WRIST', level = 61 }, -- Bindings
+    [19718] = { loc = 'INVTYPE_WRIST', level = 61 }, -- Stanchion
+    [19719] = { loc = 'INVTYPE_WAIST', level = 61 }, -- Girdle
+    [19720] = { loc = 'INVTYPE_WAIST', level = 61 }, -- Sash
+    [19724] = { loc = 'INVTYPE_CHEST', level = 65 }, -- Aegis
+    [19723] = { loc = 'INVTYPE_CHEST', level = 65 }, -- Kossack
+    [19722] = { loc = 'INVTYPE_CHEST', level = 65 }, -- Tabard
+    [19721] = { loc = 'INVTYPE_SHOULDER', level = 68 }, -- Shawl
+    [20885] = { loc = 'INVTYPE_CLOAK', level = 67 }, -- Martial Drake
+    [20889] = { loc = 'INVTYPE_CLOAK', level = 67 }, -- Regal Drape
+    [20888] = { loc = 'INVTYPE_FINGER', level = 65 }, -- Ceremonial Ring
+    [20884] = { loc = 'INVTYPE_FINGER', level = 65 }, -- Magisterial Ring
+    [20886] = { loc = 'INVTYPE_WEAPONOFFHAND', level = 70 }, -- Spiked Hilt -- Exceptions apply - Paladin / Shaman weapon are main hand
+    [21232] = { loc = 'INVTYPE_WEAPONOFFHAND', level = 79 }, -- Imperial Qiraji Armaments -- Can also be a ranged weapon or shield
+    [20890] = { loc = 'INVTYPE_WEAPONMAINHAND', level = 70 }, -- Ornate Hilt
+    [21237] = { loc = 'INVTYPE_2HWEAPON', level = 79 }, -- Imperial Qiraji Regalia -- Can also be a one-handed weapon
+    [20928] = { loc = 'INVTYPE_FEET', level = 78 }, -- Qiraji Bindings of Command -- Can also be shoulders
+    [20932] = { loc = 'INVTYPE_FEET', level = 78 }, -- Qiraji Bindings of Dominance -- same deal
+    [20933] = { loc = 'INVTYPE_CHEST', level = 88 }, -- Husk of the Old God
+    [20929] = { loc = 'INVTYPE_CHEST', level = 88 }, -- Carapace of the Old God
+    [20927] = { loc = 'INVTYPE_LEGS', level = 81 }, -- Ouro's Intact Hide
+    [20931] = { loc = 'INVTYPE_LEGS', level = 81 }, -- Skin of the Great Sandworm
+    [22368] = { loc = 'INVTYPE_SHOULDER', level = 86 }, -- Shoulderpads
+    [22354] = { loc = 'INVTYPE_SHOULDER', level = 86 }, -- Pauldrons
+    [22361] = { loc = 'INVTYPE_SHOULDER', level = 86 }, -- Spaulders
+    [22372] = { loc = 'INVTYPE_FEET', level = 86 }, -- Sandals
+    [22365] = { loc = 'INVTYPE_FEET', level = 86 }, -- Boots
+    [22358] = { loc = 'INVTYPE_FEET', level = 86 }, -- Sabatons
+    [22369] = { loc = 'INVTYPE_WRIST', level = 88 }, -- Bindings
+    [22362] = { loc = 'INVTYPE_WRIST', level = 88 }, -- Wristguards
+    [22355] = { loc = 'INVTYPE_WRIST', level = 88 }, -- Bracers
+    [22357] = { loc = 'INVTYPE_HAND', level = 88 }, -- Gauntlets
+    [22364] = { loc = 'INVTYPE_HAND', level = 88 }, -- Handguards
+    [22371] = { loc = 'INVTYPE_HAND', level = 88 }, -- Gloves
+    [22363] = { loc = 'INVTYPE_WAIST', level = 88 }, -- Girdle
+    [22370] = { loc = 'INVTYPE_WAIST', level = 88 }, -- Belt
+    [22356] = { loc = 'INVTYPE_WAIST', level = 88 }, -- Waistguard
+    [22359] = { loc = 'INVTYPE_LEGS', level = 88 }, -- Legguards
+    [22352] = { loc = 'INVTYPE_LEGS', level = 88 }, -- Legplates
+    [22366] = { loc = 'INVTYPE_LEGS', level = 88 }, -- Leggings
+    [22367] = { loc = 'INVTYPE_HEAD', level = 88 }, -- Circlet
+    [22360] = { loc = 'INVTYPE_HEAD', level = 88 }, -- Headpiece
+    [22353] = { loc = 'INVTYPE_HEAD', level = 88 }, -- Helmet
+    [22350] = { loc = 'INVTYPE_CHEST', level = 92 }, -- Tunic
+    [22351] = { loc = 'INVTYPE_CHEST', level = 92 }, -- Robe
+    [22349] = { loc = 'INVTYPE_CHEST', level = 92 }, -- Breastplate
 };
 
 local function toSlots(item)
-    local token = TOKENS[item.id];
+    local token = TOKENS[item.id] and TOKENS[item.id].loc;
 
     return token and LOCS[token] or LOCS[item.loc];
 end
@@ -295,33 +299,62 @@ function ExG:ItemInfo(linkOrId)
     local name, link, rarity, level, minLevel, type, subtype, stackCount, loc, texture, sellPrice, classID, subClassID, bindType, expacID, setID, isCraftReg = GetItemInfo(id);
 
     if not name then
-        return nil;
+        local obj = Item:CreateFromItemID(id);
+
+        obj:ContinueOnItemLoad(function()
+            local name, link, rarity, level, minLevel, type, subtype, stackCount, loc, texture, sellPrice, classID, subClassID, bindType, expacID, setID, isCraftReg = GetItemInfo(id);
+
+            local item = {
+                id = id,
+                link = link,
+                name = name,
+                rarity = rarity,
+                level = level,
+                minLevel = minLevel,
+                type = type,
+                subtype = subtype,
+                stackCount = stackCount,
+                loc = loc,
+                texture = texture,
+                sellPrice = sellPrice,
+                classID = classID,
+                subClassID = subClassID,
+                bindType = bindType,
+                expacID = expacID,
+                setID = setID,
+                isCraftReg = isCraftReg
+            };
+
+            item.slots = toSlots(item);
+
+            return item;
+        end);
+    else
+        local item = {
+            id = id,
+            link = link,
+            name = name,
+            rarity = rarity,
+            level = level,
+            minLevel = minLevel,
+            type = type,
+            subtype = subtype,
+            stackCount = stackCount,
+            loc = loc,
+            texture = texture,
+            sellPrice = sellPrice,
+            classID = classID,
+            subClassID = subClassID,
+            bindType = bindType,
+            expacID = expacID,
+            setID = setID,
+            isCraftReg = isCraftReg
+        };
+
+        item.slots = toSlots(item);
+
+        return item;
     end
-
-    local item = {
-        id = id,
-        link = link,
-        name = name,
-        rarity = rarity,
-        level = level,
-        minLevel = minLevel,
-        type = type,
-        subtype = subtype,
-        stackCount = stackCount,
-        loc = loc,
-        texture = texture,
-        sellPrice = sellPrice,
-        classID = classID,
-        subClassID = subClassID,
-        bindType = bindType,
-        expacID = expacID,
-        setID = setID,
-        isCraftReg = isCraftReg
-    };
-
-    item.slots = toSlots(item);
-
-    return item;
 end
 
 function ExG:Equipped(slots)
@@ -344,7 +377,7 @@ function ExG:GetEG(offNote)
     local ep, gp;
 
     if not offNote then
-        ep, gp = store().BaseEP, store().BaseGP;
+        ep, gp = store().baseEP, store().baseGP;
 
         return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100, };
     end
@@ -352,12 +385,12 @@ function ExG:GetEG(offNote)
     local ep, gp = string.match(offNote, 'cep{(-?%d+%.?%d*),(-?%d+%.?%d*)}');
 
     if ep and gp then
-        ep, gp = tonumber(ep) or store().BaseEP, tonumber(gp) or store().BaseGP;
+        ep, gp = tonumber(ep) or store().baseEP, max(tonumber(gp) or store().baseGP, store().baseGP);
 
         return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100, };
     end
 
-    ep, gp = store().BaseEP, store().BaseGP;
+    ep, gp = store().baseEP, store().baseGP;
 
     return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100, };
 end
@@ -367,7 +400,7 @@ function ExG:SetEG(info, ep, gp)
         return;
     end
 
-    ep, gp = tonumber(ep) or store().BaseEP, tonumber(gp) or store().BaseGP;
+    ep, gp = tonumber(ep) or store().baseEP, max(tonumber(gp) or store().baseGP, store().baseGP);
 
     if store().debug then
         self:Print(L['ExG SetEG'](info.name, info, ep, gp));
@@ -378,22 +411,20 @@ function ExG:SetEG(info, ep, gp)
     return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100, };
 end
 
-function ExG:CalcGP(infoOrId)
-    local id = tonumber(infoOrId);
+function ExG:CalcGP(linkOrId)
+    local info = self:ItemInfo(linkOrId);
 
-    if not id then
-        id = 0;
+    if not info then
+        return 0;
     end
 
-    return 10;
-end
+    local loc = TOKENS[info.id] and TOKENS[info.id].loc or info.loc;
+    local lvl = TOKENS[info.id] and TOKENS[info.id].level or info.level;
+    local slot = store().items.formula[LOCS_OVER[loc] or loc];
 
-function ExG:LootIndex(link)
-    for i = 1, GetNumLootItems() do
-        if link == GetLootSlotLink(i) then
-            return i;
-        end
+    if not slot then
+        return 0;
     end
 
-    return nil;
+    return math.floor(store().items.formula.coef * (store().items.formula.base ^ (lvl / 26 + info.rarity - 4)) * slot * store().items.formula.mod);
 end
