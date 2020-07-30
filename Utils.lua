@@ -19,6 +19,8 @@ local function toString(offNote, ep, gp)
     return newOffNote;
 end
 
+local LINK_PATTERN = "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*):?(%-?%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?";
+
 local LOCS_OVER = {
     INVTYPE_ROBE = 'INVTYPE_ROBE',
 };
@@ -298,63 +300,31 @@ function ExG:ItemInfo(linkOrId)
 
     local name, link, rarity, level, minLevel, type, subtype, stackCount, loc, texture, sellPrice, classID, subClassID, bindType, expacID, setID, isCraftReg = GetItemInfo(id);
 
-    if not name then
-        local obj = Item:CreateFromItemID(id);
+    local item = {
+        loaded = (name ~= nil),
+        id = id,
+        link = link,
+        name = name,
+        rarity = rarity,
+        level = level,
+        minLevel = minLevel,
+        type = type,
+        subtype = subtype,
+        stackCount = stackCount,
+        loc = loc,
+        texture = texture,
+        sellPrice = sellPrice,
+        classID = classID,
+        subClassID = subClassID,
+        bindType = bindType,
+        expacID = expacID,
+        setID = setID,
+        isCraftReg = isCraftReg
+    };
 
-        obj:ContinueOnItemLoad(function()
-            local name, link, rarity, level, minLevel, type, subtype, stackCount, loc, texture, sellPrice, classID, subClassID, bindType, expacID, setID, isCraftReg = GetItemInfo(id);
+    item.slots = toSlots(item);
 
-            local item = {
-                id = id,
-                link = link,
-                name = name,
-                rarity = rarity,
-                level = level,
-                minLevel = minLevel,
-                type = type,
-                subtype = subtype,
-                stackCount = stackCount,
-                loc = loc,
-                texture = texture,
-                sellPrice = sellPrice,
-                classID = classID,
-                subClassID = subClassID,
-                bindType = bindType,
-                expacID = expacID,
-                setID = setID,
-                isCraftReg = isCraftReg
-            };
-
-            item.slots = toSlots(item);
-
-            return item;
-        end);
-    else
-        local item = {
-            id = id,
-            link = link,
-            name = name,
-            rarity = rarity,
-            level = level,
-            minLevel = minLevel,
-            type = type,
-            subtype = subtype,
-            stackCount = stackCount,
-            loc = loc,
-            texture = texture,
-            sellPrice = sellPrice,
-            classID = classID,
-            subClassID = subClassID,
-            bindType = bindType,
-            expacID = expacID,
-            setID = setID,
-            isCraftReg = isCraftReg
-        };
-
-        item.slots = toSlots(item);
-
-        return item;
-    end
+    return item;
 end
 
 function ExG:Equipped(slots)
@@ -434,5 +404,7 @@ function ExG:CalcGP(linkOrId)
         return 0;
     end
 
-    return math.floor(store().items.formula.coef * (store().items.formula.base ^ (lvl / 26 + info.rarity - 4)) * slot * store().items.formula.mod);
+    local formula = store().items.formula;
+
+    return math.floor(formula.coef * (formula.base ^ (lvl / 26 + info.rarity - 4)) * slot * formula.mod);
 end
