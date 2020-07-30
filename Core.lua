@@ -26,22 +26,21 @@ local function tooltipGp(self)
     GameTooltip:AddLine(L['ExG Tooltip GP value'](gp), { 1, 1, 1 });
 end
 
-local function hyperlinkGp(self, iString)
-    if not string.find(iString, "item:") or not CEPGP_gp_tooltips then return; end
-    local id = CEPGP_getItemID(iString);
-    local name = GetItemInfo(id);
-    if not name and CEPGP_itemExists(tonumber(id)) then
-        local item = Item:CreateFromItemID(tonumber(id));
-        item:ContinueOnItemLoad(function()
-            local gp = CEPGP_calcGP(_, 1, id);
-            ItemRefTooltip:AddLine("GP Value: " .. gp, { 1, 1, 1 });
-            ItemRefTooltip:Show();
-        end);
-    else
-        local gp = CEPGP_calcGP(_, 1, id);
-        ItemRefTooltip:AddLine("GP Value: " .. gp, { 1, 1, 1 });
-        ItemRefTooltip:Show();
+local function hyperlinkGp(self, link)
+    if not store().showGp then
+        return;
     end
+
+    local info = ExG:ItemInfo(link);
+
+    if not info then
+        return;
+    end
+
+    local gp = ExG:CalcGP(info.id);
+
+    ItemRefTooltip:AddLine(L['ExG Tooltip GP value'](gp), { 1, 1, 1 });
+    ItemRefTooltip:Show();
 end
 
 local buttons = {
@@ -1159,7 +1158,7 @@ function ExG:PostInit()
     tmp.class = self.state.class;
 
     GameTooltip:HookScript("OnTooltipSetItem", tooltipGp);
-    --    hooksecurefunc("ChatFrame_OnHyperlinkShow", hyperlinkGp);
+    hooksecurefunc("ChatFrame_OnHyperlinkShow", hyperlinkGp);
 
     local version = GetAddOnMetadata(self.name, 'Version');
 
