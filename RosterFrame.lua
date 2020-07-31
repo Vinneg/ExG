@@ -55,9 +55,7 @@ function ExG.RosterFrame:RenderList()
 
     local roster = {};
 
-    local ttlMembers = GetNumGuildMembers();
-
-    for i = 1, ttlMembers do
+    for i = 1, GetNumGuildMembers() do
         local name, rank, _, level, classLoc, _, _, offNote, isOnline, _, class = GetGuildRosterInfo(i);
 
         local eg = ExG:GetEG(offNote);

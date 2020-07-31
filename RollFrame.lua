@@ -424,7 +424,7 @@ function ExG.RollFrame:Create()
     self.frame = AceGUI:Create('Window');
     self.frame:SetTitle(L['Roll Frame']);
     self.frame:SetLayout(nil);
-    self.frame:SetCallback('OnClose', function() for id in pairs(self.items) do self:RemoveItem(self, id); end self.frame:Hide(); end);
+    self.frame:SetCallback('OnClose', function() for id in pairs(self.items) do ExG:RollItem({ id = id, class = ExG.state.class, option = 'button6', }); self:RemoveItem(id); end self.frame:Hide(); end);
     self.frame:SetHeight(477);
     self.frame:EnableResize(false);
     self.frame:Hide();
