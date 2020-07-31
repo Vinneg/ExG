@@ -97,6 +97,7 @@ function ExG:GuidEG()
 
     store().history.data[dt] = {
         type = 'guild',
+        target = { name = L['ExG History GUILD'], class = 'GUILD', },
         master = { name = self.state.name, class = self.state.class, },
         desc = L['ExG Guid EG'](ep, gp);
         dt = dt,
@@ -148,8 +149,9 @@ function ExG:RaidEG()
 
     store().history.data[dt] = {
         type = 'guild',
+        target = { name = L['ExG History RAID'], class = 'RAID', },
         master = { name = self.state.name, class = self.state.class, },
-        desc = L['ExG Guid EG'](ep, gp);
+        desc = L['ExG Raid EG'](ep, gp);
         dt = dt,
         details = {},
     };

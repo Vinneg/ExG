@@ -150,8 +150,8 @@ ExG.messages = {
 };
 
 ExG.state = {
-    name = '',
-    class = '',
+    name = nil,
+    class = nil,
     looting = false,
     options = nil,
 };
@@ -201,6 +201,7 @@ ExG.defaults = {
                 INVTYPE_2HWEAPON = 1.8,
                 INVTYPE_SHIELD = 0.7,
                 INVTYPE_RANGED = 0.6,
+                INVTYPE_WAND = 0.5,
                 INVTYPE_RELIC = 0.5,
                 INVTYPE_THROWN = 0.6,
             },
@@ -520,6 +521,8 @@ ExG.options = {
                 itemsWaist = items.type(147, 'INVTYPE_WAIST'),
                 itemsFiller24 = items.filler(148),
                 itemsWeapon2H = items.type(149, 'INVTYPE_2HWEAPON'),
+                itemsFiller21 = items.filler(150),
+                itemsWand = items.type(151, 'INVTYPE_WAND'),
                 itemsFiller9 = items.filler(152, 'full'),
                 itemsShoulder = items.type(153, 'INVTYPE_SHOULDER'),
                 itemsFiller10 = items.filler(154),
@@ -1175,7 +1178,6 @@ function ExG:AnnounceItems(ids)
 
         if info then
             items[id] = v;
-            items[id].gp = self:CalcGP(id);
             items[id].name = info.name;
             items[id].loc = info.loc;
             items[id].link = info.link;
@@ -1199,7 +1201,7 @@ function ExG:handleAnnounceItems(_, message, _, sender)
         return;
     end
 
-    local success, gps, settings, buttons = Serializer:Deserialize(message);
+    local success, items, settings, buttons = Serializer:Deserialize(message);
 
     if not success then
         return
@@ -1211,7 +1213,7 @@ function ExG:handleAnnounceItems(_, message, _, sender)
 
     store().buttons = buttons;
 
-    self.RollFrame:AddItems(gps);
+    self.RollFrame:AddItems(items);
     self.RollFrame:Show();
 end
 
@@ -1385,11 +1387,10 @@ function ExG:LOOT_OPENED()
     end
 
     local links = {};
-    local count = GetNumLootItems();
 
-    for i = 1, count do
+    for i = 1, GetNumLootItems() do
         if LootSlotHasItem(i) then
-            local info = self:ItemInfo(GetLootSlotLink(i));
+            local info = self:LinkInfo(GetLootSlotLink(i));
 
             if info then
                 local itemData = store().items.data[info.id];

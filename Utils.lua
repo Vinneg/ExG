@@ -19,7 +19,7 @@ local function toString(offNote, ep, gp)
     return newOffNote;
 end
 
-local LINK_PATTERN = "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*):?(%-?%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?";
+local LINK_PATTERN = '|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*):?(%-?%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?';
 
 local LOCS_OVER = {
     INVTYPE_ROBE = 'INVTYPE_ROBE',
@@ -271,28 +271,56 @@ function ExG:RaidInfo(unit)
     return nil;
 end
 
+local RARITY_COLORS = {
+    ['9d9d9d'] = 0,
+    ['ffffff'] = 1,
+    ['1eff00'] = 2,
+    ['0070dd'] = 3,
+    ['a335ee'] = 4,
+    ['ff8000'] = 5,
+    ['e6cc80'] = 6,
+    ['00ccff'] = 7,
+};
+
+function ExG:LinkInfo(link)
+    if not link then
+        return nil;
+    end
+
+    local _, _, color, _, id, _, _, _, _, _, _, _, _, _, name = string.find(link, LINK_PATTERN);
+
+    if not id then
+        return nil;
+    end
+
+    local _, type, subtype, loc, texture, classID, subClassID = GetItemInfoInstant(id);
+
+    local item = {
+        id = id,
+        link = link,
+        name = name,
+        rarity = RARITY_COLORS[color],
+        type = type,
+        subtype = subtype,
+        loc = loc,
+        texture = texture,
+        classID = classID,
+        subClassID = subClassID,
+    };
+
+    item.slots = toSlots(item);
+
+    print('LinkInfo: id = ', id, ', rarity = ', item.rarity);
+
+    return item;
+end
+
 function ExG:ItemInfo(linkOrId)
     if not linkOrId then
         return nil;
     end
 
-    local id = tonumber(linkOrId);
-
-    if not id then
-        local itemString = string.match(linkOrId, 'item[%-?%d:]+');
-
-        if not itemString then
-            return nil;
-        end
-
-        local _, tmp = strsplit(':', itemString);
-
-        if not tmp then
-            return nil;
-        end
-
-        id = tonumber(tmp);
-    end
+    local id = GetItemInfoInstant(linkOrId);
 
     if not id then
         return nil;
@@ -301,7 +329,6 @@ function ExG:ItemInfo(linkOrId)
     local name, link, rarity, level, minLevel, type, subtype, stackCount, loc, texture, sellPrice, classID, subClassID, bindType, expacID, setID, isCraftReg = GetItemInfo(id);
 
     local item = {
-        loaded = (name ~= nil),
         id = id,
         link = link,
         name = name,
@@ -396,8 +423,17 @@ function ExG:CalcGP(linkOrId)
         return class.gp or def.gp;
     end
 
-    local loc = TOKENS[info.id] and TOKENS[info.id].loc or info.loc;
-    local lvl = TOKENS[info.id] and TOKENS[info.id].level or info.level;
+    local token = TOKENS[info.id];
+    local loc = token and token.loc or info.loc;
+    local lvl = token and token.level or info.level;
+
+    if info.classID == 2 and info.subClassID == 19 then
+        loc = 'INVTYPE_WAND';
+    end
+    if info.classID == 2 and (info.subClassID == 2 or info.subClassID == 3 or info.subClassID == 18) then
+        loc = 'INVTYPE_RANGED';
+    end
+
     local slot = store().items.formula[LOCS_OVER[loc] or loc];
 
     if not slot then

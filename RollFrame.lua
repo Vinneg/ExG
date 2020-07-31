@@ -325,8 +325,8 @@ local function renderItem(self, pane)
     end
 
     local settings = store().items.data[item.id];
-    local class = (settings or {})[ExG.state.class] or {};
-    local def = (settings or {})['DEFAULT'] or {};
+    local class = settings and settings[ExG.state.class] or {};
+    local def = settings and settings['DEFAULT'] or {};
 
     pane.head:SetImage(item.texture);
     pane.cost:SetText(((class.gp or def.gp) or item.gp or 0) .. ' GP');
@@ -438,16 +438,16 @@ function ExG.RollFrame:Hide()
     self.frame:Hide();
 end
 
-function ExG.RollFrame:AddItems(ids)
-    for id, v in pairs(ids) do
+function ExG.RollFrame:AddItems(items)
+    for id, v in pairs(items) do
         self.items[id] = self.items[id] or { count = 1, accepted = {}, rolls = {} };
 
         local tmp = self.items[id];
         local info = ExG:ItemInfo(id);
 
         local settings = store().items.data[id];
-        local class = (settings or {})[ExG.state.class];
-        local def = (settings or {})['DEFAULT'];
+        local class = settings and settings[ExG.state.class] or {};
+        local def = settings and settings['DEFAULT'] or {};
 
         tmp.id = id;
         tmp.name = v.name;
@@ -460,9 +460,17 @@ function ExG.RollFrame:AddItems(ids)
         tmp.gp = tmp.settings and tmp.settings.gp or v.gp;
 
         ExG:AcceptItem(id);
-    end
 
-    renderItems(self);
+        local obj = Item:CreateFromItemID(tmp.id);
+        obj:ContinueOnItemLoad(function()
+            local info = ExG:ItemInfo(id);
+
+            local tmp = self.items[id];
+            tmp.gp = ExG:CalcGP(tmp.id);
+
+            renderItems(self);
+        end);
+    end
 end
 
 function ExG.RollFrame:AcceptItem(itemId, source)
