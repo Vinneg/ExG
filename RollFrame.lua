@@ -443,21 +443,15 @@ function ExG.RollFrame:AddItems(items)
         self.items[id] = self.items[id] or { count = 1, accepted = {}, rolls = {} };
 
         local tmp = self.items[id];
-        local info = ExG:ItemInfo(id);
 
         local settings = store().items.data[id];
         local class = settings and settings[ExG.state.class] or {};
         local def = settings and settings['DEFAULT'] or {};
 
         tmp.id = id;
-        tmp.name = v.name;
-        tmp.loc = v.loc;
-        tmp.link = v.link;
-        tmp.texture = v.texture;
-        tmp.count = v.count;
-
+        tmp.count = v;
         tmp.settings = class or def;
-        tmp.gp = tmp.settings and tmp.settings.gp or v.gp;
+        tmp.gp = class.gp or def.gp;
 
         ExG:AcceptItem(id);
 
@@ -466,7 +460,12 @@ function ExG.RollFrame:AddItems(items)
             local info = ExG:ItemInfo(id);
 
             local tmp = self.items[id];
-            tmp.gp = ExG:CalcGP(tmp.id);
+            tmp.gp = tmp.gp or ExG:CalcGP(id);
+            tmp.name = info.name;
+            tmp.loc = info.loc;
+            tmp.link = info.link;
+            tmp.texture = info.texture;
+            tmp.count = info.count;
 
             renderItems(self);
         end);

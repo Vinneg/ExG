@@ -1174,20 +1174,14 @@ function ExG:AnnounceItems(ids)
     for id, v in pairs(ids) do
         settings[id] = store().items.data[id] or false;
 
-        local info = self:ItemInfo(id);
+        local hasOne = self.RollFrame.items[id];
 
-        if info then
+        if not hasOne then
             items[id] = v;
-            items[id].name = info.name;
-            items[id].loc = info.loc;
-            items[id].link = info.link;
-            items[id].texture = info.texture;
-        else
-            v = nil;
         end
     end
 
-    local data = Serializer:Serialize(items, settings, store().buttons);
+    local data = Serializer:Serialize(items, settings, store().buttons, store().items.formula);
 
     if store().debug and not IsInRaid() then
         self:SendCommMessage(self.messages.prefix.announce, data, self.messages.whisper, self.state.name);
@@ -1201,7 +1195,7 @@ function ExG:handleAnnounceItems(_, message, _, sender)
         return;
     end
 
-    local success, items, settings, buttons = Serializer:Deserialize(message);
+    local success, items, settings, buttons, formula = Serializer:Deserialize(message);
 
     if not success then
         return
@@ -1212,6 +1206,7 @@ function ExG:handleAnnounceItems(_, message, _, sender)
     end
 
     store().buttons = buttons;
+    store().items.formula = formula;
 
     self.RollFrame:AddItems(items);
     self.RollFrame:Show();
@@ -1386,7 +1381,7 @@ function ExG:LOOT_OPENED()
         return;
     end
 
-    local links = {};
+    local ids = {};
 
     for i = 1, GetNumLootItems() do
         if LootSlotHasItem(i) then
@@ -1396,18 +1391,17 @@ function ExG:LOOT_OPENED()
                 local itemData = store().items.data[info.id];
 
                 if info.rarity >= store().items.threshold or itemData then
-                    links[info.id] = links[info.id] or { count = 0 };
-                    links[info.id].count = links[info.id].count + 1;
+                    ids[info.id] = (ids[info.id] or 0) + 1;
                 end
             end
         end
     end
 
-    if self:Size(links) == 0 then
+    if self:Size(ids) == 0 then
         return;
     end
 
-    self:AnnounceItems(links);
+    self:AnnounceItems(ids);
 end
 
 function ExG:LOOT_CLOSED()
