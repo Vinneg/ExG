@@ -1103,7 +1103,7 @@ function ExG:HandleChatCommand(input)
     if arg == 'ony' then
         self:ENCOUNTER_END(0, 1084, 0, 0, 0, true)
     elseif arg == 'announce' then
-        self:AnnounceItems({ [19438] = { count = 1 }, [18820] = { count = 2 }, [19019] = { count = 1 }, [15138] = { count = 1 }, [19812] = { count = 2 }, [22351] = { count = 1 }, });
+        self:AnnounceItems({ [19438] = 1, [18820] = 2, [19019] = 1, [15138] = 1, [19812] = 2, [22351] = 1, });
     elseif arg == 'his' then
         self.HistoryFrame:Show();
     elseif arg == 'inv' then
@@ -1180,6 +1180,8 @@ function ExG:AnnounceItems(ids)
             items[id] = v;
         end
     end
+
+    print('AnnounceItems: items.size = ', self:Size(items));
 
     local data = Serializer:Serialize(items, settings, store().buttons, store().items.formula);
 
@@ -1321,7 +1323,7 @@ function ExG:handleHistoryShare(_, message, _, sender)
 end
 
 function ExG:ENCOUNTER_END(_, id, _, _, _, success)
-    if not success then
+    if success == 0 then
         return;
     end
 
@@ -1396,6 +1398,8 @@ function ExG:LOOT_OPENED()
             end
         end
     end
+
+    print('LOOT_OPENED: size = ', self:Size(ids));
 
     if self:Size(ids) == 0 then
         return;

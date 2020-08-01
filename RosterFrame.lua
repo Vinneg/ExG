@@ -15,7 +15,6 @@ function ExG.RosterFrame:Create()
     self.frame = AceGUI:Create('Window');
     self.frame:SetTitle(L['ExG']);
     self.frame:SetLayout(nil);
-    --    self.frame:SetCallback('OnClose', function(widget) AceGUI:Release(widget); end)
     self.frame:Hide();
 
     local group = AceGUI:Create('SimpleGroup');

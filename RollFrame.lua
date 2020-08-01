@@ -455,20 +455,35 @@ function ExG.RollFrame:AddItems(items)
 
         ExG:AcceptItem(id);
 
-        local obj = Item:CreateFromItemID(tmp.id);
-        obj:ContinueOnItemLoad(function()
-            local info = ExG:ItemInfo(id);
+        print('RollFrame:AddItems: id = ', tmp.id);
 
-            local tmp = self.items[id];
+        local info = ExG:ItemInfo(id);
+
+        if info then
             tmp.gp = tmp.gp or ExG:CalcGP(id);
             tmp.name = info.name;
             tmp.loc = info.loc;
             tmp.link = info.link;
             tmp.texture = info.texture;
-            tmp.count = info.count;
 
             renderItems(self);
-        end);
+        else
+            local obj = Item:CreateFromItemID(tmp.id);
+            obj:ContinueOnItemLoad(function()
+                print('ContinueOnItemLoad: id = ', tmp.id);
+
+                local info = ExG:ItemInfo(id);
+
+                local tmp = self.items[id];
+                tmp.gp = tmp.gp or ExG:CalcGP(id);
+                tmp.name = info.name;
+                tmp.loc = info.loc;
+                tmp.link = info.link;
+                tmp.texture = info.texture;
+
+                renderItems(self);
+            end);
+        end
     end
 end
 

@@ -310,8 +310,6 @@ function ExG:LinkInfo(link)
 
     item.slots = toSlots(item);
 
-    print('LinkInfo: id = ', id, ', rarity = ', item.rarity);
-
     return item;
 end
 
@@ -327,6 +325,10 @@ function ExG:ItemInfo(linkOrId)
     end
 
     local name, link, rarity, level, minLevel, type, subtype, stackCount, loc, texture, sellPrice, classID, subClassID, bindType, expacID, setID, isCraftReg = GetItemInfo(id);
+
+    if not name then
+        return nil;
+    end
 
     local item = {
         id = id,
