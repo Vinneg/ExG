@@ -12,6 +12,7 @@ local onLeave = function() return GameTooltip:Hide(); end;
 local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
 
 local MAX_ROLLS = 10;
+local PANE_WIDTH = 200;
 
 ExG.RollFrame = {
     frame = nil,
@@ -67,19 +68,19 @@ local function getButtons(self, pane)
         idx = i;
     end
 
-    if ExG:IsMl() then
-        pane.dis = AceGUI:Create('Button');
-        pane.dis:SetText(L['Disenchant']);
-        pane.dis:SetWidth(pane.frame:GetWidth() - 10);
-        pane.dis:SetCallback('OnClick', function() self:GiveItem(ExG.state.name, ExG.state.class, pane.itemId); end);
-        pane:AddChild(pane.dis);
-
-        local point = points[ceil(idx / 2) * 2 + 1];
-
-        pane.dis:SetPoint(point.point, point.frame, point.rel, point.x, point.y);
-
-        last = pane.dis;
-    end
+    --    if ExG:IsMl() then
+    --        pane.dis = AceGUI:Create('Button');
+    --        pane.dis:SetText(L['Disenchant']);
+    --        pane.dis:SetWidth(pane.frame:GetWidth() - 10);
+    --        pane.dis:SetCallback('OnClick', function() self:GiveItem(ExG.state.name, ExG.state.class, pane.itemId); end);
+    --        pane:AddChild(pane.dis);
+    --
+    --        local point = points[ceil(idx / 2) * 2 + 1];
+    --
+    --        pane.dis:SetPoint(point.point, point.frame, point.rel, point.x, point.y);
+    --
+    --        last = pane.dis;
+    --    end
 
     return last;
 end
@@ -172,7 +173,7 @@ local function getPane(self, itemId)
         pane.itemId = itemId;
     elseif not pane then
         pane = AceGUI:Create('SimpleGroup');
-        pane:SetWidth(250);
+        pane:SetWidth(PANE_WIDTH);
         pane:SetFullHeight(true);
         pane:SetLayout(nil);
         pane.itemId = itemId;
@@ -219,18 +220,19 @@ local function getPane(self, itemId)
         pane.accepted:SetFullWidth(true);
         pane:AddChild(pane.accepted);
 
-        pane.accepted:SetPoint('TOPLEFT', last.frame, 'BOTTOMLEFT', 0, -5);
-        pane.accepted:SetPoint('TOPRIGHT', last.frame, 'BOTTOMRIGHT', 0, -5);
+        pane.accepted:SetPoint('TOP', last.frame, 'BOTTOM', 0, -5);
+        pane.accepted:SetPoint('LEFT', pane.frame, 'LEFT', 5, 0);
+        pane.accepted:SetPoint('RIGHT', pane.frame, 'RIGHT', -5, 0);
 
         getRolls(pane);
     end
 
-    self.frame:SetWidth(count(self) * 255 + 15);
+    self.frame:SetWidth(count(self) * (PANE_WIDTH + 5) + 15);
 
     return pane;
 end
 
-local function renderButons(self, pane, item, settings)
+local function renderButons(self, pane, settings)
     for _, v in pairs(store().buttons.data) do
         if pane[v.id] then
             local enabled = true;
@@ -248,10 +250,9 @@ local function renderButons(self, pane, item, settings)
             if v.id == 'button6' then
                 pane[v.id]:SetCallback('OnClick', function() ExG:RollItem({ id = pane.itemId, class = ExG.state.class, option = v.id, }); if store().items.closeOnPass and not ExG:IsMl() then self:RemoveItem(pane.itemId); end end);
             else
-                local info = ExG:ItemInfo(pane.itemId);
-                local id1, id2 = ExG:Equipped(info.slots);
+                local id1, id2 = ExG:Equipped(self.items[pane.itemId].slots);
 
-                pane[v.id]:SetCallback('OnClick', function() ExG:RollItem({ id = pane.itemId, class = ExG.state.class, option = v.id, slot1 = id1, slot2 = id2, rnd = random(1, 100) }); end);
+                pane[v.id]:SetCallback('OnClick', function() ExG:RollItem({ id = pane.itemId, class = ExG.state.class, option = v.id, slot1 = id1 and id1.link, slot2 = id2 and id2.link, rnd = random(1, 100) }); end);
             end
         end
     end
@@ -334,7 +335,7 @@ local function renderItem(self, pane)
     pane.head:SetLabel(item.link);
     pane.head:SetCallback('OnEnter', onEnter(pane.head.frame, item.link));
 
-    renderButons(self, pane, item, settings);
+    renderButons(self, pane, settings);
     renderRolls(self, pane);
 
     pane.frame:Show();
@@ -455,35 +456,34 @@ function ExG.RollFrame:AddItems(items)
 
         ExG:AcceptItem(id);
 
-        print('RollFrame:AddItems: id = ', tmp.id);
+        --        local info = ExG:ItemInfo(id);
+        --
+        --        if info then
+        --            tmp.gp = tmp.gp or ExG:CalcGP(id);
+        --            tmp.name = info.name;
+        --            tmp.loc = info.loc;
+        --            tmp.link = info.link;
+        --            tmp.texture = info.texture;
+        --
+        --            renderItems(self);
+        --        else
+        local obj = Item:CreateFromItemID(id);
+        obj:ContinueOnItemLoad(function()
+            print('ContinueOnItemLoad: id = ', id);
 
-        local info = ExG:ItemInfo(id);
+            local info = ExG:ItemInfo(id);
 
-        if info then
+            local tmp = self.items[id];
             tmp.gp = tmp.gp or ExG:CalcGP(id);
             tmp.name = info.name;
             tmp.loc = info.loc;
+            tmp.slots = info.slots;
             tmp.link = info.link;
             tmp.texture = info.texture;
 
             renderItems(self);
-        else
-            local obj = Item:CreateFromItemID(tmp.id);
-            obj:ContinueOnItemLoad(function()
-                print('ContinueOnItemLoad: id = ', tmp.id);
-
-                local info = ExG:ItemInfo(id);
-
-                local tmp = self.items[id];
-                tmp.gp = tmp.gp or ExG:CalcGP(id);
-                tmp.name = info.name;
-                tmp.loc = info.loc;
-                tmp.link = info.link;
-                tmp.texture = info.texture;
-
-                renderItems(self);
-            end);
-        end
+        end);
+        --        end
     end
 end
 
@@ -506,7 +506,7 @@ function ExG.RollFrame:GiveItem(unit, class, itemId, option)
         return;
     end
 
-    local info = ExG:ItemInfo(itemId);
+    local info = self.items[itemId];
 
     if not info then
         return;
@@ -515,7 +515,7 @@ function ExG.RollFrame:GiveItem(unit, class, itemId, option)
     local lootIndex, unitIndex
 
     for i = 1, GetNumLootItems() do
-        local tmp = ExG:ItemInfo(GetLootSlotLink(i));
+        local tmp = ExG:LinkInfo(GetLootSlotLink(i));
 
         lootIndex = tmp and info.id == tmp.id and i or lootIndex;
     end
@@ -595,8 +595,8 @@ function ExG.RollFrame:RollItem(data, unit)
     item.rolls[unit].class = data.class;
     item.rolls[unit].option = data.option;
     item.rolls[unit].rnd = item.rolls[unit].rnd or data.rnd;
-    item.rolls[unit].slot1 = ExG:ItemInfo(data.slot1);
-    item.rolls[unit].slot2 = ExG:ItemInfo(data.slot2);
+    item.rolls[unit].slot1 = ExG:LinkInfo(data.slot1);
+    item.rolls[unit].slot2 = ExG:LinkInfo(data.slot2);
 
     local pane = getPane(self, item.id);
 

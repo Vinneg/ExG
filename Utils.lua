@@ -364,9 +364,9 @@ function ExG:Equipped(slots)
     local res = {};
 
     for _, v in ipairs(slots) do
-        local info = self:ItemInfo(GetInventoryItemLink('player', v));
+        local info = self:LinkInfo(GetInventoryItemLink('player', v));
 
-        tinsert(res, info and info.id);
+        tinsert(res, info);
     end
 
     return unpack(res);

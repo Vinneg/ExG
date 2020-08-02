@@ -1181,8 +1181,6 @@ function ExG:AnnounceItems(ids)
         end
     end
 
-    print('AnnounceItems: items.size = ', self:Size(items));
-
     local data = Serializer:Serialize(items, settings, store().buttons, store().items.formula);
 
     if store().debug and not IsInRaid() then
@@ -1324,6 +1322,10 @@ end
 
 function ExG:ENCOUNTER_END(_, id, _, _, _, success)
     if success == 0 then
+        return;
+    end
+
+    if not self:IsMl() then
         return;
     end
 
