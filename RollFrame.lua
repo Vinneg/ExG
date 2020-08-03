@@ -33,17 +33,22 @@ end
 
 local function getButtons(self, pane)
     local points = {
-        { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -5 },
-        { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -5 },
-        { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -30 },
-        { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -30 },
-        { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -55 },
-        { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -55 },
-        { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -80 },
-        { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -105 },
+        button = {
+            { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -5 },
+            { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -5 },
+            { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -30 },
+            { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -30 },
+            { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -55 },
+            { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -55 },
+        },
+        disenchant = {
+            [1] = { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -30 },
+            [2] = { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -55 },
+            [3] = { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -80 },
+        },
     };
 
-    local btns, idx, last = {}, 1, nil;
+    local btns, last = {}, nil;
 
     for _, v in pairs(store().buttons.data) do
         if v.enabled then
@@ -56,31 +61,30 @@ local function getButtons(self, pane)
     for i, v in ipairs(btns) do
         pane[v.id] = AceGUI:Create('Button');
         pane[v.id]:SetText('');
-        pane[v.id]:SetWidth((pane.frame:GetWidth() - 15) / 2);
+        pane[v.id]:SetWidth((PANE_WIDTH - 15) / 2);
         pane[v.id]:SetDisabled(true);
         pane:AddChild(pane[v.id]);
 
-        local point = points[i];
+        local point = points.button[i];
 
         pane[v.id]:SetPoint(point.point, point.frame, point.rel, point.x, point.y);
 
         last = pane[v.id];
-        idx = i;
     end
 
-    --    if ExG:IsMl() then
-    --        pane.dis = AceGUI:Create('Button');
-    --        pane.dis:SetText(L['Disenchant']);
-    --        pane.dis:SetWidth(pane.frame:GetWidth() - 10);
-    --        pane.dis:SetCallback('OnClick', function() self:GiveItem(ExG.state.name, ExG.state.class, pane.itemId); end);
-    --        pane:AddChild(pane.dis);
-    --
-    --        local point = points[ceil(idx / 2) * 2 + 1];
-    --
-    --        pane.dis:SetPoint(point.point, point.frame, point.rel, point.x, point.y);
-    --
-    --        last = pane.dis;
-    --    end
+    if ExG:IsMl() then
+        pane.dis = AceGUI:Create('Button');
+        pane.dis:SetText(L['Disenchant']);
+        pane.dis:SetWidth(PANE_WIDTH - 10);
+        pane.dis:SetCallback('OnClick', function() self:GiveItem(ExG.state.name, ExG.state.class, pane.itemId); end);
+        pane:AddChild(pane.dis);
+
+        local point = points.disenchant[ceil(#btns / 2)];
+
+        pane.dis:SetPoint(point.point, point.frame, point.rel, point.x, point.y);
+
+        last = pane.dis;
+    end
 
     return last;
 end

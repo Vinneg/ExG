@@ -149,7 +149,7 @@ local function goRefresh(self)
     renderList(self);
 end
 
-local function MakeButtons(self)
+local function makeButtons(self)
     local back = AceGUI:Create('Button');
     back:SetWidth(20);
     back:SetHeight(20);
@@ -178,7 +178,7 @@ local function MakeButtons(self)
     refresh:SetPoint('TOP', self.frame.frame, 'TOP', 0, -30);
 end
 
-local function MakeHeaders(self)
+local function makeHeaders(self)
     self.headers = AceGUI:Create('SimpleGroup');
     self.headers:SetFullWidth(true);
     self.headers:SetLayout('Flow');
@@ -251,8 +251,8 @@ function ExG.HistoryFrame:Create()
     self.frame:SetCallback('OnClose', function() self.data = {}; self.frame:Hide(); end)
     self.frame:Hide();
 
-    MakeButtons(self);
-    MakeHeaders(self);
+    makeButtons(self);
+    makeHeaders(self);
 
     local group = AceGUI:Create('SimpleGroup');
     group:SetFullWidth(true);
