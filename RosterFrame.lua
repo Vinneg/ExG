@@ -6,12 +6,21 @@ local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 
 local store = function() return ExG.store.char; end;
 
-local sortBy = function(field)
+local order = function(self, field)
     return function()
-        ExG.RosterFrame.order[2] = ExG.RosterFrame.order[1];
-        ExG.RosterFrame.order[1] = field;
+        self.order[field] = -(self.order[field] or -1);
+
+        sort(self[self.current], function(a, b)
+            if self.order[field] == 1 then
+                return a[field] < b[field];
+            else
+                return a[field] > b[field];
+            end
+        end);
+
+        self:RenderItems(self);
     end;
-end;
+end
 
 local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
 
@@ -157,7 +166,7 @@ local function makeHeaders(self)
     name:SetJustifyV('MIDDLE');
     name:SetColor(ExG:ClassColor('SYSTEM'));
     name:SetText(L['Name']);
-    name:SetCallback('OnClick', sortBy('name'));
+    name:SetCallback('OnClick', order(self, 'name'));
     self.frame:AddChild(name);
 
     name:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -90);
@@ -170,7 +179,7 @@ local function makeHeaders(self)
     class:SetJustifyV('MIDDLE');
     class:SetColor(ExG:ClassColor('SYSTEM'));
     class:SetText(L['Class']);
-    class:SetCallback('OnClick', sortBy('class'));
+    class:SetCallback('OnClick', order(self, 'classLoc'));
     self.frame:AddChild(class);
 
     class:SetPoint('TOPLEFT', name.frame, 'TOPRIGHT', 0, 0);
@@ -183,7 +192,7 @@ local function makeHeaders(self)
     rank:SetJustifyV('MIDDLE');
     rank:SetColor(ExG:ClassColor('SYSTEM'));
     rank:SetText(L['Rank']);
-    rank:SetCallback('OnClick', sortBy('rank'));
+    rank:SetCallback('OnClick', order(self, 'rankId'));
     self.frame:AddChild(rank);
 
     rank:SetPoint('TOPLEFT', class.frame, 'TOPRIGHT', 0, 0);
@@ -196,7 +205,7 @@ local function makeHeaders(self)
     pr:SetJustifyV('MIDDLE');
     pr:SetColor(ExG:ClassColor('SYSTEM'));
     pr:SetText(L['PR']);
-    pr:SetCallback('OnClick', sortBy('pr'));
+    pr:SetCallback('OnClick', order(self, 'pr'));
     self.frame:AddChild(pr);
 
     pr:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -30, -90);
@@ -210,7 +219,7 @@ local function makeHeaders(self)
     gp:SetJustifyV('MIDDLE');
     gp:SetColor(ExG:ClassColor('SYSTEM'));
     gp:SetText(L['GP']);
-    gp:SetCallback('OnClick', sortBy('gp'));
+    gp:SetCallback('OnClick', order(self, 'gp'));
     self.frame:AddChild(gp);
 
     gp:SetPoint('TOPRIGHT', pr.frame, 'TOPLEFT');
@@ -223,19 +232,24 @@ local function makeHeaders(self)
     ep:SetJustifyH('CENTER');
     ep:SetJustifyV('MIDDLE');
     ep:SetColor(ExG:ClassColor('SYSTEM'));
-    ep:SetText(L['GP']);
-    ep:SetCallback('OnClick', sortBy('ep'));
+    ep:SetText(L['EP']);
+    ep:SetCallback('OnClick', order(self, 'ep'));
     self.frame:AddChild(ep);
 
     ep:SetPoint('TOPRIGHT', gp.frame, 'TOPLEFT');
 end
 
-local function makeRow(self)
+local function renderItem(self, item)
+    if not item then
+        return;
+    end
+
     local row = AceGUI:Create('SimpleGroup');
     row:SetFullWidth(true);
     row:SetHeight(20);
     row:SetLayout(nil);
     row:SetAutoAdjustHeight(false);
+    row.frame:EnableMouse(true);
 
     local highlight = row.frame:CreateTexture(nil, 'HIGHLIGHT');
     highlight:SetTexture('Interface\\Buttons\\UI-Listbox-Highlight');
@@ -249,9 +263,12 @@ local function makeRow(self)
     row.name = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
     row.name:SetFont(DEFAULT_FONT, 10);
     row.name:ClearAllPoints();
-    row.name:SetAllPoints();
+    row.name:SetPoint('TOPLEFT', 2, 0);
+    row.name:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 160, 0);
     row.name:SetJustifyH('LEFT');
     row.name:SetJustifyV('MIDDLE');
+    row.name:SetVertexColor(ExG:ClassColor(item.class));
+    row.name:SetText(item.name);
 
     row.rank = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
     row.rank:SetFont(DEFAULT_FONT, 10);
@@ -260,6 +277,8 @@ local function makeRow(self)
     row.rank:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 260, 0);
     row.rank:SetJustifyH('CENTER');
     row.rank:SetJustifyV('MIDDLE');
+    row.rank:SetVertexColor(ExG:ClassColor(item.class));
+    row.rank:SetText(item.rank);
 
     row.pr = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
     row.pr:SetFont(DEFAULT_FONT, 10);
@@ -268,6 +287,8 @@ local function makeRow(self)
     row.pr:SetPoint('BOTTOMLEFT', row.frame, 'BOTTOMRIGHT', -50, 0);
     row.pr:SetJustifyH('CENTER');
     row.pr:SetJustifyV('MIDDLE');
+    row.pr:SetVertexColor(ExG:ClassColor(item.class));
+    row.pr:SetText(item.pr);
 
     row.gp = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
     row.gp:SetFont(DEFAULT_FONT, 10);
@@ -276,6 +297,8 @@ local function makeRow(self)
     row.gp:SetPoint('BOTTOMLEFT', row.pr, 'BOTTOMLEFT', -50, 0);
     row.gp:SetJustifyH('CENTER');
     row.gp:SetJustifyV('MIDDLE');
+    row.gp:SetVertexColor(ExG:ClassColor(item.class));
+    row.gp:SetText(item.gp);
 
     row.ep = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
     row.ep:SetFont(DEFAULT_FONT, 10);
@@ -284,42 +307,23 @@ local function makeRow(self)
     row.ep:SetPoint('BOTTOMLEFT', row.gp, 'BOTTOMLEFT', -50, 0);
     row.ep:SetJustifyH('CENTER');
     row.ep:SetJustifyV('MIDDLE');
-
-    row.frame:Hide();
-end
-
-local function renderItem(row, item)
-    if not item then
-        row.frame:Hide();
-
-        return;
-    end
-
-    row.name:SetVertexColor(ExG:ClassColor(item.class));
-    row.name:SetText(item.name);
-    row.rank:SetVertexColor(ExG:ClassColor(item.class));
-    row.rank:SetText(item.rank);
     row.ep:SetVertexColor(ExG:ClassColor(item.class));
     row.ep:SetText(item.ep);
-    row.gp:SetVertexColor(ExG:ClassColor(item.class));
-    row.gp:SetText(item.gp);
-    row.pr:SetVertexColor(ExG:ClassColor(item.class));
-    row.pr:SetText(item.pr);
 
-    row.frame:Show();
+    row.OnRelease = function(self)
+        if self.name then self.name:ClearAllPoints(); self.name = nil; end
+        if self.rank then self.rank:ClearAllPoints(); self.rank = nil; end
+        if self.pr then self.pr:ClearAllPoints(); self.pr = nil; end
+        if self.gp then self.gp:ClearAllPoints(); self.gp = nil; end
+        if self.ep then self.ep:ClearAllPoints(); self.ep = nil; end
+    end;
 end
 
 local function renderItems(self)
-    local diff = #self[self.current] - #self.panes;
+    self.list:ReleaseChildren();
 
-    if diff > 0 then
-        for i = 1, diff do
-            makeRow(self);
-        end
-    end
-
-    for i, row in ipairs(self.panes) do
-        renderItem(row, self[self.current][i]);
+    for i, v in ipairs(self[self.current]) do
+        renderItem(self, v);
     end
 end
 
@@ -352,10 +356,6 @@ function ExG.RosterFrame:Create()
     self.list:SetLayout('List');
 
     group:AddChild(self.list);
-
-    for i = 1, GetNumGuildMembers() do
-        makeRow(self);
-    end
 end
 
 function ExG.RosterFrame:Show()
