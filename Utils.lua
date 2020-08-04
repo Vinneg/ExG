@@ -401,10 +401,12 @@ function ExG:SetEG(info, ep, gp)
 
     ep, gp = tonumber(ep) or store().baseEP, max(tonumber(gp) or store().baseGP, store().baseGP);
 
+    local res = toString(info.officerNote, ep, gp);
+
     if store().debug then
-        self:Print(L['ExG SetEG'](info.name, info, ep, gp));
+        self:Print('New notes set for ', info.name, ': ', res);
     else
-        GuildRosterSetOfficerNote(info.index, toString(info.officerNote, ep, gp));
+        GuildRosterSetOfficerNote(info.index, res);
     end
 
     return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100, };

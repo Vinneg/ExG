@@ -81,7 +81,7 @@ function ExG:ClearHistory()
 end
 
 function ExG:GuidEG()
-    local ep, gp = store().mass.guildEp, store().mass.guildGp;
+    local ep, gp, desc = store().mass.guildEp, store().mass.guildGp, store().mass;
 
     if (ep or 0) == 0 or (gp or 0) == 0 then
         return;
@@ -110,16 +110,14 @@ function ExG:GuidEG()
         local st = dt + i / 1000;
 
         local name, _, _, _, _, _, _, officerNote, _, _, class = GetGuildRosterInfo(i);
-        local info = { index = i, name = name, class = class, officerNote = officerNote };
+        local info = { index = i, name = Ambiguate(name, 'all'), class = class, officerNote = officerNote };
 
-        name = Ambiguate(name, 'all');
-
-        if name then
+        if info.name then
             local old = self:GetEG(officerNote);
             local new = self:SetEG(info, old.ep + ep, old.gp + gp);
 
             details[st] = {
-                target = { name = name, class = class, },
+                target = { name = info.name, class = info.class, },
                 ep = { before = old.ep, after = new.ep, };
                 gp = { before = old.gp, after = new.gp, };
                 dt = st,
@@ -133,7 +131,7 @@ function ExG:GuidEG()
 end
 
 function ExG:RaidEG()
-    local ep, gp = store().mass.guildEp, store().mass.guildGp;
+    local ep, gp = store().mass.raidEp, store().mass.raidGp;
 
     if (ep or 0) == 0 or (gp or 0) == 0 then
         return;
@@ -162,16 +160,14 @@ function ExG:RaidEG()
         local st = dt + i / 1000;
 
         local name, _, _, _, _, _, _, officerNote, _, _, class = GetGuildRosterInfo(i);
-        local info = { index = i, name = name, class = class, officerNote = officerNote };
+        local info = { index = i, name = Ambiguate(name, 'all'), class = class, officerNote = officerNote };
 
-        name = Ambiguate(name, 'all');
-
-        if name then
+        if info.name then
             local old = self:GetEG(officerNote);
             local new = self:SetEG(info, old.ep + ep, old.gp + gp);
 
             details[st] = {
-                target = { name = name, class = class, },
+                target = { name = info.name, class = info.class, },
                 ep = { before = old.ep, after = new.ep, };
                 gp = { before = old.gp, after = new.gp, };
                 dt = st,
@@ -185,4 +181,53 @@ function ExG:RaidEG()
 end
 
 function ExG:GuidDecay()
+    local decay = store().mass.decay;
+
+    if (decay or 0) == 0 then
+        return;
+    end
+
+    decay = 1 - decay;
+
+    local dt, offset = time(), 0;
+
+    while store().history.data[dt + offset / 1000] do
+        offset = offset + 1;
+    end
+
+    dt = dt + offset / 1000;
+
+    store().history.data[dt] = {
+        type = 'guild',
+        target = { name = L['ExG History GUILD'], class = 'GUILD', },
+        master = { name = self.state.name, class = self.state.class, },
+        desc = L['ExG Guid Decay'](decay);
+        dt = dt,
+        details = {},
+    };
+
+    local details = {};
+
+    for i = 1, GetNumGuildMembers() do
+        local st = dt + i / 1000;
+
+        local name, _, _, _, _, _, _, officerNote, _, _, class = GetGuildRosterInfo(i);
+        local info = { index = i, name = Ambiguate(name, 'all'), class = class, officerNote = officerNote };
+
+        if info.name then
+            local old = self:GetEG(officerNote);
+            local new = self:SetEG(info, floor(old.ep * decay), floor(old.gp * decay));
+
+            details[st] = {
+                target = { name = info.name, class = info.class, },
+                ep = { before = old.ep, after = new.ep, };
+                gp = { before = old.gp, after = new.gp, };
+                dt = st,
+            };
+        end
+    end
+
+    store().history.data[dt].details = details;
+
+    self:HistoryShare({ data = { [dt] = store().history.data[dt] } });
 end
