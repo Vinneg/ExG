@@ -204,7 +204,7 @@ function ExG:GuildInfo(unit)
     end
 
     for i = 1, GetNumGuildMembers() do
-        local name, rankName, rankIndex, level, classDisplayName, zone, publicNote, officerNote, isOnline, status, class, achievementPoints, achievementRank, isMobile, canSoR, repStanding, GUID = GetGuildRosterInfo(i);
+        local name, rank, rankId, level, classLoc, zone, publicNote, officerNote, isOnline, status, class, achievementPoints, achievementRank, isMobile, canSoR, repStanding, GUID = GetGuildRosterInfo(i);
 
         name = Ambiguate(name, 'all');
 
@@ -212,10 +212,10 @@ function ExG:GuildInfo(unit)
             return {
                 index = i,
                 name = name,
-                rankName = rankName,
-                rankIndex = rankIndex,
+                rank = rank,
+                rankId = rankId,
                 level = level,
-                classDisplayName = classDisplayName,
+                classLoc = classLoc,
                 zone = zone,
                 publicNote = publicNote,
                 officerNote = officerNote,
@@ -287,13 +287,13 @@ function ExG:LinkInfo(link)
         return nil;
     end
 
-    local _, _, color, _, id, _, _, _, _, _, _, _, _, _, name = string.find(link, LINK_PATTERN);
+    local _, _, color, _, _, _, _, _, _, _, _, _, _, _, name = string.find(link, LINK_PATTERN);
 
     if not id then
         return nil;
     end
 
-    local _, type, subtype, loc, texture, classID, subClassID = GetItemInfoInstant(id);
+    local id, type, subtype, loc, texture, classID, subClassID = GetItemInfoInstant(link);
 
     local item = {
         id = id,

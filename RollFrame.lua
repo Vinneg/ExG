@@ -123,7 +123,7 @@ local function getRolls(pane)
         roll.name:SetPoint('TOPLEFT', 0, 0);
         roll.name:SetPoint('BOTTOMRIGHT', -90, 0);
         roll.name:SetJustifyH('LEFT');
-        roll.name:SetJustifyV('CENTER');
+        roll.name:SetJustifyV('MIDDLE');
         roll.name:SetText('Name');
 
         roll.option = roll.pane.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
@@ -132,7 +132,7 @@ local function getRolls(pane)
         roll.option:SetPoint('TOPLEFT', 0, 0);
         roll.option:SetPoint('BOTTOMRIGHT', -90, 0);
         roll.option:SetJustifyH('RIGHT');
-        roll.option:SetJustifyV('CENTER');
+        roll.option:SetJustifyV('MIDDLE');
         roll.option:SetText('Option');
 
         roll.pr = roll.pane.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
@@ -141,7 +141,7 @@ local function getRolls(pane)
         roll.pr:SetPoint('TOPLEFT', roll.pane.frame, 'TOPRIGHT', -80, 0);
         roll.pr:SetPoint('BOTTOMRIGHT', -36, 0);
         roll.pr:SetJustifyH('RIGHT');
-        roll.pr:SetJustifyV('CENTER');
+        roll.pr:SetJustifyV('MIDDLE');
         roll.pr:SetText('PR');
 
         roll.item1 = AceGUI:Create('Icon');
@@ -201,7 +201,7 @@ local function getPane(self, itemId)
         pane.cost:ClearAllPoints();
         pane.cost:SetPoint('LEFT', 20, 0);
         pane.cost:SetJustifyH('LEFT');
-        pane.cost:SetJustifyV('CENTER');
+        pane.cost:SetJustifyV('MIDDLE');
         pane.cost:SetText('0 GP');
 
         pane.count = pane.head.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
@@ -209,7 +209,7 @@ local function getPane(self, itemId)
         pane.count:ClearAllPoints();
         pane.count:SetPoint('RIGHT', -20, 0);
         pane.count:SetJustifyH('RIGHT');
-        pane.count:SetJustifyV('CENTER');
+        pane.count:SetJustifyV('MIDDLE');
         pane.count:SetText('x 1');
 
         pane:AddChild(pane.head);
@@ -471,6 +471,7 @@ function ExG.RollFrame:AddItems(items)
         --
         --            renderItems(self);
         --        else
+        print('RollFrame:AddItems - id = ', id);
         local obj = Item:CreateFromItemID(id);
         obj:ContinueOnItemLoad(function()
             print('ContinueOnItemLoad: id = ', id);

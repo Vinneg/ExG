@@ -358,6 +358,7 @@ ExG.options = {
                     type = 'execute',
                     name = L['Add Guild EPGP'],
                     order = 24,
+                    disabled = function() return not CanEditOfficerNote(); end,
                     func = function() ExG:GuidEG(); end,
                 },
                 guildFiller = {
@@ -396,6 +397,7 @@ ExG.options = {
                     type = 'execute',
                     name = L['Add Raid EPGP'],
                     order = 34,
+                    disabled = function() return not CanEditOfficerNote(); end,
                     func = function() ExG:RaidEG(); end,
                 },
                 raidFiller = {
@@ -417,6 +419,7 @@ ExG.options = {
                     type = 'execute',
                     name = L['Guild Decay'],
                     order = 42,
+                    disabled = function() return not CanEditOfficerNote(); end,
                     func = function() ExG:GuidDecay(); end,
                 },
                 decayFiller = {
@@ -1400,8 +1403,6 @@ function ExG:LOOT_OPENED()
             end
         end
     end
-
-    print('LOOT_OPENED: size = ', self:Size(ids));
 
     if self:Size(ids) == 0 then
         return;
