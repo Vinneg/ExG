@@ -1106,7 +1106,7 @@ function ExG:HandleChatCommand(input)
     if arg == 'ony' then
         self:ENCOUNTER_END(0, 1084, 0, 0, 0, true)
     elseif arg == 'announce' then
-        self:AnnounceItems({ [19438] = 1, [18820] = 2, [19019] = 1, [15138] = 1, [19812] = 2, [22351] = 1, });
+        self:AnnounceItems({ [19438] = { count = 1 }, [18820] = { count = 2 }, [19019] = { count = 1 }, [15138] = { count = 1 }, [19812] = { count = 2 }, [22351] = { count = 1 }, });
     elseif arg == 'his' then
         self.HistoryFrame:Show();
     elseif arg == 'inv' then
@@ -1398,7 +1398,8 @@ function ExG:LOOT_OPENED()
                 local itemData = store().items.data[info.id];
 
                 if info.rarity >= store().items.threshold or itemData then
-                    ids[info.id] = (ids[info.id] or 0) + 1;
+                    ids[info.id] = (ids[info.id] or { count = 0 });
+                    ids[info.id].count = ids[info.id].count + 1;
                 end
             end
         end

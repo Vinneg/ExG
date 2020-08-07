@@ -8,7 +8,7 @@ local store = function() return ExG.store.char; end;
 
 local onEnter = function(owner, link) return function() GameTooltip:SetOwner(owner, 'ANCHOR_RIGHT'); GameTooltip:SetHyperlink(link); GameTooltip:Show(); end; end;
 local onLeave = function() return GameTooltip:Hide(); end;
-local onClick = function(item) return function() ExG:AnnounceItems({ item }); end; end;
+local onClick = function(itemId) return function() ExG:AnnounceItems({ [itemId] = { count = 1 } }); end; end;
 
 local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
 
