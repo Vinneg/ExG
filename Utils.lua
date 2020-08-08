@@ -3,6 +3,12 @@ local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 
 local store = function() return ExG.store.char; end;
 
+local function getEG(ep, gp)
+    local resEp, resGp = tonumber(ep) or store().baseEP, tonumber(gp) or store().baseGP;
+
+    return max(resEp, store().baseEP), max(resGp, store().baseGP);
+end
+
 local function toString(offNote, ep, gp)
     local newEPGP = 'cep{' .. ep .. ',' .. gp .. '}';
 
@@ -375,21 +381,9 @@ end
 function ExG:GetEG(offNote)
     local ep, gp;
 
-    if not offNote then
-        ep, gp = store().baseEP, store().baseGP;
+    local ep, gp = string.match(offNote or '', 'cep{(-?%d+%.?%d*),(-?%d+%.?%d*)}');
 
-        return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100, };
-    end
-
-    local ep, gp = string.match(offNote, 'cep{(-?%d+%.?%d*),(-?%d+%.?%d*)}');
-
-    if ep and gp then
-        ep, gp = max(tonumber(ep) or store().baseEP, store().baseEP), max(tonumber(gp) or store().baseGP, store().baseGP);
-
-        return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100, };
-    end
-
-    ep, gp = store().baseEP, store().baseGP;
+    ep, gp = getEG(ep, gp);
 
     return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100, };
 end
@@ -399,7 +393,7 @@ function ExG:SetEG(info, ep, gp)
         return;
     end
 
-    local newEP, newGp = max(tonumber(ep) or store().baseEP, store().baseEP), max(tonumber(gp) or store().baseGP, store().baseGP);
+    local newEP, newGp = getEG(ep, gp);
 
     local res = toString(info.officerNote, newEP, newGp);
 
