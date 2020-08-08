@@ -161,7 +161,7 @@ ExG.defaults = {
         chars = {},
     },
     char = {
-        baseEP = 10,
+        baseEP = 0,
         baseGP = 10,
         debug = false,
         showGp = true,

@@ -4,7 +4,7 @@ local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 local store = function() return ExG.store.char; end;
 
 local function toString(offNote, ep, gp)
-    local newEPGP = 'cep{' .. (tonumber(ep) or store().baseEP) .. ',' .. (tonumber(gp) or store().baseGP) .. '}';
+    local newEPGP = 'cep{' .. ep .. ',' .. gp .. '}';
 
     if not offNote then
         return newEPGP;
@@ -384,7 +384,7 @@ function ExG:GetEG(offNote)
     local ep, gp = string.match(offNote, 'cep{(-?%d+%.?%d*),(-?%d+%.?%d*)}');
 
     if ep and gp then
-        ep, gp = tonumber(ep) or store().baseEP, max(tonumber(gp) or store().baseGP, store().baseGP);
+        ep, gp = max(tonumber(ep) or store().baseEP, store().baseEP), max(tonumber(gp) or store().baseGP, store().baseGP);
 
         return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100, };
     end
@@ -399,9 +399,9 @@ function ExG:SetEG(info, ep, gp)
         return;
     end
 
-    ep, gp = tonumber(ep) or store().baseEP, max(tonumber(gp) or store().baseGP, store().baseGP);
+    local newEP, newGp = max(tonumber(ep) or store().baseEP, store().baseEP), max(tonumber(gp) or store().baseGP, store().baseGP);
 
-    local res = toString(info.officerNote, ep, gp);
+    local res = toString(info.officerNote, newEP, newGp);
 
     if store().debug then
         self:Print('New notes set for ', info.name, ': ', res);
@@ -409,7 +409,7 @@ function ExG:SetEG(info, ep, gp)
         GuildRosterSetOfficerNote(info.index, res);
     end
 
-    return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100, };
+    return { ep = newEP, gp = newGp, pr = floor(newEP * 100 / newGp) / 100, };
 end
 
 function ExG:CalcGP(linkOrId)
