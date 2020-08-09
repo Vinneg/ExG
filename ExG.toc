@@ -8,6 +8,7 @@
 embeds.xml
 locale\locale.xml
 Core.lua
+Commons.lua
 Utils.lua
 RollFrame.lua
 RosterFrame.lua

@@ -39,7 +39,7 @@ local LOCS = {
     INVTYPE_BODY = { 4 },
     INVTYPE_CHEST = { 5 },
     INVTYPE_ROBE = { 5 },
-    INVTYPE_WAIST = { 5 },
+    INVTYPE_WAIST = { 6 },
     INVTYPE_LEGS = { 7 },
     INVTYPE_FEET = { 8 },
     INVTYPE_WRIST = { 9 },
@@ -393,9 +393,9 @@ function ExG:SetEG(info, ep, gp)
         return;
     end
 
-    local newEP, newGp = getEG(ep, gp);
+    local newEp, newGp = getEG(ep, gp);
 
-    local res = toString(info.officerNote, newEP, newGp);
+    local res = toString(info.officerNote, newEp, newGp);
 
     if store().debug then
         self:Print('New notes set for ', info.name, ': ', res);
@@ -403,7 +403,7 @@ function ExG:SetEG(info, ep, gp)
         GuildRosterSetOfficerNote(info.index, res);
     end
 
-    return { ep = newEP, gp = newGp, pr = floor(newEP * 100 / newGp) / 100, };
+    return { ep = newEp, gp = newGp, pr = floor(newEp * 100 / newGp) / 100, };
 end
 
 function ExG:CalcGP(linkOrId)

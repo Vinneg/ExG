@@ -1180,7 +1180,7 @@ function ExG:AnnounceItems(ids)
         local hasOne = self.RollFrame.items[id];
 
         if not hasOne then
-            items[id] = v;
+            items[id] = v.count or 0;
         end
     end
 
@@ -1300,8 +1300,6 @@ function ExG:HistoryShare(source, target)
 
     if target then
         self:SendCommMessage(self.messages.prefix.share, data, self.messages.whisper, target);
-    elseif store().debug then
-        self:SendCommMessage(self.messages.prefix.share, data, self.messages.whisper, self.state.name);
     else
         self:SendCommMessage(self.messages.prefix.share, data, self.messages.guild);
     end
@@ -1334,7 +1332,7 @@ function ExG:ENCOUNTER_END(_, id, _, _, _, success)
 
     local boss = store().bosses[id];
 
-    if not boss then
+    if not (boss and boss.enable) then
         return;
     end
 

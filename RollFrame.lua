@@ -233,6 +233,10 @@ local function getPane(self, itemId)
 
     self.frame:SetWidth(count(self) * (PANE_WIDTH + 5) + 15);
 
+    if count(self) == 0 then
+        self.frame:Hide();
+    end
+
     return pane;
 end
 
@@ -281,13 +285,12 @@ local function renderRolls(self, pane)
             local button = v.option and store().buttons.data[v.option];
             local pr = button and button.roll and v.rnd or ExG:GetEG(info.officerNote).pr;
 
-            v.pr = pr;
-
             tinsert(rolls, { name = v.name, class = v.class, option = v.option, pr = pr, slot1 = v.slot1, slot2 = v.slot2, rnd = v.rnd });
         end
     end
 
-    sort(rolls, function(a, b) if a.option < b.option then return true elseif a.option == b.option then return a.pr < a.pr; end; return false; end);
+    -- TODO
+    sort(rolls, function(a, b) if a.option < b.option then return true elseif a.option == b.option then return a.pr > a.pr; end; return false; end);
 
     for i, v in ipairs(rolls) do
         if i <= MAX_ROLLS then
@@ -471,10 +474,9 @@ function ExG.RollFrame:AddItems(items)
         --
         --            renderItems(self);
         --        else
-        print('RollFrame:AddItems - id = ', id);
         local obj = Item:CreateFromItemID(id);
         obj:ContinueOnItemLoad(function()
-            print('ContinueOnItemLoad: id = ', id);
+            print('RollFrame:AddItems:ContinueOnItemLoad: id = ', id);
 
             local info = ExG:ItemInfo(id);
 
@@ -575,13 +577,13 @@ function ExG.RollFrame:RemoveItem(itemId)
                 pane.frame:Hide();
             end
 
-            self.frame:SetWidth(count(self) * 255 + 15);
+            self.frame:SetWidth(count(self) * (PANE_WIDTH + 5) + 15);
         end
     end
 
     self.items[itemId] = nil;
 
-    self.frame:SetWidth(count(self) * 255 + 15);
+    self.frame:SetWidth(count(self) * (PANE_WIDTH + 5) + 15);
 
     if count(self) == 0 then
         self.frame:Hide();
