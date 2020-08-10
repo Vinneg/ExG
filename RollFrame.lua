@@ -6,6 +6,33 @@ local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 
 local store = function() return ExG.store.char; end;
 
+local btnRoll = function(self, pane, btn, info1, info2)
+    return function()
+        ExG:RollItem({
+            id = pane.itemId,
+            class = ExG.state.class,
+            option = btn.id,
+            slot1 = info1 and info1.link,
+            slot2 = info2 and info2.link,
+            rnd = random(1, 100),
+        });
+    end;
+end
+
+local btnPass = function(self, pane, btn)
+    return function()
+        ExG:RollItem({
+            id = pane.itemId,
+            class = ExG.state.class,
+            option = btn.id,
+        });
+
+        if store().items.closeOnPass and not ExG:IsMl() then
+            self:RemoveItem(pane.itemId);
+        end
+    end
+end
+
 local onEnter = function(owner, link) if link then return function() GameTooltip:SetOwner(owner, 'ANCHOR_RIGHT'); GameTooltip:SetHyperlink(link); GameTooltip:Show(); end; else return function() end; end end;
 local onLeave = function() return GameTooltip:Hide(); end;
 
@@ -241,26 +268,26 @@ local function getPane(self, itemId)
 end
 
 local function renderButons(self, pane, settings)
-    for _, v in pairs(store().buttons.data) do
-        if pane[v.id] then
+    for _, btn in pairs(store().buttons.data) do
+        if pane[btn.id] then
             local enabled = true;
 
-            if settings and v.id ~= 'button6' then
+            if settings and btn.id ~= 'button6' then
                 local class = settings[ExG.state.class] or {};
                 local def = settings['DEFAULT'] or {};
 
-                enabled = class[v.id] or def[v.id];
+                enabled = class[btn.id] or def[btn.id];
             end
 
-            pane[v.id]:SetText(enabled and v.text or '');
-            pane[v.id]:SetDisabled(not enabled);
+            pane[btn.id]:SetText(enabled and btn.text or '');
+            pane[btn.id]:SetDisabled(not enabled);
 
-            if v.id == 'button6' then
-                pane[v.id]:SetCallback('OnClick', function() ExG:RollItem({ id = pane.itemId, class = ExG.state.class, option = v.id, }); if store().items.closeOnPass and not ExG:IsMl() then self:RemoveItem(pane.itemId); end end);
+            if btn.id == 'button6' then
+                pane[btn.id]:SetCallback('OnClick', btnPass(self, pane, btn));
             else
-                local id1, id2 = ExG:Equipped(self.items[pane.itemId].slots);
+                local info1, info2 = ExG:Equipped(self.items[pane.itemId].slots);
 
-                pane[v.id]:SetCallback('OnClick', function() ExG:RollItem({ id = pane.itemId, class = ExG.state.class, option = v.id, slot1 = id1 and id1.link, slot2 = id2 and id2.link, rnd = random(1, 100) }); end);
+                pane[btn.id]:SetCallback('OnClick', btnRoll(self, pane, btn, info1, info2));
             end
         end
     end
@@ -274,7 +301,7 @@ local function renderRolls(self, pane)
             pane.rolls[i].pane.frame:Hide();
         end
 
-        return
+        return;
     end
 
     local rolls = {};
