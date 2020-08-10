@@ -77,26 +77,26 @@ local function getButtons(self, pane)
 
     local btns, last = {}, nil;
 
-    for _, v in pairs(store().buttons.data) do
-        if v.enabled then
-            tinsert(btns, v);
+    for _, btn in pairs(store().buttons.data) do
+        if btn.enabled then
+            tinsert(btns, btn);
         end
     end
 
     sort(btns, function(a, b) return a.id < b.id; end);
 
-    for i, v in ipairs(btns) do
-        pane[v.id] = AceGUI:Create('Button');
-        pane[v.id]:SetText('');
-        pane[v.id]:SetWidth((PANE_WIDTH - 15) / 2);
-        pane[v.id]:SetDisabled(true);
-        pane:AddChild(pane[v.id]);
+    for i, btn in ipairs(btns) do
+        pane[btn.id] = AceGUI:Create('Button');
+        pane[btn.id]:SetText('');
+        pane[btn.id]:SetWidth((PANE_WIDTH - 15) / 2);
+        pane[btn.id]:SetDisabled(true);
+        pane:AddChild(pane[btn.id]);
 
         local point = points.button[i];
 
-        pane[v.id]:SetPoint(point.point, point.frame, point.rel, point.x, point.y);
+        pane[btn.id]:SetPoint(point.point, point.frame, point.rel, point.x, point.y);
 
-        last = pane[v.id];
+        last = pane[btn.id];
     end
 
     if ExG:IsMl() then
@@ -306,17 +306,24 @@ local function renderRolls(self, pane)
 
     local rolls = {};
 
-    for _, v in pairs(item.rolls) do
-        if v.option < 'button6' then
-            local info = ExG:GuildInfo(v.name);
-            local button = v.option and store().buttons.data[v.option];
-            local pr = button and button.roll and v.rnd or ExG:GetEG(info.officerNote).pr;
+    for _, roll in pairs(item.rolls) do
+        if roll.option < 'button6' then
+            local info = ExG:GuildInfo(roll.name);
+            local button = roll.option and store().buttons.data[roll.option];
+            local pr = button and button.roll and roll.rnd or ExG:GetEG(info.officerNote).pr;
 
-            tinsert(rolls, { name = v.name, class = v.class, option = v.option, pr = pr, slot1 = v.slot1, slot2 = v.slot2, rnd = v.rnd });
+            tinsert(rolls, { name = roll.name, class = roll.class, option = roll.option, pr = pr, slot1 = roll.slot1, slot2 = roll.slot2, rnd = roll.rnd });
         end
     end
 
-    sort(rolls, function(a, b) if a.option < b.option then return true; elseif a.option == b.option then return a.pr > b.pr; end; return false; end);
+    sort(rolls, function(a, b)
+        if a.option < b.option then
+            return true;
+        elseif a.option == b.option then
+            return a.pr > b.pr;
+        end;
+        return false;
+    end);
 
     for i = 1, min(#rolls, MAX_ROLLS) do
         local tmp = rolls[i];
