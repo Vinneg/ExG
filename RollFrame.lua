@@ -289,31 +289,30 @@ local function renderRolls(self, pane)
         end
     end
 
-    -- TODO
-    sort(rolls, function(a, b) if a.option < b.option then return true elseif a.option == b.option then return a.pr > a.pr; end; return false; end);
+    sort(rolls, function(a, b) if a.option < b.option then return true; elseif a.option == b.option then return a.pr > b.pr; end; return false; end);
 
-    for i, v in ipairs(rolls) do
-        if i <= MAX_ROLLS then
-            local roll = pane.rolls[i];
-            local button = v.option and store().buttons.data[v.option];
+    for i = 1, min(#rolls, MAX_ROLLS) do
+        local tmp = rolls[i];
 
-            roll.name:SetVertexColor(ExG:ClassColor(v.class));
-            roll.name:SetText(v.name);
-            roll.option:SetText(store().buttons.data[v.option].text);
-            roll.pr:SetText(v.pr);
-            roll.item1:SetImage(v.slot1 and v.slot1.texture);
-            roll.item1:SetCallback('OnEnter', onEnter(roll.item1.frame, v.slot1 and v.slot1.link));
-            roll.item1:SetCallback('OnLeave', onLeave);
-            roll.item2:SetImage(v.slot2 and v.slot2.texture);
-            roll.item2:SetCallback('OnEnter', onEnter(roll.item2.frame, v.slot2 and v.slot2.link));
-            roll.item2:SetCallback('OnLeave', onLeave);
+        local roll = pane.rolls[i];
+        local button = tmp.option and store().buttons.data[tmp.option];
 
-            if ExG:IsMl() then
-                roll.pane.frame:SetScript('OnMouseDown', function() self:GiveItem(v.name, v.class, pane.itemId, v.option); end);
-            end
+        roll.name:SetVertexColor(ExG:ClassColor(tmp.class));
+        roll.name:SetText(tmp.name);
+        roll.option:SetText(store().buttons.data[tmp.option].text);
+        roll.pr:SetText(tmp.pr);
+        roll.item1:SetImage(tmp.slot1 and tmp.slot1.texture);
+        roll.item1:SetCallback('OnEnter', onEnter(roll.item1.frame, tmp.slot1 and tmp.slot1.link));
+        roll.item1:SetCallback('OnLeave', onLeave);
+        roll.item2:SetImage(tmp.slot2 and tmp.slot2.texture);
+        roll.item2:SetCallback('OnEnter', onEnter(roll.item2.frame, tmp.slot2 and tmp.slot2.link));
+        roll.item2:SetCallback('OnLeave', onLeave);
 
-            roll.pane.frame:Show();
+        if ExG:IsMl() then
+            roll.pane.frame:SetScript('OnMouseDown', function() self:GiveItem(tmp.name, tmp.class, pane.itemId, tmp.option); end);
         end
+
+        roll.pane.frame:Show();
     end
 
     for i = #rolls + 1, #pane.rolls do
