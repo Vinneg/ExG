@@ -1184,6 +1184,10 @@ function ExG:AnnounceItems(ids)
         end
     end
 
+    if self.Size(items) == 0 then
+        return;
+    end
+
     local data = Serializer:Serialize(items, settings, store().buttons, store().items.formula);
 
     if store().debug and not IsInRaid() then
@@ -1363,14 +1367,17 @@ function ExG:ENCOUNTER_END(_, id, _, _, _, success)
 
             local st = dt + i / 1000;
             local info = self:GuildInfo(name);
-            local old = self:GetEG(info.officerNote);
-            local new = self:SetEG(info, old.ep + boss.ep, old.gp);
 
-            details[st] = {
-                target = { name = name, class = class, },
-                ep = { before = old.ep, after = new.ep, },
-                dt = st,
-            };
+            if info then
+                local old = self:GetEG(info.officerNote);
+                local new = self:SetEG(info, old.ep + boss.ep, old.gp);
+
+                details[st] = {
+                    target = { name = name, class = class, },
+                    ep = { before = old.ep, after = new.ep, },
+                    dt = st,
+                };
+            end
         end
     end
 

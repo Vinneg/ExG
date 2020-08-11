@@ -398,7 +398,7 @@ function ExG:SetEG(info, ep, gp)
     local res = toString(info.officerNote, newEp, newGp);
 
     if store().debug then
-        self:Print('New notes set for ', info.name, ': ', res);
+        self:Print('Set EG for ', info.name, ': ', info.officerNote, ' -> ', res);
     else
         GuildRosterSetOfficerNote(info.index, res);
     end
