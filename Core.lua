@@ -1365,10 +1365,10 @@ function ExG:ENCOUNTER_END(_, id, _, _, _, success)
         if name then
             name = Ambiguate(name, 'all');
 
-            local st = dt + i / 1000;
             local info = self:GuildInfo(name);
 
             if info then
+                local st = dt + i / 1000;
                 local old = self:GetEG(info.officerNote);
                 local new = self:SetEG(info, old.ep + boss.ep, old.gp);
 
