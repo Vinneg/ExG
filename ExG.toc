@@ -12,6 +12,7 @@ Commons.lua
 Utils.lua
 RollFrame.lua
 RosterFrame.lua
+UnitFrame.lua
 InventoryFrame.lua
 HistoryFrame.lua
 ItemsFrame.lua

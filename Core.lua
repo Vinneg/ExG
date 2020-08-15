@@ -296,12 +296,12 @@ ExG.options = {
     args = {
         general = {
             type = 'group',
-            name = L['ExG General'],
+            name = L['General'],
             order = 0,
             args = {
                 baseEP = {
                     type = 'input',
-                    name = L['ExG BaseEP'],
+                    name = L['Base EP'],
                     order = 0,
                     validate = isNumber,
                     get = function() return tostring(store().baseEP); end,
@@ -309,7 +309,7 @@ ExG.options = {
                 },
                 baseGP = {
                     type = 'input',
-                    name = L['ExG BaseGP'],
+                    name = L['Base GP'],
                     order = 10,
                     validate = isNumber,
                     get = function() return tostring(store().baseGP); end,
@@ -1145,6 +1145,7 @@ function ExG:OnInitialize()
     self.InventoryFrame:Create();
     self.HistoryFrame:Create();
     self.ItemsFrame:Create();
+    self.UnitFrame:Create();
 
     self:RegisterEvent('ENCOUNTER_END');
     self:RegisterEvent('LOOT_OPENED');

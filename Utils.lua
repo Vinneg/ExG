@@ -9,17 +9,17 @@ local function getEG(ep, gp)
     return max(resEp, store().baseEP), max(resGp, store().baseGP);
 end
 
-local function toString(offNote, ep, gp)
+local function toString(info, ep, gp)
     local newEPGP = 'cep{' .. ep .. ',' .. gp .. '}';
 
-    if not offNote then
+    if (info.officerNote or '') == '' then
         return newEPGP;
     end
 
-    local newOffNote, subs = string.gsub(offNote, 'cep{[^}]*}', newEPGP);
+    local newOffNote, subs = string.gsub(info.officerNote, 'cep{[^}]*}', newEPGP);
 
     if subs == 0 then
-        newOffNote = newEPGP + offNote;
+        newOffNote = newEPGP .. info.officerNote;
     end
 
     return newOffNote;
@@ -395,7 +395,7 @@ function ExG:SetEG(info, ep, gp)
 
     local newEp, newGp = getEG(ep, gp);
 
-    local res = toString(info.officerNote, newEp, newGp);
+    local res = toString(info, newEp, newGp);
 
     if store().debug then
         self:Print('Set EG for ', info.name, ': ', info.officerNote, ' -> ', res);

@@ -28,7 +28,6 @@ ExG.RosterFrame = {
     frame = nil,
     list = nil,
     current = 'guild',
-    panes = {},
     guild = {},
     raid = {},
     order = {},
@@ -258,7 +257,9 @@ local function renderItem(self, item)
 
     self.list:AddChild(row);
 
-    tinsert(self.panes, row);
+    if CanEditOfficerNote() then
+        row.frame:SetScript('OnMouseDown', function() ExG.UnitFrame:Show(item.name); end);
+    end
 
     row.name = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
     row.name:SetFont(DEFAULT_FONT, 10);

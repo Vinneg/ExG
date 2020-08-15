@@ -215,7 +215,6 @@ end
 function ExG.ItemsFrame:Create()
     self.frame = AceGUI:Create('Window');
     self.frame:SetTitle(L['Items Frame'](self.page, totalPages(self)));
-    self.frame:SetWidth(500);
     self.frame:SetWidth(750);
     self.frame:SetLayout(nil);
     self.frame:SetCallback('OnClose', function() self.data = {}; self.frame:Hide(); end)
