@@ -3,7 +3,7 @@ local L = LibStub('AceLocale-3.0'):NewLocale('ExG', 'ruRU');
 L['ExG'] = "Extended EPGP";
 L['Roll Frame'] = 'Розыгрыш';
 L['Inventory Frame'] = 'Инвентарь';
-L['History Frame'] = function(page, total) return 'История. Страница ' .. (page or 0) .. ' из ' .. (total or 0) .. '.' end;
+L['History Frame'] = function(page, total) return format('История. Страница %d из %d.', (page or 0) + 1, total or 0); end;
 L['Items Frame'] = function(page, total) return 'Настройки предметов. Страница ' .. (page or 0) .. ' из ' .. (total or 0) .. '.' end;
 L['Usage:'] = 'Использование:';
 L['to open Options frame'] = 'открыть панель опций';
@@ -19,7 +19,7 @@ L['ExG Guid EG'] = function(ep, gp, desc) local e; if (ep or 0) ~= 0 then e = (e
 L['Add Raid EPGP'] = 'Добавить EPGP Рейду';
 L['ExG Raid EG'] = function(ep, gp, desc) local e; if (ep or 0) ~= 0 then e = (ep < 0 and ' ' or ' +') .. (ep or 0) .. ' EP'; end local g; if (gp or 0) ~= 0 then g = (gp < 0 and ' -' or ' +') .. (gp or 0) .. ' GP'; end return 'EPGP Рейда' .. (e or '') .. (g or '') .. ' (' .. (desc or 'по приколу') .. ')'; end;
 L['Guild Decay'] = 'Гильдейское понижение';
-L['ExG Guid Decay'] = function(decay) return 'Гильдейское понижение EPGP на ' .. (decay or '0%'); end;
+L['Guild Decay Desc'] = function(decay) return format('Гильдейское понижение EPGP на %d%%', (decay or 0) * 100); end;
 L['ExG Items'] = 'Предметы';
 L['Open Items Settings'] = 'Открыть настройки предметов';
 L['Items import text'] = 'Текст для импорта';

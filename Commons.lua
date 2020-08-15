@@ -201,7 +201,7 @@ function ExG:GuidDecay()
         type = 'guild',
         target = { name = L['ExG History GUILD'], class = 'GUILD', },
         master = { name = self.state.name, class = self.state.class, },
-        desc = L['ExG Guid Decay'](decay);
+        desc = L['Guild Decay Desc'](store().mass.decay);
         dt = dt,
         details = {},
     };
