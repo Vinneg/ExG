@@ -14,6 +14,7 @@ L['Base GP'] = true;
 L['Cancel'] = true;
 L['Ok'] = true;
 L['ExG Show GP'] = 'Show GP values on tooltips';
+L['Unit Adjust Desc'] = function(type, diff, reason) return format('Individual %s%d %s (%s)', diff < 0 and '' or '+', diff, type or 'EP', (reason or '') == '' and 'for fun' or reason); end;
 L['ExG Tooltip GP value'] = function(gp) return format('GP value: %d', gp or 0); end;
 L['Mass Operations'] = true;
 L['Add Guild EPGP'] = true;

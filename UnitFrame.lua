@@ -14,57 +14,60 @@ ExG.UnitFrame = {
 };
 
 local function makeFrame(self)
-    local ep = AceGUI:Create('CheckBox');
-    ep:SetLabel(L['EP']);
-    self.frame:AddChild(ep);
+    self.ep = AceGUI:Create('CheckBox');
+    self.ep:SetLabel(L['EP']);
+    self.ep:SetValue(true);
+    self.ep:SetCallback('OnValueChanged', function(value) self.gp:SetValue(not value.checked); end);
+    self.frame:AddChild(self.ep);
 
-    ep:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 5, -30);
-    ep:SetPoint('BOTTOMRIGHT', self.frame.frame, 'TOPRIGHT', -5, -50);
+    self.ep:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 5, -30);
+    self.ep:SetPoint('BOTTOMRIGHT', self.frame.frame, 'TOPRIGHT', -5, -50);
 
-    local gp = AceGUI:Create('CheckBox');
-    gp:SetLabel(L['GP']);
-    self.frame:AddChild(gp);
+    self.gp = AceGUI:Create('CheckBox');
+    self.gp:SetLabel(L['GP']);
+    self.gp:SetCallback('OnValueChanged', function(value) self.ep:SetValue(not value.checked); end);
+    self.frame:AddChild(self.gp);
 
-    gp:SetPoint('TOPLEFT', ep.frame, 'BOTTOMLEFT', 0, -5);
-    gp:SetPoint('BOTTOMRIGHT', ep.frame, 'BOTTOMRIGHT', 0, -25);
+    self.gp:SetPoint('TOPLEFT', self.ep.frame, 'BOTTOMLEFT', 0, -5);
+    self.gp:SetPoint('BOTTOMRIGHT', self.ep.frame, 'BOTTOMRIGHT', 0, -25);
 
-    local amount = AceGUI:Create('EditBox');
-    amount:SetWidth(120);
-    amount:SetHeight(25);
-    amount:SetLabel(L['Amount']);
-    self.frame:AddChild(amount);
+    self.amount = AceGUI:Create('EditBox');
+    self.amount:SetWidth(120);
+    self.amount:SetHeight(25);
+    self.amount:SetLabel(L['Amount']);
+    self.frame:AddChild(self.amount);
 
-    amount:SetPoint('TOPLEFT', gp.frame, 'BOTTOMLEFT', 0, -5);
-    amount:SetPoint('RIGHT', gp.frame, 'RIGHT', 0, 0);
+    self.amount:SetPoint('TOPLEFT', self.gp.frame, 'BOTTOMLEFT', 0, -5);
+    self.amount:SetPoint('RIGHT', self.gp.frame, 'RIGHT', 0, 0);
 
-    local reason = AceGUI:Create('EditBox');
-    reason:SetWidth(120);
-    reason:SetHeight(25);
-    reason:SetLabel(L['Reason']);
-    self.frame:AddChild(reason);
+    self.reason = AceGUI:Create('EditBox');
+    self.reason:SetWidth(120);
+    self.reason:SetHeight(25);
+    self.reason:SetLabel(L['Reason']);
+    self.frame:AddChild(self.reason);
 
-    reason:SetPoint('TOPLEFT', amount.frame, 'BOTTOMLEFT', 0, -5);
-    reason:SetPoint('RIGHT', amount.frame, 'RIGHT', 0, 0);
+    self.reason:SetPoint('TOPLEFT', self.amount.frame, 'BOTTOMLEFT', 0, -5);
+    self.reason:SetPoint('RIGHT', self.amount.frame, 'RIGHT', 0, 0);
 
-    local apply = AceGUI:Create('Button');
-    apply:SetWidth(120);
-    apply:SetHeight(25);
-    apply:SetText(L['Ok']);
-    apply:SetCallback('OnClick', function() self:AdjustEG(); end);
-    self.frame:AddChild(apply);
+    self.apply = AceGUI:Create('Button');
+    self.apply:SetWidth(120);
+    self.apply:SetHeight(25);
+    self.apply:SetText(L['Ok']);
+    self.apply:SetCallback('OnClick', function() self:AdjustEG(); end);
+    self.frame:AddChild(self.apply);
 
-    apply:SetPoint('BOTTOMLEFT', self.frame.frame, 'BOTTOMLEFT', 5, 5);
-    apply:SetPoint('TOPRIGHT', self.frame.frame, 'BOTTOMLEFT', 120, 30);
+    self.apply:SetPoint('BOTTOMLEFT', self.frame.frame, 'BOTTOMLEFT', 5, 5);
+    self.apply:SetPoint('TOPRIGHT', self.frame.frame, 'BOTTOMLEFT', 120, 30);
 
-    local cancel = AceGUI:Create('Button');
-    cancel:SetWidth(120);
-    cancel:SetHeight(25);
-    cancel:SetText(L['Cancel']);
-    cancel:SetCallback('OnClick', function() self.frame:Hide(); end);
-    self.frame:AddChild(cancel);
+    self.cancel = AceGUI:Create('Button');
+    self.cancel:SetWidth(120);
+    self.cancel:SetHeight(25);
+    self.cancel:SetText(L['Cancel']);
+    self.cancel:SetCallback('OnClick', function() self.frame:Hide(); end);
+    self.frame:AddChild(self.cancel);
 
-    cancel:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -5, 5);
-    cancel:SetPoint('TOPLEFT', self.frame.frame, 'BOTTOMRIGHT', -120, 30);
+    self.cancel:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -5, 5);
+    self.cancel:SetPoint('TOPLEFT', self.frame.frame, 'BOTTOMRIGHT', -120, 30);
 end
 
 function ExG.UnitFrame:Create()
@@ -95,6 +98,16 @@ function ExG.UnitFrame:Hide()
 end
 
 function ExG.UnitFrame:AdjustEG()
+    if not self.unit then
+        return;
+    end
+
+    local diff = tonumber(self.amount:GetText());
+
+    if not diff then
+        return;
+    end
+
     local info = ExG:GuildInfo(self.unit);
 
     if not info then
@@ -102,7 +115,41 @@ function ExG.UnitFrame:AdjustEG()
     end
 
     local old = ExG:GetEG(info.officerNote);
-    local new = ExG:SetEG(info, old.ep + self.ep, old.gp + self.gp);
+    local new, type;
+
+    if self.ep:GetValue() then
+        type = 'EP';
+        new = ExG:SetEG(info, old.ep + diff, old.gp);
+    elseif self.gp:GetValue() then
+        type = 'GP';
+        new = ExG:SetEG(info, old.ep, old.gp + diff);
+    end
+
+    if not new then
+        return;
+    end
+
+    print('reason = ', self.reason:GetText());
+
+    local dt, offset = time(), 0;
+
+    while store().history.data[dt + offset / 1000] do
+        offset = offset + 1;
+    end
+
+    dt = dt + offset / 1000;
+
+    store().history.data[dt] = {
+        type = 'unit',
+        target = { name = self.unit, class = info.class, },
+        master = { name = ExG.state.name, class = ExG.state.class, },
+        desc = L['Unit Adjust Desc'](type, diff, self.reason:GetText());
+        ep = { before = old.ep, after = new.ep, };
+        gp = { before = old.gp, after = new.gp, };
+        dt = dt,
+    };
+
+    ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
 
     self.frame:Hide();
 end

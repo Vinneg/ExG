@@ -146,7 +146,7 @@ function ExG:RaidEG()
     dt = dt + offset / 1000;
 
     store().history.data[dt] = {
-        type = 'guild',
+        type = 'raid',
         target = { name = L['ExG History RAID'], class = 'RAID', },
         master = { name = self.state.name, class = self.state.class, },
         desc = L['ExG Raid EG'](ep, gp);

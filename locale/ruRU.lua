@@ -14,6 +14,7 @@ L['Base GP'] = 'Базовое GP';
 L['Cancel'] = 'Отмена';
 L['Ok'] = 'Ок';
 L['ExG Show GP'] = 'Показывать стоимость GP в подсказках';
+L['Unit Adjust Desc'] = function(type, diff, reason) return format('Индивидуально %s%d %s (%s)', diff < 0 and '' or '+', diff, type or 'EP', (reason or '') == '' and 'по приколу' or reason); end;
 L['ExG Tooltip GP value'] = function(gp) return 'Стоимость GP: ' .. (gp or 0) end;
 L['Mass Operations'] = 'Массовые операции';
 L['Add Guild EPGP'] = 'Добавить EPGP Гильдии';
