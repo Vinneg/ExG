@@ -1184,8 +1184,8 @@ function ExG:AnnounceItems(ids)
             items[id] = v.count or 0;
         end
     end
-
-    if self.Size(items) == 0 then
+    
+    if self:Size(items) == 0 then
         return;
     end
 
