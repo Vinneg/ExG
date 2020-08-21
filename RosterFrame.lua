@@ -250,10 +250,12 @@ local function renderItem(self, item)
     row:SetAutoAdjustHeight(false);
     row.frame:EnableMouse(true);
 
-    local highlight = row.frame:CreateTexture(nil, 'HIGHLIGHT');
-    highlight:SetTexture('Interface\\Buttons\\UI-Listbox-Highlight');
-    highlight:SetAllPoints(true);
-    highlight:SetBlendMode('ADD');
+    if not row.highlight then
+        row.highlight = row.frame:CreateTexture(nil, 'HIGHLIGHT');
+        row.highlight:SetTexture('Interface\\Buttons\\UI-Listbox-Highlight');
+        row.highlight:SetAllPoints(true);
+        row.highlight:SetBlendMode('ADD');
+    end
 
     self.list:AddChild(row);
 
@@ -261,63 +263,78 @@ local function renderItem(self, item)
         row.frame:SetScript('OnMouseDown', function() ExG.UnitFrame:Show(item.name); end);
     end
 
-    row.name = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
-    row.name:SetFont(DEFAULT_FONT, 10);
-    row.name:ClearAllPoints();
-    row.name:SetPoint('TOPLEFT', 2, 0);
-    row.name:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 160, 0);
-    row.name:SetJustifyH('LEFT');
-    row.name:SetJustifyV('MIDDLE');
-    row.name:SetVertexColor(ExG:ClassColor(item.class));
+    if not row.name then
+        row.name = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+        row.name:SetFont(DEFAULT_FONT, 10);
+        row.name:ClearAllPoints();
+        row.name:SetPoint('TOPLEFT', 2, 0);
+        row.name:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 160, 0);
+        row.name:SetJustifyH('LEFT');
+        row.name:SetJustifyV('MIDDLE');
+        row.name:SetVertexColor(ExG:ClassColor(item.class));
+    end
+
     row.name:SetText(item.name);
 
-    row.rank = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
-    row.rank:SetFont(DEFAULT_FONT, 10);
-    row.rank:ClearAllPoints();
-    row.rank:SetPoint('TOPLEFT', 160, 0);
-    row.rank:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 260, 0);
-    row.rank:SetJustifyH('CENTER');
-    row.rank:SetJustifyV('MIDDLE');
-    row.rank:SetVertexColor(ExG:ClassColor(item.class));
+    if not row.rank then
+        row.rank = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+        row.rank:SetFont(DEFAULT_FONT, 10);
+        row.rank:ClearAllPoints();
+        row.rank:SetPoint('TOPLEFT', 160, 0);
+        row.rank:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 260, 0);
+        row.rank:SetJustifyH('CENTER');
+        row.rank:SetJustifyV('MIDDLE');
+        row.rank:SetVertexColor(ExG:ClassColor(item.class));
+    end
+
     row.rank:SetText(item.rank);
 
-    row.pr = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
-    row.pr:SetFont(DEFAULT_FONT, 10);
-    row.pr:ClearAllPoints();
-    row.pr:SetPoint('TOPRIGHT');
-    row.pr:SetPoint('BOTTOMLEFT', row.frame, 'BOTTOMRIGHT', -50, 0);
-    row.pr:SetJustifyH('CENTER');
-    row.pr:SetJustifyV('MIDDLE');
-    row.pr:SetVertexColor(ExG:ClassColor(item.class));
+    if not row.pr then
+        row.pr = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+        row.pr:SetFont(DEFAULT_FONT, 10);
+        row.pr:ClearAllPoints();
+        row.pr:SetPoint('TOPRIGHT');
+        row.pr:SetPoint('BOTTOMLEFT', row.frame, 'BOTTOMRIGHT', -50, 0);
+        row.pr:SetJustifyH('CENTER');
+        row.pr:SetJustifyV('MIDDLE');
+        row.pr:SetVertexColor(ExG:ClassColor(item.class));
+    end
+
     row.pr:SetText(item.pr);
 
-    row.gp = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
-    row.gp:SetFont(DEFAULT_FONT, 10);
-    row.gp:ClearAllPoints();
-    row.gp:SetPoint('TOPRIGHT', row.pr, 'TOPLEFT');
-    row.gp:SetPoint('BOTTOMLEFT', row.pr, 'BOTTOMLEFT', -50, 0);
-    row.gp:SetJustifyH('CENTER');
-    row.gp:SetJustifyV('MIDDLE');
-    row.gp:SetVertexColor(ExG:ClassColor(item.class));
+    if not row.gp then
+        row.gp = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+        row.gp:SetFont(DEFAULT_FONT, 10);
+        row.gp:ClearAllPoints();
+        row.gp:SetPoint('TOPRIGHT', row.pr, 'TOPLEFT');
+        row.gp:SetPoint('BOTTOMLEFT', row.pr, 'BOTTOMLEFT', -50, 0);
+        row.gp:SetJustifyH('CENTER');
+        row.gp:SetJustifyV('MIDDLE');
+        row.gp:SetVertexColor(ExG:ClassColor(item.class));
+    end
+
     row.gp:SetText(item.gp);
 
-    row.ep = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
-    row.ep:SetFont(DEFAULT_FONT, 10);
-    row.ep:ClearAllPoints();
-    row.ep:SetPoint('TOPRIGHT', row.gp, 'TOPLEFT');
-    row.ep:SetPoint('BOTTOMLEFT', row.gp, 'BOTTOMLEFT', -50, 0);
-    row.ep:SetJustifyH('CENTER');
-    row.ep:SetJustifyV('MIDDLE');
-    row.ep:SetVertexColor(ExG:ClassColor(item.class));
+    if not row.ep then
+        row.ep = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+        row.ep:SetFont(DEFAULT_FONT, 10);
+        row.ep:ClearAllPoints();
+        row.ep:SetPoint('TOPRIGHT', row.gp, 'TOPLEFT');
+        row.ep:SetPoint('BOTTOMLEFT', row.gp, 'BOTTOMLEFT', -50, 0);
+        row.ep:SetJustifyH('CENTER');
+        row.ep:SetJustifyV('MIDDLE');
+        row.ep:SetVertexColor(ExG:ClassColor(item.class));
+    end
+
     row.ep:SetText(item.ep);
 
-    row.OnRelease = function(self)
-        if self.name then self.name:ClearAllPoints(); self.name = nil; end
-        if self.rank then self.rank:ClearAllPoints(); self.rank = nil; end
-        if self.pr then self.pr:ClearAllPoints(); self.pr = nil; end
-        if self.gp then self.gp:ClearAllPoints(); self.gp = nil; end
-        if self.ep then self.ep:ClearAllPoints(); self.ep = nil; end
-    end;
+    --    row.OnRelease = function(self)
+    --        self.name:ClearAllPoints(); self.name = nil;
+    --        self.rank:ClearAllPoints(); self.rank = nil;
+    --        self.pr:ClearAllPoints(); self.pr = nil;
+    --        self.gp:ClearAllPoints(); self.gp = nil;
+    --        self.ep:ClearAllPoints(); self.ep = nil;
+    --    end;
 end
 
 local function renderItems(self)
