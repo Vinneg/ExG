@@ -301,7 +301,7 @@ function ExG:LinkInfo(link)
         id = id,
         link = link,
         name = name,
-        rarity = RARITY_COLORS[color],
+        rarity = color and RARITY_COLORS[color],
         type = type,
         subtype = subtype,
         loc = loc,
