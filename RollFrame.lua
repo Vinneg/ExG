@@ -282,13 +282,9 @@ local function renderButons(self, pane, settings)
             pane[btn.id]:SetText(enabled and btn.text or '');
             pane[btn.id]:SetDisabled(not enabled);
 
-            if btn.id == 'button6' then
-                pane[btn.id]:SetCallback('OnClick', btnPass(self, pane, btn));
-            else
-                local info1, info2 = ExG:Equipped(self.items[pane.itemId].slots);
+            local info1, info2 = ExG:Equipped(self.items[pane.itemId].slots);
 
-                pane[btn.id]:SetCallback('OnClick', btnRoll(self, pane, btn, info1, info2));
-            end
+            pane[btn.id]:SetCallback('OnClick', btnRoll(self, pane, btn, info1, info2));
         end
     end
 end
@@ -496,21 +492,8 @@ function ExG.RollFrame:AddItems(items)
 
         ExG:AcceptItem(id);
 
-        --        local info = ExG:ItemInfo(id);
-        --
-        --        if info then
-        --            tmp.gp = tmp.gp or ExG:CalcGP(id);
-        --            tmp.name = info.name;
-        --            tmp.loc = info.loc;
-        --            tmp.link = info.link;
-        --            tmp.texture = info.texture;
-        --
-        --            renderItems(self);
-        --        else
         local obj = Item:CreateFromItemID(id);
         obj:ContinueOnItemLoad(function()
-            print('RollFrame:AddItems:ContinueOnItemLoad: id = ', id);
-
             local info = ExG:ItemInfo(id);
 
             local tmp = self.items[id];
@@ -523,7 +506,6 @@ function ExG.RollFrame:AddItems(items)
 
             renderItems(self);
         end);
-        --        end
     end
 end
 

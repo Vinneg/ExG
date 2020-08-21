@@ -295,10 +295,6 @@ function ExG:LinkInfo(link)
 
     local _, _, color, _, _, _, _, _, _, _, _, _, _, _, name = string.find(link, LINK_PATTERN);
 
-    if not id then
-        return nil;
-    end
-
     local id, type, subtype, loc, texture, classID, subClassID = GetItemInfoInstant(link);
 
     local item = {
