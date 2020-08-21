@@ -1103,9 +1103,7 @@ ExG.store = {};
 function ExG:HandleChatCommand(input)
     local arg = strlower(input or '');
 
-    if arg == 'ony' then
-        self:ENCOUNTER_END(0, 1084, 0, 0, 0, true)
-    elseif arg == 'announce' then
+    if arg == 'test' then
         self:AnnounceItems({ [19438] = { count = 1 }, [18820] = { count = 2 }, [19019] = { count = 1 }, [15138] = { count = 1 }, [19812] = { count = 2 }, [22351] = { count = 1 }, });
     elseif arg == 'his' then
         self.HistoryFrame:Show();
