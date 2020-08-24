@@ -354,8 +354,9 @@ function ExG.RosterFrame:Create()
     self.frame:EnableResize(false);
     self.frame:SetWidth(470);
     self.frame:SetHeight(700);
-    self.frame:SetCallback('OnClose', function() self.frame:Hide(); ExG.AdjustFrame:Hide(); ExG.DecayFrame:Hide(); end);
     self.frame:Hide();
+
+    self.frame:SetCallback('OnClose', function() self.frame:Hide(); ExG.AdjustFrame:Hide(); ExG.DecayFrame:Hide(); end);
 
     makeTopLine(self);
     makeFilters(self);
