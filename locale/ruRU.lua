@@ -1,5 +1,15 @@
 local L = LibStub('AceLocale-3.0'):NewLocale('ExG', 'ruRU');
 
+local eg = function(val, postfix)
+    local tmp = tonumber(val);
+
+    if (tmp or 0) == 0 then
+        return '';
+    end
+
+    return format('%s%d %s', tmp < 0 and ' ' or ' +', tmp, strupper(postfix));
+end
+
 L['ExG'] = "Extended EPGP";
 L['Roll Frame'] = 'Розыгрыш';
 L['Inventory Frame'] = 'Инвентарь';
@@ -14,13 +24,13 @@ L['Base GP'] = 'Базовое GP';
 L['Cancel'] = 'Отмена';
 L['Ok'] = 'Ок';
 L['ExG Show GP'] = 'Показывать стоимость GP в подсказках';
-L['Unit Adjust Desc'] = function(type, diff, reason) return format('Индивидуально %s%d %s (%s)', diff < 0 and '' or '+', diff, type or 'EP', (reason or '') == '' and 'по приколу' or reason); end;
+L['Unit Adjust Desc'] = function(type, diff, reason) return format('Индивидуально %s%d %s%s', diff < 0 and '' or '+', diff, type or 'EP', (reason or '') == '' and '' or format(' (%s)', reason)); end;
 L['ExG Tooltip GP value'] = function(gp) return 'Стоимость GP: ' .. (gp or 0) end;
 L['Mass Operations'] = 'Массовые операции';
 L['Add Guild EPGP'] = 'Добавить EPGP Гильдии';
-L['ExG Guid EG'] = function(ep, gp, desc) local e; if (ep or 0) ~= 0 then e = (ep < 0 and ' ' or ' +') .. (ep or 0) .. ' EP'; end local g; if (gp or 0) ~= 0 then g = (gp < 0 and ' -' or ' +') .. (gp or 0) .. ' GP'; end return 'EPGP Гильдии' .. (e or '') .. (g or '') .. ' (' .. (desc or 'по приколу') .. ')'; end;
+L['ExG Guid EG'] = function(ep, gp, desc) return format('EPGP Гильдии %s%s%s', eg(ep, 'EP'), eg(gp, 'GP'), (desc or '') == '' and '' or format(' (%s)', desc)); end;
 L['Add Raid EPGP'] = 'Добавить EPGP Рейду';
-L['ExG Raid EG'] = function(ep, gp, desc) local e; if (ep or 0) ~= 0 then e = (ep < 0 and ' ' or ' +') .. (ep or 0) .. ' EP'; end local g; if (gp or 0) ~= 0 then g = (gp < 0 and ' -' or ' +') .. (gp or 0) .. ' GP'; end return 'EPGP Рейда' .. (e or '') .. (g or '') .. ' (' .. (desc or 'по приколу') .. ')'; end;
+L['ExG Raid EG'] = function(ep, gp, desc) return format('EPGP Рейда %s%s%s', eg(ep, 'EP'), eg(gp, 'GP'), (desc or '') == '' and '' or format(' (%s)', desc)); end;
 L['Guild Decay'] = 'Гильдейское понижение';
 L['Guild Decay Desc'] = function(decay) return format('Гильдейское понижение EPGP на %d%%', (decay or 0) * 100); end;
 L['ExG Items'] = 'Предметы';
@@ -108,7 +118,11 @@ L['ExG Bosses AK40'] = 'Ан\'Кираж';
 L['ExG Bosses NAXX'] = 'Наксрамас';
 L['ExG Bosses OTHER'] = 'Остальные';
 L['ExG History RAID'] = 'Рейд';
+L['RAID'] = 'Рейд';
+L['Raid'] = 'Рейд';
 L['ExG History GUILD'] = 'Гильдия';
+L['GUILD'] = 'Гильдия';
+L['Guild'] = 'Гильдия';
 L['ExG History Boss End'] = function(boss, ep) return 'EP Рейда ' .. (ep < 0 and '' or '+') .. (ep or 0) .. ' за ' .. (boss or 'Неизвестно'); end;
 L['History pulled'] = function(data) return '|cff33ff99Получение истории от ' .. (data.source or 'unknown') .. ' за последние ' .. (data.offset or 0) .. ' дней(дня).|r'; end;
 L['History imported'] = function(data) return '|cff33ff99Загружено ' .. (data.count or 0) .. ' записей истории. От ' .. date('%d.%m %H:%M:%S', data.min) .. ' по ' .. date('%d.%m %H:%M:%S', data.max) .. '.|r'; end;

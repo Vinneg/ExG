@@ -323,111 +323,6 @@ ExG.options = {
                     get = function() return store().showGp; end,
                     set = function(_, value) store().showGp = value; end,
                 },
-                massHeader = {
-                    type = 'header',
-                    name = L['Mass Operations'],
-                    order = 20,
-                },
-                guildEp = {
-                    type = 'input',
-                    name = 'EP',
-                    order = 21,
-                    width = 0.2,
-                    validate = isNumber,
-                    get = function() return tostring(store().mass.guildEp); end,
-                    set = function(_, value) store().mass.guildEp = tonumber(value); end,
-                },
-                guildGp = {
-                    type = 'input',
-                    name = 'GP',
-                    order = 22,
-                    width = 0.2,
-                    validate = isNumber,
-                    get = function() return tostring(store().mass.guildGp); end,
-                    set = function(_, value) store().mass.guildGp = tonumber(value); end,
-                },
-                guildDesc = {
-                    type = 'input',
-                    name = L['Description'],
-                    order = 23,
-                    width = 0.5,
-                    get = function() return store().mass.guildDesc; end,
-                    set = function(_, value) store().mass.guildDesc = value; end,
-                },
-                guildEx = {
-                    type = 'execute',
-                    name = L['Add Guild EPGP'],
-                    order = 24,
-                    disabled = function() return not CanEditOfficerNote(); end,
-                    func = function() ExG:GuidEG(); end,
-                },
-                guildFiller = {
-                    type = 'description',
-                    name = '',
-                    order = 25,
-                    width = 'full',
-                },
-                raidEp = {
-                    type = 'input',
-                    name = 'EP',
-                    order = 31,
-                    width = 0.2,
-                    validate = isNumber,
-                    get = function() return tostring(store().mass.raidEp); end,
-                    set = function(_, value) store().mass.raidEp = tonumber(value); end,
-                },
-                raidGp = {
-                    type = 'input',
-                    name = 'GP',
-                    order = 32,
-                    width = 0.2,
-                    validate = isNumber,
-                    get = function() return tostring(store().mass.raidGp); end,
-                    set = function(_, value) store().mass.raidGp = tonumber(value); end,
-                },
-                raidDesc = {
-                    type = 'input',
-                    name = L['Description'],
-                    order = 33,
-                    width = 0.5,
-                    get = function() return store().mass.raidDesc; end,
-                    set = function(_, value) store().mass.raidDesc = value; end,
-                },
-                raidEx = {
-                    type = 'execute',
-                    name = L['Add Raid EPGP'],
-                    order = 34,
-                    disabled = function() return not CanEditOfficerNote(); end,
-                    func = function() ExG:RaidEG(); end,
-                },
-                raidFiller = {
-                    type = 'description',
-                    name = '',
-                    order = 35,
-                    width = 'full',
-                },
-                decay = {
-                    type = 'input',
-                    name = '',
-                    order = 41,
-                    width = 0.5,
-                    validate = isNumber,
-                    get = function() return tostring(store().mass.decay); end,
-                    set = function(_, value) store().mass.decay = tonumber(value); end,
-                },
-                decayEx = {
-                    type = 'execute',
-                    name = L['Guild Decay'],
-                    order = 42,
-                    disabled = function() return not CanEditOfficerNote(); end,
-                    func = function() ExG:GuidDecay(); end,
-                },
-                decayFiller = {
-                    type = 'description',
-                    name = '',
-                    order = 43,
-                    width = 'full',
-                },
                 debugHeader = {
                     type = 'header',
                     name = L['ExG Debug'],
@@ -1143,7 +1038,8 @@ function ExG:OnInitialize()
     self.InventoryFrame:Create();
     self.HistoryFrame:Create();
     self.ItemsFrame:Create();
-    self.UnitFrame:Create();
+    self.AdjustFrame:Create();
+    self.DecayFrame:Create();
 
     self:RegisterEvent('ENCOUNTER_END');
     self:RegisterEvent('LOOT_OPENED');

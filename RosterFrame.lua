@@ -260,7 +260,7 @@ local function renderItem(self, item)
     self.list:AddChild(row);
 
     if CanEditOfficerNote() then
-        row.frame:SetScript('OnMouseDown', function() ExG.UnitFrame:Show(item.name); end);
+        row.frame:SetScript('OnMouseDown', function() ExG.AdjustFrame:Show(item.name); end);
     end
 
     if not row.name then
@@ -327,17 +327,19 @@ local function renderItem(self, item)
     end
 
     row.ep:SetText(item.ep);
-
-    --    row.OnRelease = function(self)
-    --        self.name:ClearAllPoints(); self.name = nil;
-    --        self.rank:ClearAllPoints(); self.rank = nil;
-    --        self.pr:ClearAllPoints(); self.pr = nil;
-    --        self.gp:ClearAllPoints(); self.gp = nil;
-    --        self.ep:ClearAllPoints(); self.ep = nil;
-    --    end;
 end
 
 local function renderItems(self)
+    if self.current == 'guild' then
+        self.frame.guild.frame:Show();
+        self.frame.raid.frame:Hide();
+        self.frame.decay.frame:Show();
+    elseif self.current == 'raid' then
+        self.frame.guild.frame:Hide();
+        self.frame.raid.frame:Show();
+        self.frame.decay.frame:Hide();
+    end
+
     self.list:ReleaseChildren();
 
     for i, v in ipairs(self[self.current]) do
@@ -352,6 +354,7 @@ function ExG.RosterFrame:Create()
     self.frame:EnableResize(false);
     self.frame:SetWidth(470);
     self.frame:SetHeight(700);
+    self.frame:SetCallback('OnClose', function() self.frame:Hide(); ExG.AdjustFrame:Hide(); ExG.DecayFrame:Hide(); end);
     self.frame:Hide();
 
     makeTopLine(self);
@@ -366,7 +369,7 @@ function ExG.RosterFrame:Create()
     self.frame:AddChild(group);
 
     group:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -105);
-    group:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -10, 10);
+    group:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -10, 30);
 
     self.list = AceGUI:Create('ScrollFrame');
     self.list:SetFullWidth(true);
@@ -374,6 +377,36 @@ function ExG.RosterFrame:Create()
     self.list:SetLayout('List');
 
     group:AddChild(self.list);
+
+    self.frame.guild = AceGUI:Create('Button');
+    self.frame.guild:SetWidth(120);
+    self.frame.guild:SetHeight(25);
+    self.frame.guild:SetText(L['Add Guild EPGP']);
+    self.frame.guild:SetCallback('OnClick', function() ExG.AdjustFrame:Show('guild'); end);
+    self.frame:AddChild(self.frame.guild);
+
+    self.frame.guild:SetPoint('BOTTOMLEFT', self.frame.frame, 'BOTTOMLEFT', 10, 5);
+    self.frame.guild:SetPoint('TOPRIGHT', self.frame.frame, 'BOTTOMLEFT', 180, 25);
+
+    self.frame.raid = AceGUI:Create('Button');
+    self.frame.raid:SetWidth(120);
+    self.frame.raid:SetHeight(25);
+    self.frame.raid:SetText(L['Add Raid EPGP']);
+    self.frame.raid:SetCallback('OnClick', function() ExG.AdjustFrame:Show('raid'); end);
+    self.frame:AddChild(self.frame.raid);
+
+    self.frame.raid:SetPoint('BOTTOMLEFT', self.frame.frame, 'BOTTOMLEFT', 10, 5);
+    self.frame.raid:SetPoint('TOPRIGHT', self.frame.frame, 'BOTTOMLEFT', 180, 25);
+
+    self.frame.decay = AceGUI:Create('Button');
+    self.frame.decay:SetWidth(120);
+    self.frame.decay:SetHeight(25);
+    self.frame.decay:SetText(L['Guild Decay']);
+    self.frame.decay:SetCallback('OnClick', function() ExG.DecayFrame:Show(); end);
+    self.frame:AddChild(self.frame.decay);
+
+    self.frame.decay:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -10, 5);
+    self.frame.decay:SetPoint('TOPLEFT', self.frame.frame, 'BOTTOMRIGHT', -180, 25);
 end
 
 function ExG.RosterFrame:Show()

@@ -1,5 +1,15 @@
 local L = LibStub('AceLocale-3.0'):NewLocale('ExG', 'enUS', true);
 
+local eg = function(val, postfix)
+    local tmp = tonumber(val);
+
+    if (tmp or 0) == 0 then
+        return '';
+    end
+
+    return format('%s%d %s', tmp < 0 and ' ' or ' +', tmp, strupper(postfix));
+end
+
 L['ExG'] = "Extended EPGP";
 L['Roll Frame'] = 'Roll';
 L['Inventory Frame'] = 'Inventory';
@@ -14,13 +24,13 @@ L['Base GP'] = true;
 L['Cancel'] = true;
 L['Ok'] = true;
 L['ExG Show GP'] = 'Show GP values on tooltips';
-L['Unit Adjust Desc'] = function(type, diff, reason) return format('Individual %s%d %s (%s)', diff < 0 and '' or '+', diff, type or 'EP', (reason or '') == '' and 'for fun' or reason); end;
+L['Unit Adjust Desc'] = function(type, diff, reason) return format('Individual %s%d %s%s', diff < 0 and '' or '+', diff, type or 'EP', (reason or '') == '' and '' or format(' (%s)', reason)); end;
 L['ExG Tooltip GP value'] = function(gp) return format('GP value: %d', gp or 0); end;
 L['Mass Operations'] = true;
 L['Add Guild EPGP'] = true;
-L['ExG Guid EG'] = function(ep, gp, desc) local e; if (ep or 0) ~= 0 then e = (ep < 0 and ' ' or ' +') .. (ep or 0) .. ' EP'; end local g; if (gp or 0) ~= 0 then g = (gp < 0 and ' ' or ' +') .. (gp or 0) .. ' GP'; end return 'Guild EPGP' .. (e or '') .. (g or '') .. ' (' .. (desc or 'for fun') .. ')'; end;
+L['ExG Guid EG'] = function(ep, gp, desc) return format('Guild EPGP%s%s%s', eg(ep, 'EP'), eg(gp, 'GP'), (desc or '') == '' and '' or format(' (%s)', desc)); end;
 L['Add Raid EPGP'] = true;
-L['ExG Raid EG'] = function(ep, gp, desc) local e; if (ep or 0) ~= 0 then e = (ep < 0 and ' ' or ' +') .. (ep or 0) .. ' EP'; end local g; if (gp or 0) ~= 0 then g = (gp < 0 and ' ' or ' +') .. (gp or 0) .. ' GP'; end return 'Raid EPGP' .. (e or '') .. (g or '') .. ' (' .. (desc or 'for fun') .. ')'; end;
+L['ExG Raid EG'] = function(ep, gp, desc) return format('Raid EPGP%s%s%s', eg(ep, 'EP'), eg(gp, 'GP'), (desc or '') == '' and '' or format(' (%s)', desc)); end;
 L['Guild Decay'] = true;
 L['Guild Decay Desc'] = function(decay) return format('Guild EPGP Decay by %d%%', (decay or 0) * 100); end;
 L['ExG Items'] = 'Items';
@@ -112,7 +122,11 @@ L['ExG Bosses AK40'] = 'Ahn\'Qiraj';
 L['ExG Bosses NAXX'] = 'Naxxramas';
 L['ExG Bosses OTHER'] = 'Other';
 L['ExG History RAID'] = 'Raid';
+L['RAID'] = 'Raid';
+L['Raid'] = 'Raid';
 L['ExG History GUILD'] = 'Guild';
+L['GUILD'] = 'Guild';
+L['Guild'] = 'Guild';
 L['ExG History Boss End'] = function(boss, ep) return 'Raid EP ' .. (ep < 0 and '' or '+') .. (ep or 0) .. ' for ' .. (boss or 'Unknown'); end;
 L['History pulled'] = function(data) return '|cff33ff99Pull history from ' .. (data.source or 'unknown') .. ' for last ' .. (data.offset or 0) .. ' days.|r'; end;
 L['History imported'] = function(data) return '|cff33ff99Imported ' .. (data.count or 0) .. ' history entries. From ' .. date('%d.%m %H:%M:%S', data.min) .. ' to ' .. date('%d.%m %H:%M:%S', data.max) .. '.|r'; end;
