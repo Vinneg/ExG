@@ -33,6 +33,7 @@ L['Add Raid EPGP'] = true;
 L['ExG Raid EG'] = function(ep, gp, desc) return format('Raid EPGP%s%s%s', eg(ep, 'EP'), eg(gp, 'GP'), (desc or '') == '' and '' or format(' (%s)', desc)); end;
 L['Guild Decay'] = true;
 L['Guild Decay Desc'] = function(decay) return format('Guild EPGP Decay by %d%%', (decay or 0) * 100); end;
+L['Percent'] = true;
 L['ExG Items'] = 'Items';
 L['Open Items Settings'] = true;
 L['Items import text'] = true;

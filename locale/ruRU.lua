@@ -33,6 +33,7 @@ L['Add Raid EPGP'] = 'Добавить EPGP Рейду';
 L['ExG Raid EG'] = function(ep, gp, desc) return format('EPGP Рейда %s%s%s', eg(ep, 'EP'), eg(gp, 'GP'), (desc or '') == '' and '' or format(' (%s)', desc)); end;
 L['Guild Decay'] = 'Гильдейское понижение';
 L['Guild Decay Desc'] = function(decay) return format('Гильдейское понижение EPGP на %d%%', (decay or 0) * 100); end;
+L['Percent'] = 'Процент';
 L['ExG Items'] = 'Предметы';
 L['Open Items Settings'] = 'Открыть настройки предметов';
 L['Items import text'] = 'Текст для импорта';

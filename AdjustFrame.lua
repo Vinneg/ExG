@@ -55,7 +55,7 @@ local function guidEG(self, ep, gp, desc)
 
     ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
 
-    self.frame:Hide();
+    self:Hide();
 end
 
 local function raidEG(self, ep, gp, desc)
@@ -111,7 +111,7 @@ local function raidEG(self, ep, gp, desc)
 
     ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
 
-    self.frame:Hide();
+    self:Hide();
 end
 
 local function unitEG(self, unit, ep, gp, desc)
@@ -159,7 +159,7 @@ local function unitEG(self, unit, ep, gp, desc)
 
     ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
 
-    self.frame:Hide();
+    self:Hide();
 end
 
 ExG.AdjustFrame = {

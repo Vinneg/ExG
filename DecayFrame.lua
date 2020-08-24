@@ -14,7 +14,7 @@ local function makeFrame(self)
     self.amount:DisableButton(true);
     self.amount:SetWidth(120);
     self.amount:SetHeight(25);
-    self.amount:SetLabel(L['Amount']);
+    self.amount:SetLabel(L['Percent']);
     self.frame:AddChild(self.amount);
 
     self.amount:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 5, -30);
@@ -67,7 +67,7 @@ end
 function ExG.DecayFrame:Adjust()
     local decay = tonumber(self.amount:GetText());
 
-    if decay then
+    if not decay then
         return;
     end
 
@@ -84,7 +84,7 @@ function ExG.DecayFrame:Adjust()
     store().history.data[dt] = {
         type = 'guild',
         target = { name = L['ExG History GUILD'], class = 'GUILD', },
-        master = { name = self.state.name, class = self.state.class, },
+        master = { name = ExG.state.name, class = ExG.state.class, },
         desc = L['Guild Decay Desc'](store().mass.decay);
         dt = dt,
         details = {},
@@ -99,8 +99,8 @@ function ExG.DecayFrame:Adjust()
         local info = { index = i, name = Ambiguate(name, 'all'), class = class, officerNote = officerNote };
 
         if info.name then
-            local old = self:GetEG(officerNote);
-            local new = self:SetEG(info, floor(old.ep * decay), floor(old.gp * decay));
+            local old = ExG:GetEG(officerNote);
+            local new = ExG:SetEG(info, floor(old.ep * decay), floor(old.gp * decay));
 
             details[st] = {
                 target = { name = info.name, class = info.class, },
@@ -113,7 +113,7 @@ function ExG.DecayFrame:Adjust()
 
     store().history.data[dt].details = details;
 
-    self:HistoryShare({ data = { [dt] = store().history.data[dt] } });
+    ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
 
-    self.frame:Hide();
+    self:Hide();
 end
