@@ -173,9 +173,7 @@ local function makeHeaders(self)
 end
 
 local function parseLine(res, line)
-    local tmp = {};
-
-    gsub(line, '[^,]+', function(item) local value = gsub(item, '"', ''); tinsert(tmp, value); end);
+    local tmp = { strsplit(',', line) };
 
     tinsert(res, tmp);
 end
@@ -183,12 +181,16 @@ end
 local function parseCell(text)
     local tmp = {};
 
-    gsub(text, '[^&]+', function(item) local left, right = strsplit('=', item, 2); tmp[strlower(left)] = right; end);
+    gsub(text, '[^&]+', function(item) local left, right = strsplit('=', item, 2); tmp[strlower(left)] = right or true; end);
+
+    if ExG:Size(tmp) == 0 then
+        return nil;
+    end
 
     return tmp;
 end
 
-local function processImport(text)
+local function import(text)
     local tmp = {};
 
     gsub(text, '[^\r\n]+', function(line) parseLine(tmp, line); end);
@@ -238,7 +240,7 @@ function ExG.ItemsFrame:Create()
 
     local box = AceGUI:Create('MultiLineEditBox');
     box:SetLabel(L['Items import text']);
-    box:SetCallback('OnEnterPressed', function() processImport(box:GetText()); end);
+    box:SetCallback('OnEnterPressed', function() import(box:GetText()); end);
     self.frame:AddChild(box);
 
     box:SetPoint('TOPLEFT', self.frame.frame, 'BOTTOMLEFT', 10, 117);

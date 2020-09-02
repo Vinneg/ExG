@@ -6,11 +6,12 @@ local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 
 local store = function() return ExG.store.char; end;
 
-local btnRoll = function(self, pane, btn, info1, info2)
+local btnRoll = function(self, pane, gp, btn, info1, info2)
     return function()
         ExG:RollItem({
             id = pane.itemId,
             class = ExG.state.class,
+            gp = gp,
             option = btn.id,
             slot1 = info1 and info1.link,
             slot2 = info2 and info2.link,
@@ -38,8 +39,24 @@ local onLeave = function() return GameTooltip:Hide(); end;
 
 local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
 
+local CLASSES = {
+    { name = 'WARRIOR' },
+    { name = 'PALADIN' },
+    { name = 'HUNTER' },
+    { name = 'ROGUE' },
+    { name = 'PRIEST' },
+    { name = 'DEATHKNIGHT' },
+    { name = 'SHAMAN' },
+    { name = 'MAGE' },
+    { name = 'WARLOCK' },
+    { name = 'MONK' },
+    { name = 'DRUID' },
+    { name = 'DEMONHUNTER' },
+};
+
 local MAX_ROLLS = 10;
 local PANE_WIDTH = 200;
+local PANE_HEIGH = 371;
 
 ExG.RollFrame = {
     frame = nil,
@@ -58,20 +75,72 @@ local function count(self)
     return res;
 end
 
+local function getTips(self, pane)
+    local SIZE = 12;
+
+    pane.bis = {};
+
+    pane.bis.label = AceGUI:Create('Label');
+    pane.bis.label:SetJustifyH('RIGHT');
+    pane.bis.label:SetJustifyV('MIDDLE');
+    pane.bis.label:SetWidth(30);
+    pane.bis.label:SetFont(DEFAULT_FONT, 8);
+    pane.bis.label:SetText('BIS');
+    pane:AddChild(pane.bis.label);
+
+    pane.bis.label:SetPoint('TOPLEFT', pane.head.frame, 'BOTTOMLEFT', 0, -2);
+    pane.bis.label:SetPoint('BOTTOMRIGHT', pane.head.frame, 'BOTTOMLEFT', 0, -12);
+
+    for i, v in ipairs(CLASSES) do
+        pane.bis[v.name] = AceGUI:Create('Icon');
+        pane.bis[v.name]:SetImageSize(SIZE, SIZE);
+        pane.bis[v.name]:SetImage('Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES', unpack(CLASS_ICON_TCOORDS[v.name]));
+        pane:AddChild(pane.bis[v.name]);
+
+        pane.bis[v.name]:SetPoint('LEFT', pane.bis.label.frame, 'RIGHT', -5 + (i - 1) * SIZE, 2);
+
+        pane.bis[v.name].frame:Hide();
+    end
+
+    pane.opt = {};
+
+    pane.opt.label = AceGUI:Create('Label');
+    pane.opt.label:SetJustifyH('RIGHT');
+    pane.opt.label:SetJustifyV('MIDDLE');
+    pane.opt.label:SetWidth(30);
+    pane.opt.label:SetFont(DEFAULT_FONT, 8);
+    pane.opt.label:SetText('OPT');
+    pane:AddChild(pane.opt.label);
+
+    pane.opt.label:SetPoint('TOPLEFT', pane.head.frame, 'BOTTOMLEFT', 0, -15);
+    pane.opt.label:SetPoint('BOTTOMRIGHT', pane.head.frame, 'BOTTOMLEFT', 0, -25);
+
+    for i, v in ipairs(CLASSES) do
+        pane.opt[v.name] = AceGUI:Create('Icon');
+        pane.opt[v.name]:SetImageSize(SIZE, SIZE);
+        pane.opt[v.name]:SetImage('Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES', unpack(CLASS_ICON_TCOORDS[v.name]));
+        pane:AddChild(pane.opt[v.name]);
+
+        pane.opt[v.name]:SetPoint('LEFT', pane.opt.label.frame, 'RIGHT', -5 + (i - 1) * SIZE, 0);
+
+        pane.opt[v.name].frame:Hide();
+    end
+end
+
 local function getButtons(self, pane)
     local points = {
         button = {
-            { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -5 },
-            { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -5 },
-            { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -30 },
-            { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -30 },
-            { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -55 },
-            { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -55 },
+            { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -32 },
+            { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -32 },
+            { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -57 },
+            { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -57 },
+            { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -82 },
+            { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -82 },
         },
         disenchant = {
-            [1] = { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -30 },
-            [2] = { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -55 },
-            [3] = { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -80 },
+            [1] = { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -57 },
+            [2] = { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -82 },
+            [3] = { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -107 },
         },
     };
 
@@ -103,7 +172,7 @@ local function getButtons(self, pane)
         pane.dis = AceGUI:Create('Button');
         pane.dis:SetText(L['Disenchant']);
         pane.dis:SetWidth(PANE_WIDTH - 10);
-        pane.dis:SetCallback('OnClick', function() self:GiveItem(ExG.state.name, ExG.state.class, pane.itemId); end);
+        pane.dis:SetCallback('OnClick', function() self.Dialog:GiveItem(self.items[pane.itemId], { name = ExG.state.name, class = ExG.state.class, }); end);
         pane:AddChild(pane.dis);
 
         local point = points.disenchant[ceil(#btns / 2)];
@@ -112,6 +181,8 @@ local function getButtons(self, pane)
 
         last = pane.dis;
     end
+
+    self.frame:SetHeight(PANE_HEIGH + 25 * ceil(#btns / 2) + (ExG:IsMl() and 25 or 0));
 
     return last;
 end
@@ -244,6 +315,8 @@ local function getPane(self, itemId)
         pane.head:SetPoint('TOPLEFT');
         pane.head:SetPoint('TOPRIGHT');
 
+        getTips(self, pane);
+
         local last = getButtons(self, pane);
 
         pane.accepted = AceGUI:Create('Label');
@@ -267,24 +340,46 @@ local function getPane(self, itemId)
     return pane;
 end
 
+local function renderTips(self, pane, settings)
+    for i, v in ipairs(CLASSES) do
+        if settings and settings[v.name] and settings[v.name].bis then
+            pane.bis[v.name].frame:Show();
+        else
+            pane.bis[v.name].frame:Hide();
+        end
+
+        if settings and settings[v.name] and settings[v.name].opt then
+            pane.opt[v.name].frame:Show();
+        else
+            pane.opt[v.name].frame:Hide();
+        end
+    end
+end
+
 local function renderButons(self, pane, settings)
+    local item = self.items[pane.itemId];
+
     for _, btn in pairs(store().buttons.data) do
         if pane[btn.id] then
             local enabled = true;
 
             if settings and btn.id ~= 'button6' then
-                local class = settings[ExG.state.class] or {};
+                local class = settings[ExG.state.class];
                 local def = settings['DEFAULT'] or {};
 
-                enabled = class[btn.id] or def[btn.id];
+                if class then
+                    enabled = class[btn.id];
+                else
+                    enabled = def[btn.id];
+                end
             end
 
             pane[btn.id]:SetText(enabled and btn.text or '');
             pane[btn.id]:SetDisabled(not enabled);
 
-            local info1, info2 = ExG:Equipped(self.items[pane.itemId].slots);
+            local info1, info2 = ExG:Equipped(item.slots);
 
-            pane[btn.id]:SetCallback('OnClick', btnRoll(self, pane, btn, info1, info2));
+            pane[btn.id]:SetCallback('OnClick', btnRoll(self, pane, item.gp, btn, info1, info2));
         end
     end
 end
@@ -308,7 +403,7 @@ local function renderRolls(self, pane)
             local button = roll.option and store().buttons.data[roll.option];
             local pr = button and button.roll and roll.rnd or ExG:GetEG(info.officerNote).pr;
 
-            tinsert(rolls, { name = roll.name, class = roll.class, option = roll.option, pr = pr, slot1 = roll.slot1, slot2 = roll.slot2, rnd = roll.rnd });
+            tinsert(rolls, { name = roll.name, class = roll.class, gp = roll.gp, option = roll.option, pr = pr, slot1 = roll.slot1, slot2 = roll.slot2, rnd = roll.rnd });
         end
     end
 
@@ -339,7 +434,7 @@ local function renderRolls(self, pane)
         roll.item2:SetCallback('OnLeave', onLeave);
 
         if ExG:IsMl() then
-            roll.pane.frame:SetScript('OnMouseDown', function() self:GiveItem(tmp.name, tmp.class, pane.itemId, tmp.option); end);
+            roll.pane.frame:SetScript('OnMouseDown', function() self.Dialog:Show(item, tmp); end); -- self:GiveItem(tmp.name, tmp.class, pane.itemId, tmp.option);
         end
 
         roll.pane.frame:Show();
@@ -371,6 +466,7 @@ local function renderItem(self, pane)
     pane.head:SetLabel(item.link);
     pane.head:SetCallback('OnEnter', onEnter(pane.head.frame, item.link));
 
+    renderTips(self, pane, settings);
     renderButons(self, pane, settings);
     renderRolls(self, pane);
 
@@ -385,8 +481,7 @@ local function renderItems(self)
     end
 end
 
-local function disenchantHistory(self, itemId)
-    local item = self.items[itemId];
+local function disenchantHistory(item)
     local dt, offset = time(), 0;
 
     while store().history.data[dt + offset / 1000] do
@@ -406,9 +501,8 @@ local function disenchantHistory(self, itemId)
     ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
 end
 
-local function appendHistory(self, unit, class, itemId, option)
-    local item = self.items[itemId];
-    local button = option and store().buttons.data[option];
+local function appendHistory(item, roll)
+    local button = roll.option and store().buttons.data[roll.option];
     local dt, offset = time(), 0;
 
     while store().history.data[dt + offset / 1000] do
@@ -419,7 +513,7 @@ local function appendHistory(self, unit, class, itemId, option)
 
     store().history.data[dt] = {
         type = 'item',
-        target = { name = unit, class = class, },
+        target = { name = roll.name, class = roll.class, },
         master = { name = ExG.state.name, class = ExG.state.class, },
         link = item.link;
         dt = dt,
@@ -428,7 +522,7 @@ local function appendHistory(self, unit, class, itemId, option)
 
     local gp = item.gp * button.ratio;
 
-    local info = ExG:GuildInfo(unit);
+    local info = ExG:GuildInfo(roll.name);
     local old = ExG:GetEG(info.officerNote);
     local new = ExG:SetEG(info, old.ep, old.gp + gp);
 
@@ -462,9 +556,11 @@ function ExG.RollFrame:Create()
     self.frame:SetTitle(L['Roll Frame']);
     self.frame:SetLayout(nil);
     self.frame:SetCallback('OnClose', function() for id in pairs(self.items) do ExG:RollItem({ id = id, class = ExG.state.class, option = 'button6', }); self:RemoveItem(id); end self.frame:Hide(); end);
-    self.frame:SetHeight(477);
+    self.frame:SetHeight(471);
     self.frame:EnableResize(false);
     self.frame:Hide();
+
+    self.Dialog:Create();
 end
 
 function ExG.RollFrame:Show()
@@ -472,6 +568,8 @@ function ExG.RollFrame:Show()
 end
 
 function ExG.RollFrame:Hide()
+    self.Dialog:Hide();
+
     self.frame:Hide();
 end
 
@@ -523,50 +621,6 @@ function ExG.RollFrame:AcceptItem(itemId, source)
     pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
 end
 
-function ExG.RollFrame:GiveItem(unit, class, itemId, option)
-    if not ExG.state.looting then
-        return;
-    end
-
-    local info = self.items[itemId];
-
-    if not info then
-        return;
-    end
-
-    local lootIndex, unitIndex
-
-    for i = 1, GetNumLootItems() do
-        local tmp = ExG:LinkInfo(GetLootSlotLink(i));
-
-        lootIndex = tmp and info.id == tmp.id and i or lootIndex;
-    end
-
-    if not lootIndex then
-        return;
-    end
-
-    for i = 1, MAX_RAID_MEMBERS do
-        local name = GetMasterLootCandidate(lootIndex, i);
-
-        unitIndex = name and unit == Ambiguate(name, 'all') and i or unitIndex;
-    end
-
-    if not unitIndex then
-        return;
-    end
-
-    GiveMasterLoot(lootIndex, unitIndex);
-
-    if not option then
-        disenchantHistory(self, itemId);
-    else
-        appendHistory(self, unit, class, itemId, option);
-    end
-
-    ExG:DistributeItem(unit, itemId);
-end
-
 function ExG.RollFrame:RemoveItem(itemId)
     local found = false;
 
@@ -603,6 +657,10 @@ function ExG.RollFrame:RemoveItem(itemId)
     if count(self) == 0 then
         self.frame:Hide();
     end
+
+    if self.Dialog.item and self.Dialog.item.id == itemId then
+        self.Dialog:Hide();
+    end
 end
 
 function ExG.RollFrame:RollItem(data, unit)
@@ -615,6 +673,7 @@ function ExG.RollFrame:RollItem(data, unit)
     item.rolls[unit] = item.rolls[unit] or {};
     item.rolls[unit].name = unit;
     item.rolls[unit].class = data.class;
+    item.rolls[unit].gp = data.gp;
     item.rolls[unit].option = data.option;
     item.rolls[unit].rnd = item.rolls[unit].rnd or data.rnd;
     item.rolls[unit].slot1 = ExG:LinkInfo(data.slot1);
@@ -642,4 +701,135 @@ function ExG.RollFrame:DistributeItem(unit, itemId)
         item.rolls[unit] = nil;
         renderItems(self);
     end
+end
+
+local function renderDialog(self)
+    local main = store().buttons.data[self.roll.option];
+
+    self.frame.head:SetText(L['Unit will receive item'](self.roll.name, self.item.link));
+    self.frame.main:SetText(format('%s - %d GP', main.text, floor(self.roll.gp * main.ratio)));
+    self.frame.main:SetCallback('OnClick', function() self:GiveItem(self.item, self.roll); end);
+
+    local btns = {};
+
+    for _, btn in pairs(store().buttons.data) do
+        if btn.enabled and btn.id ~= 'button6' and btn.id ~= self.roll.option then
+            tinsert(btns, btn);
+        end
+    end
+
+    sort(btns, function(a, b) return a.id < b.id; end);
+
+    for i, btn in ipairs(btns) do
+        self.frame.btn[i]:SetText(format('%s\n%d GP', btn.text, floor(self.roll.gp * btn.ratio)));
+        self.frame.btn[i]:SetCallback('OnClick', function() self:GiveItem(self.item, { name = self.roll.name, class = self.roll.class, option = btn.id, }); end);
+    end
+end
+
+ExG.RollFrame.Dialog = {
+    frame = nil,
+    item = nil,
+    roll = nil,
+};
+
+function ExG.RollFrame.Dialog:Create()
+    self.frame = AceGUI:Create('Window');
+    self.frame:SetTitle(L['Roll Dialog Frame']);
+    self.frame:SetLayout('Flow');
+    self.frame:SetCallback('OnClose', function() end);
+    self.frame:SetWidth(310);
+    self.frame:SetHeight(135);
+    self.frame:EnableResize(false);
+
+    self.frame.head = AceGUI:Create('Label');
+    self.frame.head:SetFullWidth(true);
+    self.frame.head:SetHeight(25);
+    self.frame.head:SetJustifyH('CENTER');
+    self.frame:AddChild(self.frame.head);
+
+    self.frame.main = AceGUI:Create('Button');
+    self.frame.main:SetFullWidth(true);
+    self.frame.main:SetHeight(25);
+    self.frame.main:SetText('25');
+    self.frame:AddChild(self.frame.main);
+
+    self.frame.btn = {};
+
+    if store().buttons.count > 2 then
+        local rwidth = 1 / (store().buttons.count - 2);
+
+        for i = 1, store().buttons.count - 2 do
+            self.frame.btn[i] = AceGUI:Create('Button');
+            self.frame.btn[i]:SetRelativeWidth(rwidth);
+            self.frame.btn[i]:SetHeight(50);
+            self.frame.btn[i]:SetText(i);
+            self.frame:AddChild(self.frame.btn[i]);
+        end
+    end
+
+    self.frame:Hide();
+end
+
+function ExG.RollFrame.Dialog:Show(item, roll)
+    if not item or not roll then
+        self.frame:Hide();
+
+        return;
+    end
+
+    self.item = item;
+    self.roll = roll;
+
+    renderDialog(self);
+
+    self.frame:Show();
+end
+
+function ExG.RollFrame.Dialog:Hide()
+    self.item = nil;
+    self.roll = nil;
+
+    self.frame:Hide();
+end
+
+function ExG.RollFrame.Dialog:GiveItem(item, roll)
+    if not ExG.state.looting then
+        return;
+    end
+
+    if not item or not roll then
+        return;
+    end
+
+    local lootIndex, unitIndex
+
+    for i = 1, GetNumLootItems() do
+        local tmp = ExG:LinkInfo(GetLootSlotLink(i));
+
+        lootIndex = tmp and item.id == tmp.id and i or lootIndex;
+    end
+
+    if not lootIndex then
+        return;
+    end
+
+    for i = 1, MAX_RAID_MEMBERS do
+        local name = GetMasterLootCandidate(lootIndex, i);
+
+        unitIndex = name and roll.name == Ambiguate(name, 'all') and i or unitIndex;
+    end
+
+    if not unitIndex then
+        return;
+    end
+
+    GiveMasterLoot(lootIndex, unitIndex);
+
+    if not roll.option then
+        disenchantHistory(item);
+    else
+        appendHistory(item, roll);
+    end
+
+    ExG:DistributeItem(roll.name, item.id);
 end

@@ -3,15 +3,13 @@ local L = LibStub('AceLocale-3.0'):NewLocale('ExG', 'enUS', true);
 local eg = function(val, postfix)
     local tmp = tonumber(val);
 
-    if (tmp or 0) == 0 then
-        return '';
-    end
-
-    return format('%s%d %s', tmp < 0 and ' ' or ' +', tmp, strupper(postfix));
+    return format('%s%d %s', (tmp or 0) < 0 and ' ' or ' +', tmp or 0, strupper(postfix));
 end
 
 L['ExG'] = "Extended EPGP";
 L['Roll Frame'] = 'Roll';
+L['Roll Dialog Frame'] = 'Item transfer';
+L['Unit will receive item'] = function(name, link) return format('%s will receive %s', name, link); end;
 L['Inventory Frame'] = 'Inventory';
 L['History Frame'] = function(page, total) return format('History. Page %d of %d.', (page or 0) + 1, total or 0); end;
 L['Items Frame'] = function(page, total) return 'Items Settings. Page ' .. ((page or 0) + 1) .. ' of ' .. (total or 0) .. '.'; end;
@@ -89,7 +87,7 @@ L['Button 4'] = true;
 L['Button 5'] = true;
 L['Button 6'] = 'Pass button';
 L['Disenchant'] = true;
-L['ExG History Item'] = function(gp, option) return format('Add %d GP%s', gp or 0, option and (' (' .. option .. ')') or ''); end;
+L['ExG History Item'] = function(gp, option) return format('%s (%s)', eg(gp, 'GP'), option or ''); end;
 L['ExG History Item Disenchant'] = 'Disenchant';
 L['Button Text'] = 'Text';
 L['Button Ratio'] = 'Ratio';

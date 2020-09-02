@@ -3,15 +3,13 @@ local L = LibStub('AceLocale-3.0'):NewLocale('ExG', 'ruRU');
 local eg = function(val, postfix)
     local tmp = tonumber(val);
 
-    if (tmp or 0) == 0 then
-        return '';
-    end
-
-    return format('%s%d %s', tmp < 0 and ' ' or ' +', tmp, strupper(postfix));
+    return format('%s%d %s', (tmp or 0) < 0 and ' ' or ' +', tmp or 0, strupper(postfix));
 end
 
 L['ExG'] = "Extended EPGP";
 L['Roll Frame'] = 'Розыгрыш';
+L['Roll Dialog Frame'] = 'Передача предмета';
+L['Unit will receive item'] = function(name, link) return format('%s получит %s', name, link); end;
 L['Inventory Frame'] = 'Инвентарь';
 L['History Frame'] = function(page, total) return format('История. Страница %d из %d.', (page or 0) + 1, total or 0); end;
 L['Items Frame'] = function(page, total) return 'Настройки предметов. Страница ' .. (page or 0) .. ' из ' .. (total or 0) .. '.' end;
@@ -89,7 +87,7 @@ L['Button 4'] = 'Кнопка 4';
 L['Button 5'] = 'Кнопка 5';
 L['Button 6'] = 'Кнопка Пас';
 L['Disenchant'] = 'Распылить';
-L['ExG History Item'] = function(gp, option) return 'Начислено ' .. (gp or 0) .. ' GP (' .. (option or '') .. ')'; end;
+L['ExG History Item'] = function(gp, option) return format('%s (%s)', eg(gp, 'GP'), option or ''); end;
 L['ExG History Item Disenchant'] = 'Распылено';
 L['Button Text'] = 'Текст';
 L['Button Ratio'] = 'Коэфф.';

@@ -999,7 +999,7 @@ function ExG:HandleChatCommand(input)
     local arg = strlower(input or '');
 
     if arg == 'test' then
-        self:AnnounceItems({ [19438] = { count = 1 }, [18820] = { count = 2 }, [19019] = { count = 1 }, [15138] = { count = 1 }, [19812] = { count = 2 }, [22351] = { count = 1 }, });
+        self:AnnounceItems({ [19375] = { count = 1 }, });
     elseif arg == 'his' then
         self.HistoryFrame:Show();
     elseif arg == 'inv' then
@@ -1078,7 +1078,7 @@ function ExG:AnnounceItems(ids)
             items[id] = v.count or 0;
         end
     end
-    
+
     if self:Size(items) == 0 then
         return;
     end
