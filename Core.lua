@@ -142,6 +142,7 @@ ExG.messages = {
         distribute = 'ExG_Distribute',
         pull = 'ExG_Pull',
         share = 'ExG_Share',
+        options = 'ExG_Options',
     },
     raid = 'RAID',
     warning = 'RAID_WARNING',
@@ -165,15 +166,6 @@ ExG.defaults = {
         baseGP = 10,
         debug = false,
         showGp = true,
-        mass = {
-            decay = 0.15,
-            raidEp = 10,
-            raidGp = 10,
-            raidDesc = '',
-            guildEp = 10,
-            guildGp = 10,
-            guildDesc = '',
-        },
         items = {
             pageSize = 50,
             threshold = 4,
@@ -322,6 +314,24 @@ ExG.options = {
                     width = 'full',
                     get = function() return store().showGp; end,
                     set = function(_, value) store().showGp = value; end,
+                },
+                shareHeader = {
+                    type = 'header',
+                    name = L['Share Options'],
+                    order = 60,
+                },
+                share = {
+                    type = 'execute',
+                    name = L['Share Options'],
+                    order = 61,
+                    width = 'full',
+                    func = function() ExG:OptionsShare(); end,
+                },
+                shareFiller = {
+                    type = 'description',
+                    name = '',
+                    order = 62,
+                    width = 'full',
                 },
                 debugHeader = {
                     type = 'header',
@@ -1029,6 +1039,7 @@ function ExG:OnInitialize()
     self:RegisterComm(self.messages.prefix.distribute, 'handleDistributeItem');
     self:RegisterComm(self.messages.prefix.pull, 'handleHistoryPull');
     self:RegisterComm(self.messages.prefix.share, 'handleHistoryShare');
+    self:RegisterComm(self.messages.prefix.options, 'handleOptionsShare');
 
     self.state.name = UnitName('player');
     self.state.class = select(2, UnitClass('player'));
@@ -1038,8 +1049,6 @@ function ExG:OnInitialize()
     self.InventoryFrame:Create();
     self.HistoryFrame:Create();
     self.ItemsFrame:Create();
-    self.AdjustFrame:Create();
-    self.DecayFrame:Create();
 
     self:RegisterEvent('ENCOUNTER_END');
     self:RegisterEvent('LOOT_OPENED');
@@ -1218,6 +1227,34 @@ function ExG:handleHistoryShare(_, message, _, sender)
     if source.count and source.min and source.max then
         self:Print(L['History imported'](source));
     end
+end
+
+function ExG:OptionsShare()
+    local data = Serializer:Serialize(store().baseEP, store().baseGP, store().items.threshold, store().items.formula, store().items.data, store().buttons, store().bosses);
+
+    self:Print(L['Options sent']);
+
+    self:SendCommMessage(self.messages.prefix.options, data, self.messages.guild);
+end
+
+function ExG:handleOptionsShare(_, message, _, sender)
+    local success, baseEP, baseGP, itemsThreshold, itemsFormula, itemsData, buttons, bosses = Serializer:Deserialize(message);
+
+    if not success then
+        return
+    end
+
+    if sender ~= self.state.name then
+        self:Print(L['Options received'](sender));
+    end
+
+    store().baseEP = baseEP;
+    store().baseGP = baseGP;
+    store().items.threshold = itemsThreshold;
+    store().items.formula = itemsFormula;
+    store().items.data = itemsData;
+    store().buttons = buttons;
+    store().bosses = bosses;
 end
 
 function ExG:ENCOUNTER_END(_, id, _, _, _, success)
