@@ -90,6 +90,7 @@ local TOKENS = {
     [20932] = { loc = 'INVTYPE_FEET', level = 78 }, -- Qiraji Bindings of Dominance -- same deal
     [20933] = { loc = 'INVTYPE_CHEST', level = 88 }, -- Husk of the Old God
     [20929] = { loc = 'INVTYPE_CHEST', level = 88 }, -- Carapace of the Old God
+    [20926] = { loc = 'INVTYPE_HEAD', level = 81 }, -- Vek'nilash's Circlet
     [20927] = { loc = 'INVTYPE_LEGS', level = 81 }, -- Ouro's Intact Hide
     [20931] = { loc = 'INVTYPE_LEGS', level = 81 }, -- Skin of the Great Sandworm
     [22368] = { loc = 'INVTYPE_SHOULDER', level = 86 }, -- Shoulderpads
@@ -120,6 +121,8 @@ local TOKENS = {
 
 local function toSlots(item)
     local token = TOKENS[item.id] and TOKENS[item.id].loc;
+
+    print('toSlots: item = ', item.name, ', id = ', item.id, ', token = ', token);
 
     return token and LOCS[token] or LOCS[item.loc];
 end
