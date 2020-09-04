@@ -703,6 +703,12 @@ function ExG.RollFrame:DistributeItem(unit, itemId)
     end
 end
 
+ExG.RollFrame.Dialog = {
+    frame = nil,
+    item = nil,
+    roll = nil,
+};
+
 local function renderDialog(self)
     local main = store().buttons.data[self.roll.option];
 
@@ -725,12 +731,6 @@ local function renderDialog(self)
         self.frame.btn[i]:SetCallback('OnClick', function() self:GiveItem(self.item, { name = self.roll.name, class = self.roll.class, option = btn.id, }); end);
     end
 end
-
-ExG.RollFrame.Dialog = {
-    frame = nil,
-    item = nil,
-    roll = nil,
-};
 
 function ExG.RollFrame.Dialog:Create()
     self.frame = AceGUI:Create('Window');
