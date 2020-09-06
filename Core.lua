@@ -126,7 +126,7 @@ local bosses = {
             type = 'input',
             name = '',
             order = order,
-            width = 0.2,
+            width = 0.5,
             validate = function(_, value) if not tonumber(value) then return L['Value must be a number']; end return true; end,
             get = function() return tostring(store().bosses[id].ep); end,
             set = function(_, value) store().bosses[id].ep = tonumber(value); end,
@@ -1008,8 +1008,20 @@ ExG.store = {};
 function ExG:HandleChatCommand(input)
     local arg = strlower(input or '');
 
-    if arg == 'test' then
-        self:AnnounceItems({ [19375] = { count = 1 }, [20926] = { count = 1 }, [18423] = { count = 1 }, [21221] = { count = 1 }, });
+    if strsub(arg, 1, 4) == 'test' then
+        local ids = { strsplit(' ', arg) };
+
+        if #ids == 1 then
+            return;
+        end
+
+        local items = {};
+
+        for i = 2, #ids do
+            items[tonumber(ids[i])] = { count = 1 };
+        end
+
+        self:AnnounceItems(items);
     elseif arg == 'his' then
         self.HistoryFrame:Show();
     elseif arg == 'inv' then

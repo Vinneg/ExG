@@ -271,9 +271,9 @@ local function renderItem(self, item)
         row.name:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 160, 0);
         row.name:SetJustifyH('LEFT');
         row.name:SetJustifyV('MIDDLE');
-        row.name:SetVertexColor(ExG:ClassColor(item.class));
     end
 
+    row.name:SetVertexColor(ExG:ClassColor(item.class));
     row.name:SetText(item.name);
 
     if not row.rank then
@@ -284,9 +284,9 @@ local function renderItem(self, item)
         row.rank:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 260, 0);
         row.rank:SetJustifyH('CENTER');
         row.rank:SetJustifyV('MIDDLE');
-        row.rank:SetVertexColor(ExG:ClassColor(item.class));
     end
 
+    row.rank:SetVertexColor(ExG:ClassColor(item.class));
     row.rank:SetText(item.rank);
 
     if not row.pr then
@@ -297,9 +297,9 @@ local function renderItem(self, item)
         row.pr:SetPoint('BOTTOMLEFT', row.frame, 'BOTTOMRIGHT', -50, 0);
         row.pr:SetJustifyH('CENTER');
         row.pr:SetJustifyV('MIDDLE');
-        row.pr:SetVertexColor(ExG:ClassColor(item.class));
     end
 
+    row.pr:SetVertexColor(ExG:ClassColor(item.class));
     row.pr:SetText(item.pr);
 
     if not row.gp then
@@ -310,9 +310,9 @@ local function renderItem(self, item)
         row.gp:SetPoint('BOTTOMLEFT', row.pr, 'BOTTOMLEFT', -50, 0);
         row.gp:SetJustifyH('CENTER');
         row.gp:SetJustifyV('MIDDLE');
-        row.gp:SetVertexColor(ExG:ClassColor(item.class));
     end
 
+    row.gp:SetVertexColor(ExG:ClassColor(item.class));
     row.gp:SetText(item.gp);
 
     if not row.ep then
@@ -323,9 +323,9 @@ local function renderItem(self, item)
         row.ep:SetPoint('BOTTOMLEFT', row.gp, 'BOTTOMLEFT', -50, 0);
         row.ep:SetJustifyH('CENTER');
         row.ep:SetJustifyV('MIDDLE');
-        row.ep:SetVertexColor(ExG:ClassColor(item.class));
     end
 
+    row.ep:SetVertexColor(ExG:ClassColor(item.class));
     row.ep:SetText(item.ep);
 end
 
