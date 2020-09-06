@@ -4,6 +4,7 @@ local AceGUI = LibStub('AceGUI-3.0');
 local LSM = LibStub('LibSharedMedia-3.0');
 local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 
+local state = function() return ExG.state; end;
 local store = function() return ExG.store.char; end;
 
 local btnRoll = function(self, pane, gp, btn, info1, info2)
@@ -35,25 +36,390 @@ local btnPass = function(self, pane, btn)
 end
 
 local onEnter = function(owner, link) if link then return function() GameTooltip:SetOwner(owner, 'ANCHOR_RIGHT'); GameTooltip:SetHyperlink(link); GameTooltip:Show(); end; else return function() end; end end;
+local onTip = function(owner, class, desc, spec) local r, g, b = ExG:ClassColor(class); return function() GameTooltip:SetOwner(owner, 'ANCHOR_TOP'); GameTooltip:SetText(desc .. (spec and ': ' .. spec or ''), r, g, b); GameTooltip:Show(); end; end;
 local onLeave = function() return GameTooltip:Hide(); end;
 
 local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
 
 local CLASSES = {
-    { name = 'WARRIOR' },
-    { name = 'PALADIN' },
-    { name = 'HUNTER' },
-    { name = 'ROGUE' },
-    { name = 'PRIEST' },
-    { name = 'DEATHKNIGHT' },
-    { name = 'SHAMAN' },
-    { name = 'MAGE' },
-    { name = 'WARLOCK' },
-    { name = 'MONK' },
-    { name = 'DRUID' },
-    { name = 'DEMONHUNTER' },
+    WARRIOR = {
+        id = 1,
+        name = 'WARRIOR',
+        icon = 626008,
+        specs = {
+            ARMS = {
+                id = 1,
+                name = 'ARMS',
+                icon = 132349,
+            },
+            FURY = {
+                id = 2,
+                name = 'FURY',
+                icon = 132347,
+            },
+            PROT = {
+                id = 3,
+                name = 'PROT',
+                icon = 132341,
+            },
+        },
+        scan = function()
+            local _, _, prot = GetTalentTabInfo(3);
+
+            if prot > 10 then
+                return 'PROT';
+            end
+
+            local _, _, arms = GetTalentTabInfo(1);
+            local _, _, fury = GetTalentTabInfo(2);
+
+            if arms > fury then
+                return 'ARMS';
+            elseif arms < fury then
+                return 'FURY';
+            end
+
+            return nil;
+        end,
+    },
+    PALADIN = {
+        id = 2,
+        name = 'PALADIN',
+        icon = 626003,
+        specs = {
+            HOLY = {
+                id = 1,
+                name = 'HOLY',
+                icon = 135920,
+            },
+            PROT = {
+                id = 2,
+                name = 'PROT',
+                icon = 135880,
+            },
+            RETRI = {
+                id = 3,
+                name = 'RETRI',
+                icon = 135873,
+            },
+        },
+        scan = function()
+            local _, _, holy = GetTalentTabInfo(1);
+            local _, _, prot = GetTalentTabInfo(2);
+            local _, _, retri = GetTalentTabInfo(3);
+
+            if holy > prot and holy > retri then
+                return 'HOLY';
+            elseif prot > holy and prot > retri then
+                return 'PROT';
+            elseif retri > holy and retri > prot then
+                return 'RETRI';
+            end
+
+            return nil;
+        end,
+    },
+    HUNTER = {
+        id = 3,
+        name = 'HUNTER',
+        icon = 626000,
+        specs = {
+            BM = {
+                id = 1,
+                name = 'BM',
+                icon = 132164,
+            },
+            MM = {
+                id = 2,
+                name = 'MM',
+                icon = 132222,
+            },
+            SURV = {
+                id = 3,
+                name = 'SURV',
+                icon = 132215,
+            },
+        },
+        scan = function()
+            return nil;
+        end,
+    },
+    ROGUE = {
+        id = 4,
+        name = 'ROGUE',
+        icon = 626005,
+        specs = {
+            ASSASSIN = {
+                id = 1,
+                name = 'ASSASSIN',
+                icon = 132292,
+            },
+            COMBAT = {
+                id = 2,
+                name = 'COMBAT',
+                icon = 132090,
+            },
+            SUBTLETY = {
+                id = 3,
+                name = 'SUBTLETY',
+                icon = 132089,
+            },
+        },
+        scan = function()
+            return nil;
+        end,
+    },
+    PRIEST = {
+        id = 5,
+        name = 'PRIEST',
+        icon = 626004,
+        specs = {
+            DISC = {
+                id = 1,
+                name = 'DISC',
+                icon = 135987,
+            },
+            HOLY = {
+                id = 2,
+                name = 'HOLY',
+                icon = 626004,
+            },
+            SHADOW = {
+                id = 3,
+                name = 'SHADOW',
+                icon = 136207,
+            },
+        },
+        scan = function()
+            local _, _, shadow = GetTalentTabInfo(3);
+
+            if shadow > 30 then
+                return 'SHADOW';
+            end
+
+            return 'HOLY';
+        end,
+    },
+    DEATHKNIGHT = {
+        id = 6,
+        name = 'DEATHKNIGHT',
+        icon = 0,
+        specs = {
+            DISC = {
+                id = 1,
+                icon = 0,
+            },
+            HOLY = {
+                id = 2,
+                icon = 0,
+            },
+            SHADOW = {
+                id = 3,
+                icon = 0,
+            },
+        },
+        scan = function()
+            return nil;
+        end,
+    },
+    SHAMAN = {
+        id = 7,
+        name = 'SHAMAN',
+        icon = 626006,
+        specs = {
+            ELEM = {
+                id = 1,
+                name = 'ELEM',
+                icon = 136048,
+            },
+            ENH = {
+                id = 2,
+                name = 'ENH',
+                icon = 136114,
+            },
+            RESTOR = {
+                id = 3,
+                name = 'RESTOR',
+                icon = 136052,
+            },
+        },
+        scan = function()
+            local _, _, elem = GetTalentTabInfo(1);
+            local _, _, enh = GetTalentTabInfo(2);
+            local _, _, restor = GetTalentTabInfo(3);
+
+            if restor > elem and restor > enh then
+                return 'RESTOR';
+            elseif elem > restor and elem > enh then
+                return 'ELEM';
+            elseif enh > restor and enh > elem then
+                return 'ENH';
+            end
+
+            return nil;
+        end,
+    },
+    MAGE = {
+        id = 8,
+        name = 'MAGE',
+        icon = 626001,
+        specs = {
+            ARCANE = {
+                id = 1,
+                name = 'ARCANE',
+                icon = 135932,
+            },
+            FIRE = {
+                id = 2,
+                name = 'FIRE',
+                icon = 135812,
+            },
+            FROST = {
+                id = 3,
+                name = 'FROST',
+                icon = 135846,
+            },
+        },
+        scan = function()
+            local _, _, fire = GetTalentTabInfo(2);
+            local _, _, frost = GetTalentTabInfo(3);
+
+            if fire > frost then
+                return 'FIRE';
+            elseif frost > fire then
+                return 'FROST';
+            end
+
+            return nil;
+        end,
+    },
+    WARLOCK = {
+        id = 9,
+        name = 'WARLOCK',
+        icon = 626007,
+        specs = {
+            AFFLI = {
+                id = 1,
+                name = 'AFFLI',
+                icon = 136145,
+            },
+            DEMON = {
+                id = 2,
+                name = 'DEMON',
+                icon = 136172,
+            },
+            DESTR = {
+                id = 3,
+                name = 'DESTR',
+                icon = 136186,
+            },
+        },
+        scan = function()
+            return nil;
+        end,
+    },
+    MONK = {
+        id = 10,
+        name = 'MONK',
+        icon = 0,
+        specs = {
+            AFFLI = {
+                id = 1,
+                name = 'DESTR',
+                icon = 0,
+            },
+            DEMON = {
+                id = 2,
+                name = 'DESTR',
+                icon = 0,
+            },
+            DESTR = {
+                id = 3,
+                name = 'DESTR',
+                icon = 0,
+            },
+        },
+        scan = function()
+            return nil;
+        end,
+    },
+    DRUID = {
+        id = 11,
+        name = 'DRUID',
+        icon = 625999,
+        specs = {
+            BALANCE = {
+                id = 1,
+                name = 'BALANCE',
+                icon = 136096,
+            },
+            FERAL = {
+                id = 2,
+                name = 'FERAL',
+                icon = 132276,
+            },
+            RESTOR = {
+                id = 3,
+                name = 'RESTOR',
+                icon = 136041,
+            },
+        },
+        scan = function()
+            local _, _, heal = GetTalentTabInfo(3);
+
+            if heal > 15 then
+                return 'RESTOR';
+            end
+
+            local _, _, balance = GetTalentTabInfo(1);
+            local _, _, feral = GetTalentTabInfo(2);
+
+            if balance > feral then
+                return 'BALANCE';
+            elseif feral > balance then
+                return 'FERAL';
+            end
+
+            return nil;
+        end,
+    },
+    DEMONHUNTER = {
+        id = 12,
+        name = 'DEMONHUNTER',
+        icon = 0,
+        specs = {
+            AFFLI = {
+                id = 1,
+                name = 'RESTOR',
+                icon = 0,
+            },
+            DEMON = {
+                id = 2,
+                name = 'RESTOR',
+                icon = 0,
+            },
+            DESTR = {
+                id = 3,
+                name = 'RESTOR',
+                icon = 0,
+            },
+        },
+        scan = function()
+            return nil;
+        end,
+    },
 };
 
+local CLASSES_ORDER = { 'WARRIOR', 'PALADIN', 'HUNTER', 'ROGUE', 'PRIEST', 'DEATHKNIGHT', 'SHAMAN', 'MAGE', 'WARLOCK', 'MONK', 'DRUID', 'DEMONHUNTER', };
+
+local function getClassSpec()
+    local class = ExG.state.class;
+    local spec = CLASSES[class] and CLASSES[class].scan() or nil;
+
+    return spec and (class .. '_' .. spec) or class;
+end
+
+local MAX_TIPS = 12;
 local MAX_ROLLS = 10;
 local PANE_WIDTH = 200;
 local PANE_HEIGH = 371;
@@ -91,17 +457,6 @@ local function getTips(self, pane)
     pane.bis.label:SetPoint('TOPLEFT', pane.head.frame, 'BOTTOMLEFT', 0, -2);
     pane.bis.label:SetPoint('BOTTOMRIGHT', pane.head.frame, 'BOTTOMLEFT', 0, -12);
 
-    for i, v in ipairs(CLASSES) do
-        pane.bis[v.name] = AceGUI:Create('Icon');
-        pane.bis[v.name]:SetImageSize(SIZE, SIZE);
-        pane.bis[v.name]:SetImage('Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES', unpack(CLASS_ICON_TCOORDS[v.name]));
-        pane:AddChild(pane.bis[v.name]);
-
-        pane.bis[v.name]:SetPoint('LEFT', pane.bis.label.frame, 'RIGHT', -5 + (i - 1) * SIZE, 2);
-
-        pane.bis[v.name].frame:Hide();
-    end
-
     pane.opt = {};
 
     pane.opt.label = AceGUI:Create('Label');
@@ -115,15 +470,26 @@ local function getTips(self, pane)
     pane.opt.label:SetPoint('TOPLEFT', pane.head.frame, 'BOTTOMLEFT', 0, -15);
     pane.opt.label:SetPoint('BOTTOMRIGHT', pane.head.frame, 'BOTTOMLEFT', 0, -25);
 
-    for i, v in ipairs(CLASSES) do
-        pane.opt[v.name] = AceGUI:Create('Icon');
-        pane.opt[v.name]:SetImageSize(SIZE, SIZE);
-        pane.opt[v.name]:SetImage('Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES', unpack(CLASS_ICON_TCOORDS[v.name]));
-        pane:AddChild(pane.opt[v.name]);
+    for i = 1, MAX_TIPS do
+        pane.bis[i] = AceGUI:Create('Icon');
+        pane.bis[i]:SetImageSize(SIZE, SIZE);
+        pane.bis[i]:SetWidth(SIZE);
+        pane.bis[i]:SetHeight(SIZE);
+        pane:AddChild(pane.bis[i]);
 
-        pane.opt[v.name]:SetPoint('LEFT', pane.opt.label.frame, 'RIGHT', -5 + (i - 1) * SIZE, 0);
+        pane.bis[i]:SetPoint('LEFT', pane.bis.label.frame, 'RIGHT', 30 + (i - 1) * (SIZE + 2), 6);
 
-        pane.opt[v.name].frame:Hide();
+        pane.bis[i].frame:Hide();
+
+        pane.opt[i] = AceGUI:Create('Icon');
+        pane.opt[i]:SetImageSize(SIZE, SIZE);
+        pane.opt[i]:SetWidth(SIZE);
+        pane.opt[i]:SetHeight(SIZE);
+        pane:AddChild(pane.opt[i]);
+
+        pane.opt[i]:SetPoint('LEFT', pane.opt.label.frame, 'RIGHT', 30 + (i - 1) * (SIZE + 2), 4);
+
+        pane.opt[i].frame:Hide();
     end
 end
 
@@ -341,17 +707,83 @@ local function getPane(self, itemId)
 end
 
 local function renderTips(self, pane, settings)
-    for i, v in ipairs(CLASSES) do
-        if settings and settings[v.name] and settings[v.name].bis then
-            pane.bis[v.name].frame:Show();
-        else
-            pane.bis[v.name].frame:Hide();
+    local scan = function(res, class)
+        if not settings then
+            return;
         end
 
-        if settings and settings[v.name] and settings[v.name].opt then
-            pane.opt[v.name].frame:Show();
+        for i, v in pairs(settings) do
+            if strfind(tostring(i), class) then
+                if v.bis or v.opt then
+                    tinsert(res, { name = i, bis = v.bis, opt = v.opt, });
+                end
+            end
+        end
+    end;
+
+    local res = {};
+
+    for i, v in ipairs(CLASSES_ORDER) do
+        scan(res, v);
+    end
+
+    for i, v in ipairs(res) do
+        local class, spec = strsplit('_', v.name, 2);
+
+        v.class = class;
+
+        class = CLASSES[class];
+
+        v.id = class.id;
+        v.desc = L[class.name];
+
+        if spec and class.specs[spec] then
+            spec = class.specs[spec];
         else
-            pane.opt[v.name].frame:Hide();
+            spec = nil;
+        end
+
+        if spec then
+            v.num = spec.id;
+            v.spec = spec.name;
+            v.icon = spec.icon;
+        else
+            v.num = 0;
+            v.spec = nil;
+            v.icon = class.icon;
+        end
+    end
+
+    sort(res, function(a, b) if a.id < b.id then return true; elseif a.id == b.id then return a.num < b.num; end return false; end);
+
+    local bisIdx, optIdx = 1, 1;
+
+    for i = 1, MAX_TIPS do
+        pane.bis[i].frame:Hide();
+        pane.opt[i].frame:Hide();
+    end
+
+    for i = 1, #res do
+        local tip = res[i];
+
+        if tip then
+            if tip.bis and bisIdx <= MAX_TIPS then
+                pane.bis[bisIdx]:SetImage(tip.icon);
+                pane.bis[bisIdx]:SetCallback('OnEnter', onTip(pane.bis[i].frame, tip.class, tip.desc, tip.spec));
+                pane.bis[bisIdx]:SetCallback('OnLeave', onLeave);
+                pane.bis[bisIdx].frame:Show();
+
+                bisIdx = bisIdx + 1;
+            end
+
+            if tip.opt and optIdx <= MAX_TIPS then
+                pane.opt[optIdx]:SetImage(tip.icon);
+                pane.opt[optIdx]:SetCallback('OnEnter', onTip(pane.opt[i].frame, tip.class, tip.desc, tip.spec));
+                pane.opt[optIdx]:SetCallback('OnLeave', onLeave);
+                pane.opt[optIdx].frame:Show();
+
+                optIdx = optIdx + 1;
+            end
         end
     end
 end
@@ -364,10 +796,13 @@ local function renderButons(self, pane, settings)
             local enabled = true;
 
             if settings and btn.id ~= 'button6' then
+                local spec = settings[getClassSpec()];
                 local class = settings[ExG.state.class];
                 local def = settings['DEFAULT'] or {};
 
-                if class then
+                if spec then
+                    enabled = spec[btn.id];
+                elseif class then
                     enabled = class[btn.id];
                 else
                     enabled = def[btn.id];
@@ -457,11 +892,12 @@ local function renderItem(self, pane)
     end
 
     local settings = store().items.data[item.id];
+    local spec = settings and settings[getClassSpec()] or {};
     local class = settings and settings[ExG.state.class] or {};
     local def = settings and settings['DEFAULT'] or {};
 
     pane.head:SetImage(item.texture);
-    pane.cost:SetText(((class.gp or def.gp) or item.gp or 0) .. ' GP');
+    pane.cost:SetText((spec.gp or class.gp or def.gp or item.gp or 0) .. ' GP');
     pane.count:SetText('x ' .. (item.count or 0));
     pane.head:SetLabel(item.link);
     pane.head:SetCallback('OnEnter', onEnter(pane.head.frame, item.link));
@@ -585,7 +1021,6 @@ function ExG.RollFrame:AddItems(items)
 
         tmp.id = id;
         tmp.count = v;
-        tmp.settings = class or def;
         tmp.gp = class.gp or def.gp;
 
         ExG:AcceptItem(id);

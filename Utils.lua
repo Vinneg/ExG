@@ -122,8 +122,6 @@ local TOKENS = {
 local function toSlots(item)
     local token = TOKENS[item.id] and TOKENS[item.id].loc;
 
-    print('toSlots: item = ', item.name, ', id = ', item.id, ', token = ', token);
-
     return token and LOCS[token] or LOCS[item.loc];
 end
 
