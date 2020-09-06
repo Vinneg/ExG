@@ -352,7 +352,7 @@ function ExG.RosterFrame:Create()
     self.frame:SetTitle(L['ExG']);
     self.frame:SetLayout(nil);
     self.frame:EnableResize(false);
-    self.frame:SetWidth(470);
+    self.frame:SetWidth(570);
     self.frame:SetHeight(700);
     self.frame:Hide();
 

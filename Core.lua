@@ -325,6 +325,7 @@ ExG.options = {
                     name = L['Share Options'],
                     order = 61,
                     width = 'full',
+                    disabled = function() local info = ExG:GuildInfo(UnitName('player')); return (info and info.rankId or 999) > 2; end,
                     func = function() ExG:OptionsShare(); end,
                 },
                 shareFiller = {
@@ -1254,6 +1255,12 @@ function ExG:handleOptionsShare(_, message, _, sender)
 
     if not success then
         return
+    end
+
+    local info = self:GuildInfo(sender);
+
+    if (info and info.rankId or 999) > 2 then
+        return;
     end
 
     if sender ~= self.state.name then
