@@ -1263,9 +1263,11 @@ function ExG:handleOptionsShare(_, message, _, sender)
         return;
     end
 
-    if sender ~= self.state.name then
-        self:Print(L['Options received'](sender));
+    if sender == self.state.name then
+        return;
     end
+
+    self:Print(L['Options received'](sender));
 
     store().baseEP = baseEP;
     store().baseGP = baseGP;
