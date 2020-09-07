@@ -21,6 +21,7 @@ L['Base EP'] = 'Базовое EP';
 L['Base GP'] = 'Базовое GP';
 L['Cancel'] = 'Отмена';
 L['Ok'] = 'Ок';
+L['Accept option share from this rank and above'] = 'Принимать настройки от этого ранга и выше';
 L['ExG Show GP'] = 'Показывать стоимость GP в подсказках';
 L['Unit Adjust Desc'] = function(type, diff, reason) return format('Индивидуально %s%d %s%s', diff < 0 and '' or '+', diff, type or 'EP', (reason or '') == '' and '' or format(' (%s)', reason)); end;
 L['ExG Tooltip GP value'] = function(gp) return 'Стоимость GP: ' .. (gp or 0) end;
@@ -111,6 +112,7 @@ L['ExG Debug Desc'] = 'В режиме отладки не происходит 
 L['Share Options'] = 'Поделиться настройками';
 L['Options sent'] = '|cff33ff99Настройки отправлены всем членам гильдии онлайн|r';
 L['Options received'] = function(sender) return format('|cff33ff99Получены настройки от %s|r', sender); end;
+L['Options ignored'] = function(sender) return format('|cff33ff99Проигнорированы настройки от %s|r', sender); end;
 L['ExG Bosses'] = 'Боссы';
 L['ExG Bosses MC'] = 'Огненные Недра';
 L['ExG Bosses BWL'] = 'Логово Крыла Тьмы';

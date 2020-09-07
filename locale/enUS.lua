@@ -21,6 +21,7 @@ L['Base EP'] = true;
 L['Base GP'] = true;
 L['Cancel'] = true;
 L['Ok'] = true;
+L['Accept option share from this rank and above'] = true;
 L['ExG Show GP'] = 'Show GP values on tooltips';
 L['Unit Adjust Desc'] = function(type, diff, reason) return format('Individual %s%d %s%s', diff < 0 and '' or '+', diff, type or 'EP', (reason or '') == '' and '' or format(' (%s)', reason)); end;
 L['ExG Tooltip GP value'] = function(gp) return format('GP value: %d', gp or 0); end;
@@ -114,6 +115,7 @@ L['ExG Debug Desc'] = 'In debug mode, EP and GP values are not saved to officer 
 L['Share Options'] = true;
 L['Options sent'] = '|cff33ff99Options sent to all online guild members|r';
 L['Options received'] = function(sender) return format('|cff33ff99Options received from %s|r', sender); end;
+L['Options ignored'] = function(sender) return format('|cff33ff99Options ignored from %s|r', sender); end;
 L['ExG Bosses'] = 'Bosses';
 L['ExG Bosses MC'] = 'Molten Core';
 L['ExG Bosses BWL'] = 'Blackwing Lair';

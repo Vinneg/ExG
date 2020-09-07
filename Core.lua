@@ -166,6 +166,7 @@ ExG.defaults = {
         baseGP = 10,
         debug = false,
         showGp = true,
+        optionFilter = 1,
         items = {
             pageSize = 50,
             threshold = 4,
@@ -320,18 +321,33 @@ ExG.options = {
                     name = L['Share Options'],
                     order = 60,
                 },
+                filter = {
+                    type = 'select',
+                    name = '',
+                    order = 61,
+                    width = 0.7,
+                    style = 'dropdown',
+                    values = function() local res = {}; for i = 1, GuildControlGetNumRanks() do res[i] = GuildControlGetRankName(i); end return res; end,
+                    get = function() return store().optionFilter; end,
+                    set = function(_, value) store().optionFilter = value; end,
+                },
+                filterDesc = {
+                    type = 'description',
+                    name = L['Accept option share from this rank and above'],
+                    order = 62,
+                    width = 1.7,
+                },
                 share = {
                     type = 'execute',
                     name = L['Share Options'],
-                    order = 61,
+                    order = 67,
                     width = 'full',
-                    disabled = function() local info = ExG:GuildInfo(UnitName('player')); return (info and info.rankId or 999) > 2; end,
                     func = function() ExG:OptionsShare(); end,
                 },
                 shareFiller = {
                     type = 'description',
                     name = '',
-                    order = 62,
+                    order = 69,
                     width = 'full',
                 },
                 debugHeader = {
@@ -1243,7 +1259,7 @@ function ExG:handleHistoryShare(_, message, _, sender)
 end
 
 function ExG:OptionsShare()
-    local data = Serializer:Serialize(store().baseEP, store().baseGP, store().items.threshold, store().items.formula, store().items.data, store().buttons, store().bosses);
+    local data = Serializer:Serialize(store().baseEP, store().baseGP, store().optionFilter, store().items.threshold, store().items.formula, store().items.data, store().buttons, store().bosses);
 
     self:Print(L['Options sent']);
 
@@ -1251,7 +1267,7 @@ function ExG:OptionsShare()
 end
 
 function ExG:handleOptionsShare(_, message, _, sender)
-    local success, baseEP, baseGP, itemsThreshold, itemsFormula, itemsData, buttons, bosses = Serializer:Deserialize(message);
+    local success, baseEP, baseGP, optionFilter, itemsThreshold, itemsFormula, itemsData, buttons, bosses = Serializer:Deserialize(message);
 
     if not success then
         return
@@ -1259,7 +1275,9 @@ function ExG:handleOptionsShare(_, message, _, sender)
 
     local info = self:GuildInfo(sender);
 
-    if (info and info.rankId or 999) > 2 then
+    if (info and info.rankId or 999) > store().optionFilter then
+        self:Print(L['Options ignored'](sender));
+
         return;
     end
 
@@ -1269,6 +1287,7 @@ function ExG:handleOptionsShare(_, message, _, sender)
 
     store().baseEP = baseEP;
     store().baseGP = baseGP;
+    store().optionFilter = optionFilter;
     store().items.threshold = itemsThreshold;
     store().items.formula = itemsFormula;
     store().items.data = itemsData;
