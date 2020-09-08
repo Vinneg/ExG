@@ -166,6 +166,8 @@ ExG.defaults = {
         baseGP = 10,
         debug = false,
         showGp = true,
+        optionFilter = 1,
+        channel = 'GUILD',
         items = {
             pageSize = 50,
             threshold = 4,
@@ -315,23 +317,54 @@ ExG.options = {
                     get = function() return store().showGp; end,
                     set = function(_, value) store().showGp = value; end,
                 },
+                channel = {
+                    type = 'select',
+                    name = '',
+                    order = 16,
+                    width = 0.7,
+                    style = 'dropdown',
+                    values = { RAID = L['RAID'], GUILD = L['GUILD'], OFFICER = L['OFFICER'], },
+                    get = function() return store().channel; end,
+                    set = function(_, value) store().channel = value; end,
+                },
+                channelDesc = {
+                    type = 'description',
+                    name = L['Report channel for EPGP events'],
+                    order = 17,
+                    width = 1.7,
+                },
                 shareHeader = {
                     type = 'header',
                     name = L['Share Options'],
                     order = 60,
                 },
+                filter = {
+                    type = 'select',
+                    name = '',
+                    order = 61,
+                    width = 0.7,
+                    style = 'dropdown',
+                    values = function() local res = {}; for i = 1, GuildControlGetNumRanks() do res[i] = format('%s #%d', GuildControlGetRankName(i), i); end return res; end,
+                    get = function() return store().optionFilter; end,
+                    set = function(_, value) store().optionFilter = value; end,
+                },
+                filterDesc = {
+                    type = 'description',
+                    name = L['Accept option share from this rank and above'],
+                    order = 62,
+                    width = 1.7,
+                },
                 share = {
                     type = 'execute',
                     name = L['Share Options'],
-                    order = 61,
+                    order = 67,
                     width = 'full',
-                    disabled = function() local info = ExG:GuildInfo(UnitName('player')); return (info and info.rankId or 999) > 2; end,
                     func = function() ExG:OptionsShare(); end,
                 },
                 shareFiller = {
                     type = 'description',
                     name = '',
-                    order = 62,
+                    order = 69,
                     width = 'full',
                 },
                 debugHeader = {
@@ -343,6 +376,7 @@ ExG.options = {
                     type = 'toggle',
                     name = L['ExG Debug'],
                     order = 71,
+                    disabled = true;
                     get = function() return store().debug; end,
                     set = function(_, value) store().debug = value; end,
                 },
@@ -1023,6 +1057,8 @@ function ExG:HandleChatCommand(input)
         end
 
         self:AnnounceItems(items);
+    elseif arg == 'debug' then
+        store().debug = not (store().debug or false);
     elseif arg == 'his' then
         self.HistoryFrame:Show();
     elseif arg == 'inv' then
@@ -1036,6 +1072,8 @@ function ExG:HandleChatCommand(input)
         self:Print('|cff33ff99', L['Usage:'], '|r');
         self:Print('opts|cff33ff99 - ', L['to open Options frame'], '|r');
         self:Print('open|cff33ff99 - ', L['to open Roster frame'], '|r');
+        self:Print('his|cff33ff99 - ', L['to open History frame'], '|r');
+        self:Print('inv|cff33ff99 - ', L['to open Inventory Roll frame'], '|r');
     end
 end
 
@@ -1071,6 +1109,8 @@ function ExG:OnInitialize()
 end
 
 function ExG:PostInit()
+    store().debug = false;
+
     self.state.name = UnitName('player');
     self.state.class = select(2, UnitClass('player'));
 
@@ -1243,7 +1283,7 @@ function ExG:handleHistoryShare(_, message, _, sender)
 end
 
 function ExG:OptionsShare()
-    local data = Serializer:Serialize(store().baseEP, store().baseGP, store().items.threshold, store().items.formula, store().items.data, store().buttons, store().bosses);
+    local data = Serializer:Serialize(store().baseEP, store().baseGP, store().optionFilter, store().channel, store().items.threshold, store().items.formula, store().items.data, store().buttons, store().bosses);
 
     self:Print(L['Options sent']);
 
@@ -1251,19 +1291,21 @@ function ExG:OptionsShare()
 end
 
 function ExG:handleOptionsShare(_, message, _, sender)
-    local success, baseEP, baseGP, itemsThreshold, itemsFormula, itemsData, buttons, bosses = Serializer:Deserialize(message);
+    local success, baseEP, baseGP, optionFilter, channel, itemsThreshold, itemsFormula, itemsData, buttons, bosses = Serializer:Deserialize(message);
 
     if not success then
         return
     end
 
-    local info = self:GuildInfo(sender);
-
-    if (info and info.rankId or 999) > 2 then
+    if sender == self.state.name then
         return;
     end
 
-    if sender == self.state.name then
+    local info = self:GuildInfo(sender);
+
+    if (info and info.rankId or 99) > store().optionFilter then
+        self:Print(L['Options ignored'](sender));
+
         return;
     end
 
@@ -1271,6 +1313,8 @@ function ExG:handleOptionsShare(_, message, _, sender)
 
     store().baseEP = baseEP;
     store().baseGP = baseGP;
+    store().optionFilter = optionFilter;
+    store().channel = channel;
     store().items.threshold = itemsThreshold;
     store().items.formula = itemsFormula;
     store().items.data = itemsData;
@@ -1337,6 +1381,8 @@ function ExG:ENCOUNTER_END(_, id, _, _, _, success)
     store().history.data[dt].details = details;
 
     self:HistoryShare({ data = { [dt] = store().history.data[dt] } });
+
+    self:Report(L['ExG Report Boss'](L['ExG Boss ' .. id], boss.ep));
 end
 
 function ExG:LOOT_OPENED()

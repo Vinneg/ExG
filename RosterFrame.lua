@@ -116,7 +116,7 @@ local function makeFilters(self)
     end
 
     local cText = AceGUI:Create('Label');
-    cText:SetWidth(80);
+    cText:SetWidth(100);
     cText:SetHeight(25);
     cText:SetText(L['Class Filter']);
     cText:SetJustifyH('RIGHT');
@@ -136,7 +136,7 @@ local function makeFilters(self)
     class:SetPoint('LEFT', cText.frame, 'RIGHT', 5, 0);
 
     local rText = AceGUI:Create('Label');
-    rText:SetWidth(80);
+    rText:SetWidth(100);
     rText:SetHeight(25);
     rText:SetText(L['Rank Filter']);
     rText:SetJustifyH('RIGHT');
@@ -207,7 +207,7 @@ local function makeHeaders(self)
     pr:SetCallback('OnClick', order(self, 'pr'));
     self.frame:AddChild(pr);
 
-    pr:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -30, -90);
+    pr:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -20, -90);
 
     local gp = AceGUI:Create('InteractiveLabel');
     gp:SetFont(DEFAULT_FONT, 10);
@@ -383,6 +383,7 @@ function ExG.RosterFrame:Create()
     self.frame.guild:SetWidth(120);
     self.frame.guild:SetHeight(25);
     self.frame.guild:SetText(L['Add Guild EPGP']);
+    self.frame.guild:SetDisabled(not CanEditOfficerNote());
     self.frame.guild:SetCallback('OnClick', function() self.AdjustDialog:Show('guild'); end);
     self.frame:AddChild(self.frame.guild);
 
@@ -393,6 +394,7 @@ function ExG.RosterFrame:Create()
     self.frame.raid:SetWidth(120);
     self.frame.raid:SetHeight(25);
     self.frame.raid:SetText(L['Add Raid EPGP']);
+    self.frame.raid:SetDisabled(not CanEditOfficerNote());
     self.frame.raid:SetCallback('OnClick', function() self.AdjustDialog:Show('raid'); end);
     self.frame:AddChild(self.frame.raid);
 
@@ -403,6 +405,7 @@ function ExG.RosterFrame:Create()
     self.frame.decay:SetWidth(120);
     self.frame.decay:SetHeight(25);
     self.frame.decay:SetText(L['Guild Decay']);
+    self.frame.decay:SetDisabled(not CanEditOfficerNote());
     self.frame.decay:SetCallback('OnClick', function() self.DecayDialog:Show(); end);
     self.frame:AddChild(self.frame.decay);
 
@@ -506,6 +509,8 @@ local function guidEG(self, ep, gp, desc)
 
     ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
 
+    ExG:Report(L['ExG Report Guild EG'](ep, gp, desc));
+
     self:Hide();
 end
 
@@ -562,6 +567,8 @@ local function raidEG(self, ep, gp, desc)
 
     ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
 
+    ExG:Report(L['ExG Report Raid EG'](ep, gp, desc));
+
     self:Hide();
 end
 
@@ -611,6 +618,8 @@ local function unitEG(self, unit, ep, gp, desc)
     };
 
     ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
+
+    ExG:Report(L['ExG Report Unit EG'](unit, type, diff, desc));
 
     self:Hide();
 end

@@ -7,12 +7,14 @@ local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 local state = function() return ExG.state; end;
 local store = function() return ExG.store.char; end;
 
-local btnRoll = function(self, pane, gp, btn, info1, info2)
+local btnRoll = function(self, pane, item, btn, info1, info2)
     return function()
+        item.rolled = true;
+
         ExG:RollItem({
             id = pane.itemId,
             class = ExG.state.class,
-            gp = gp,
+            gp = item.gp,
             option = btn.id,
             slot1 = info1 and info1.link,
             slot2 = info2 and info2.link,
@@ -814,7 +816,7 @@ local function renderButons(self, pane, settings)
 
             local info1, info2 = ExG:Equipped(item.slots);
 
-            pane[btn.id]:SetCallback('OnClick', btnRoll(self, pane, item.gp, btn, info1, info2));
+            pane[btn.id]:SetCallback('OnClick', btnRoll(self, pane, item, btn, info1, info2));
         end
     end
 end
@@ -846,8 +848,9 @@ local function renderRolls(self, pane)
         if a.option < b.option then
             return true;
         elseif a.option == b.option then
-            return a.pr > b.pr;
+            return a.pr == b.pr and a.rnd > b.rnd or a.pr > b.pr;
         end;
+
         return false;
     end);
 
@@ -935,6 +938,8 @@ local function disenchantHistory(item)
     };
 
     ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
+
+    ExG:Report(L['ExG Report Disenchant'](item.link));
 end
 
 local function appendHistory(item, roll)
@@ -956,14 +961,12 @@ local function appendHistory(item, roll)
         details = {},
     };
 
-    local gp = item.gp * button.ratio;
-
     local info = ExG:GuildInfo(roll.name);
     local old = ExG:GetEG(info.officerNote);
-    local new = ExG:SetEG(info, old.ep, old.gp + gp);
+    local new = ExG:SetEG(info, old.ep, old.gp + roll.gp);
 
     store().history.data[dt].gp = { before = old.gp, after = new.gp, };
-    store().history.data[dt].desc = L['ExG History Item'](gp, button.text);
+    store().history.data[dt].desc = L['ExG History Item'](roll.gp, button.text);
 
     local i, details = 1, {};
 
@@ -984,19 +987,22 @@ local function appendHistory(item, roll)
 
     store().history.data[dt].details = details;
 
-    ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
+    ExG:HistoryShare({ data = { [dt] = store().history.data[dt], }, });
+
+    ExG:Report(L['ExG Report Item'](roll.name, item.link, roll.gp));
 end
 
 function ExG.RollFrame:Create()
     self.frame = AceGUI:Create('Window');
     self.frame:SetTitle(L['Roll Frame']);
     self.frame:SetLayout(nil);
-    self.frame:SetCallback('OnClose', function() for id in pairs(self.items) do ExG:RollItem({ id = id, class = ExG.state.class, option = 'button6', }); self:RemoveItem(id); end self.frame:Hide(); end);
+    self.frame:SetCallback('OnClose', function() self:Hide(); end);
     self.frame:SetHeight(471);
     self.frame:EnableResize(false);
-    self.frame:Hide();
 
     self.Dialog:Create();
+
+    self.frame:Hide();
 end
 
 function ExG.RollFrame:Show()
@@ -1004,6 +1010,22 @@ function ExG.RollFrame:Show()
 end
 
 function ExG.RollFrame:Hide()
+    for id, item in pairs(self.items) do
+        if not (item.rolled or false) then
+            ExG:RollItem({
+                id = id,
+                class = ExG.state.class,
+                gp = item.gp,
+                option = 'button6',
+                slot1 = nil,
+                slot2 = nil,
+                rnd = random(1, 100),
+            });
+        end
+
+        self:RemoveItem(id);
+    end
+
     self.Dialog:Hide();
 
     self.frame:Hide();
@@ -1162,8 +1184,10 @@ local function renderDialog(self)
     sort(btns, function(a, b) return a.id < b.id; end);
 
     for i, btn in ipairs(btns) do
-        self.frame.btn[i]:SetText(format('%s\n%d GP', btn.text, floor(self.roll.gp * btn.ratio)));
-        self.frame.btn[i]:SetCallback('OnClick', function() self:GiveItem(self.item, { name = self.roll.name, class = self.roll.class, option = btn.id, }); end);
+        local gp = floor(self.roll.gp * btn.ratio);
+
+        self.frame.btn[i]:SetText(format('%s\n%d GP', btn.text, gp));
+        self.frame.btn[i]:SetCallback('OnClick', function() self:GiveItem(self.item, { name = self.roll.name, class = self.roll.class, gp = gp, option = btn.id, }); end);
     end
 end
 
@@ -1232,6 +1256,10 @@ function ExG.RollFrame.Dialog:GiveItem(item, roll)
         return;
     end
 
+    if not CanEditOfficerNote() then
+        return;
+    end
+
     if not item or not roll then
         return;
     end
@@ -1267,4 +1295,6 @@ function ExG.RollFrame.Dialog:GiveItem(item, roll)
     end
 
     ExG:DistributeItem(roll.name, item.id);
+
+    self:Hide();
 end
