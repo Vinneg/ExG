@@ -196,13 +196,17 @@ function ExG:IsMl(unit)
         return false;
     end
 
+    if not unit then
+        unit = self.state.name;
+    end
+
     local info = self:RaidInfo(unit);
 
     if info then
         return info.isMl;
-    else
-        return false;
     end
+
+    return false;
 end
 
 function ExG:GuildInfo(unit)
@@ -211,7 +215,7 @@ function ExG:GuildInfo(unit)
     end
 
     for i = 1, GetNumGuildMembers() do
-        local name, rank, rankId, level, classLoc, zone, publicNote, officerNote, isOnline, status, class, achievementPoints, achievementRank, isMobile, canSoR, repStanding, GUID = GetGuildRosterInfo(i);
+        local name, rank, rankId, level, classLoc, zone, publicNote, officerNote, online, status, class, achievementPoints, achievementRank, isMobile, canSoR, repStanding, GUID = GetGuildRosterInfo(i);
 
         name = Ambiguate(name, 'all');
 
@@ -226,7 +230,7 @@ function ExG:GuildInfo(unit)
                 zone = zone,
                 publicNote = publicNote,
                 officerNote = officerNote,
-                isOnline = isOnline,
+                online = online,
                 status = status,
                 class = class,
                 achievementPoints = achievementPoints,
@@ -234,9 +238,34 @@ function ExG:GuildInfo(unit)
                 isMobile = isMobile,
                 canSoR = canSoR,
                 repStanding = repStanding,
-                GUID = GUID
+                GUID = GUID,
             };
         end
+    end
+
+    local info = self:RaidInfo(unit);
+
+    if info then
+        return {
+            index = nil,
+            name = info.name,
+            rank = L['Not in Guild'],
+            rankId = 99,
+            level = info.level,
+            classLoc = info.classLoc,
+            zone = info.zone,
+            publicNote = nil,
+            officerNote = nil,
+            online = info.online,
+            status = nil,
+            class = info.class,
+            achievementPoints = nil,
+            achievementRank = nil,
+            isMobile = nil,
+            canSoR = nil,
+            repStanding = nil,
+            GUID = nil,
+        };
     end
 
     return nil;
@@ -250,7 +279,7 @@ function ExG:RaidInfo(unit)
     unit = unit or self.state.name;
 
     for i = 1, MAX_RAID_MEMBERS do
-        local name, rank, subgroup, level, classDisplayName, class, zone, online, isDead, role, isMl, combatRole = GetRaidRosterInfo(i);
+        local name, rank, subgroup, level, classLoc, class, zone, online, isDead, role, isMl, combatRole = GetRaidRosterInfo(i);
 
         if name then
             name = Ambiguate(name, 'all');
@@ -262,7 +291,7 @@ function ExG:RaidInfo(unit)
                     rank = rank,
                     subgroup = subgroup,
                     level = level,
-                    classDisplayName = classDisplayName,
+                    classLoc = classLoc,
                     class = class,
                     zone = zone,
                     online = online,
@@ -382,7 +411,7 @@ function ExG:GetEG(offNote)
 
     ep, gp = getEG(ep, gp);
 
-    return { ep = ep, gp = gp, pr = floor(ep * 100 / gp) / 100, };
+    return { ep = ep, gp = gp, pr = floor(100 * ep / gp) / 100, };
 end
 
 function ExG:SetEG(info, ep, gp)
@@ -400,7 +429,7 @@ function ExG:SetEG(info, ep, gp)
         GuildRosterSetOfficerNote(info.index, res);
     end
 
-    return { ep = newEp, gp = newGp, pr = floor(newEp * 100 / newGp) / 100, };
+    return { ep = newEp, gp = newGp, pr = floor(100 * newEp / newGp) / 100, };
 end
 
 function ExG:CalcGP(linkOrId)
@@ -438,4 +467,8 @@ function ExG:CalcGP(linkOrId)
     local formula = store().items.formula;
 
     return math.floor(formula.coef * (formula.base ^ (lvl / 26 + info.rarity - 4)) * slot * formula.mod);
+end
+
+function ExG:Report(msg)
+    SendChatMessage(msg, store().channel);
 end
