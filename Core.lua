@@ -1283,7 +1283,7 @@ function ExG:handleHistoryShare(_, message, _, sender)
 end
 
 function ExG:OptionsShare()
-    local data = Serializer:Serialize(store().baseEP, store().baseGP, store().optionFilter, store().items.threshold, store().items.formula, store().items.data, store().buttons, store().bosses);
+    local data = Serializer:Serialize(store().baseEP, store().baseGP, store().optionFilter, store().channel, store().items.threshold, store().items.formula, store().items.data, store().buttons, store().bosses);
 
     self:Print(L['Options sent']);
 
@@ -1291,7 +1291,7 @@ function ExG:OptionsShare()
 end
 
 function ExG:handleOptionsShare(_, message, _, sender)
-    local success, baseEP, baseGP, optionFilter, itemsThreshold, itemsFormula, itemsData, buttons, bosses = Serializer:Deserialize(message);
+    local success, baseEP, baseGP, optionFilter, channel, itemsThreshold, itemsFormula, itemsData, buttons, bosses = Serializer:Deserialize(message);
 
     if not success then
         return
@@ -1314,6 +1314,7 @@ function ExG:handleOptionsShare(_, message, _, sender)
     store().baseEP = baseEP;
     store().baseGP = baseGP;
     store().optionFilter = optionFilter;
+    store().channel = channel;
     store().items.threshold = itemsThreshold;
     store().items.formula = itemsFormula;
     store().items.data = itemsData;
