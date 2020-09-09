@@ -421,6 +421,10 @@ function ExG.RosterFrame:Show()
 
     getData(self);
 
+    self.frame.guild:SetDisabled(not CanEditOfficerNote());
+    self.frame.raid:SetDisabled(not CanEditOfficerNote());
+    self.frame.decay:SetDisabled(not CanEditOfficerNote());
+
     self:RenderItems();
 end
 

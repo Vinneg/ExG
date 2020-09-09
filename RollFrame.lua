@@ -422,6 +422,7 @@ local function getClassSpec()
 end
 
 local MAX_TIPS = 12;
+local MAX_PANES = 10;
 local MAX_ROLLS = 10;
 local PANE_WIDTH = 200;
 local PANE_HEIGH = 371;
@@ -434,8 +435,8 @@ ExG.RollFrame = {
 local function count(self)
     local res = 0;
 
-    for _, v in ipairs(self.frame.children) do
-        if v.itemId then
+    for _, pane in ipairs(self.frame.children) do
+        if pane.itemId then
             res = res + 1;
         end
     end
@@ -443,7 +444,7 @@ local function count(self)
     return res;
 end
 
-local function getTips(self, pane)
+local function makeTips(self, pane)
     local SIZE = 12;
 
     pane.bis = {};
@@ -495,7 +496,7 @@ local function getTips(self, pane)
     end
 end
 
-local function getButtons(self, pane)
+local function makeButtons(self, pane)
     local points = {
         button = {
             { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -32 },
@@ -524,7 +525,7 @@ local function getButtons(self, pane)
 
     for i, btn in ipairs(btns) do
         pane[btn.id] = AceGUI:Create('Button');
-        pane[btn.id]:SetText('');
+        pane[btn.id]:SetText(btn.text);
         pane[btn.id]:SetWidth((PANE_WIDTH - 15) / 2);
         pane[btn.id]:SetDisabled(true);
         pane:AddChild(pane[btn.id]);
@@ -555,11 +556,11 @@ local function getButtons(self, pane)
     return last;
 end
 
-local function getRolls(pane)
+local function makeRolls(pane)
     pane.rolls = {};
 
     for i = 1, MAX_ROLLS do
-        pane.rolls[i] = pane.rolls[i] or {};
+        pane.rolls[i] = {};
 
         local roll = pane.rolls[i];
 
@@ -626,86 +627,64 @@ local function getRolls(pane)
     end
 end
 
-local function getPane(self, itemId)
-    local pane, blank;
+local function makePane(self)
+    local pane = AceGUI:Create('SimpleGroup');
+    pane:SetWidth(PANE_WIDTH);
+    pane:SetLayout(nil);
+    self.frame:AddChild(pane);
 
-    for i = 1, #self.frame.children do
-        local tmp = self.frame.children[i];
+    pane.head = AceGUI:Create('Icon');
+    pane.head:SetImageSize(50, 50);
+    pane.head:SetLabel('link');
+    pane.head:SetCallback('OnLeave', onLeave);
 
-        pane = (tmp.itemId == itemId) and tmp or pane;
-        if not tmp.itemId and not blank then
-            blank = tmp;
-        end
-    end
+    pane.cost = pane.head.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+    pane.cost:SetFont(DEFAULT_FONT, 10);
+    pane.cost:ClearAllPoints();
+    pane.cost:SetPoint('LEFT', 20, 0);
+    pane.cost:SetJustifyH('LEFT');
+    pane.cost:SetJustifyV('MIDDLE');
+    pane.cost:SetText('0 GP');
 
-    if not pane and blank then
-        pane = blank;
-        pane.itemId = itemId;
-    elseif not pane then
-        pane = AceGUI:Create('SimpleGroup');
-        pane:SetWidth(PANE_WIDTH);
-        pane:SetFullHeight(true);
-        pane:SetLayout(nil);
-        pane.itemId = itemId;
-        self.frame:AddChild(pane);
+    pane.count = pane.head.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+    pane.count:SetFont(DEFAULT_FONT, 10);
+    pane.count:ClearAllPoints();
+    pane.count:SetPoint('RIGHT', -20, 0);
+    pane.count:SetJustifyH('RIGHT');
+    pane.count:SetJustifyV('MIDDLE');
+    pane.count:SetText('x 1');
 
-        if #self.frame.children == 1 then
-            pane:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -30);
-            pane:SetPoint('BOTTOMLEFT', self.frame.frame, 'BOTTOMLEFT', 10, 10);
-        else
-            pane:SetPoint('TOPLEFT', self.frame.children[#self.frame.children - 1].frame, 'TOPRIGHT', 5, 0);
-            pane:SetPoint('BOTTOMLEFT', self.frame.children[#self.frame.children - 1].frame, 'BOTTOMRIGHT', 5, 0);
-        end
+    pane:AddChild(pane.head);
 
-        pane.head = AceGUI:Create('Icon');
-        pane.head:SetImageSize(50, 50);
-        pane.head:SetLabel('');
-        pane.head:SetCallback('OnLeave', onLeave);
+    pane.head:SetPoint('TOPLEFT');
+    pane.head:SetPoint('TOPRIGHT');
 
-        pane.cost = pane.head.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
-        pane.cost:SetFont(DEFAULT_FONT, 10);
-        pane.cost:ClearAllPoints();
-        pane.cost:SetPoint('LEFT', 20, 0);
-        pane.cost:SetJustifyH('LEFT');
-        pane.cost:SetJustifyV('MIDDLE');
-        pane.cost:SetText('0 GP');
+    makeTips(self, pane);
 
-        pane.count = pane.head.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
-        pane.count:SetFont(DEFAULT_FONT, 10);
-        pane.count:ClearAllPoints();
-        pane.count:SetPoint('RIGHT', -20, 0);
-        pane.count:SetJustifyH('RIGHT');
-        pane.count:SetJustifyV('MIDDLE');
-        pane.count:SetText('x 1');
+    local last = makeButtons(self, pane);
 
-        pane:AddChild(pane.head);
+    pane.accepted = AceGUI:Create('Label');
+    pane.accepted:SetText('none');
+    pane.accepted:SetFullWidth(true);
+    pane:AddChild(pane.accepted);
 
-        pane.head:SetPoint('TOPLEFT');
-        pane.head:SetPoint('TOPRIGHT');
+    pane.accepted:SetPoint('TOP', last.frame, 'BOTTOM', 0, -5);
+    pane.accepted:SetPoint('LEFT', pane.frame, 'LEFT', 5, 0);
+    pane.accepted:SetPoint('RIGHT', pane.frame, 'RIGHT', -5, 0);
 
-        getTips(self, pane);
-
-        local last = getButtons(self, pane);
-
-        pane.accepted = AceGUI:Create('Label');
-        pane.accepted:SetText('none');
-        pane.accepted:SetFullWidth(true);
-        pane:AddChild(pane.accepted);
-
-        pane.accepted:SetPoint('TOP', last.frame, 'BOTTOM', 0, -5);
-        pane.accepted:SetPoint('LEFT', pane.frame, 'LEFT', 5, 0);
-        pane.accepted:SetPoint('RIGHT', pane.frame, 'RIGHT', -5, 0);
-
-        getRolls(pane);
-    end
+    makeRolls(pane);
 
     self.frame:SetWidth(count(self) * (PANE_WIDTH + 5) + 15);
 
-    if count(self) == 0 then
-        self.frame:Hide();
+    if #self.frame.children == 1 then
+        pane:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -30);
+        pane:SetPoint('BOTTOMLEFT', self.frame.frame, 'BOTTOMLEFT', 10, 10);
+    else
+        pane:SetPoint('TOPLEFT', self.frame.children[#self.frame.children - 1].frame, 'TOPRIGHT', 5, 0);
+        pane:SetPoint('BOTTOMLEFT', self.frame.children[#self.frame.children - 1].frame, 'BOTTOMRIGHT', 5, 0);
     end
 
-    return pane;
+    pane.frame:Hide();
 end
 
 local function renderTips(self, pane, settings)
@@ -790,8 +769,8 @@ local function renderTips(self, pane, settings)
     end
 end
 
-local function renderButons(self, pane, settings)
-    local item = self.items[pane.itemId];
+local function renderButons(self, item, settings)
+    local pane = item.pane;
 
     for _, btn in pairs(store().buttons.data) do
         if pane[btn.id] then
@@ -883,16 +862,16 @@ local function renderRolls(self, pane)
     end
 end
 
-local function renderItem(self, pane)
-    if not pane or not pane.itemId then
-        return;
-    end
-
-    local item = self.items[pane.itemId];
-
+local function renderItem(self, item)
     if not item then
         return;
     end
+
+    if not item.pane or not item.pane.itemId then
+        return;
+    end
+
+    local pane = item.pane;
 
     local settings = store().items.data[item.id];
     local spec = settings and settings[getClassSpec()] or {};
@@ -906,17 +885,31 @@ local function renderItem(self, pane)
     pane.head:SetCallback('OnEnter', onEnter(pane.head.frame, item.link));
 
     renderTips(self, pane, settings);
-    renderButons(self, pane, settings);
+    renderButons(self, item, settings);
     renderRolls(self, pane);
+
+    self.frame:SetWidth(count(self) * (PANE_WIDTH + 5) + 15);
+
+    if count(self) == 0 then
+        self.frame:Hide();
+    end
 
     pane.frame:Show();
 end
 
-local function renderItems(self)
-    for id in pairs(self.items) do
-        local pane = getPane(self, id);
+local function getPane(self, id)
+    for i, v in ipairs(self.frame.children) do
+        if not v.itemId then
+            v.itemId = id;
 
-        renderItem(self, pane);
+            return v;
+        end
+    end
+end
+
+local function renderItems(self)
+    for id, item in pairs(self.items) do
+        renderItem(self, item);
     end
 end
 
@@ -1000,6 +993,10 @@ function ExG.RollFrame:Create()
     self.frame:SetHeight(471);
     self.frame:EnableResize(false);
 
+    for i = 1, MAX_PANES do
+        makePane(self);
+    end
+
     self.Dialog:Create();
 
     self.frame:Hide();
@@ -1037,13 +1034,11 @@ function ExG.RollFrame:AddItems(items)
 
         local tmp = self.items[id];
 
-        local settings = store().items.data[id];
-        local class = settings and settings[ExG.state.class] or {};
-        local def = settings and settings['DEFAULT'] or {};
-
         tmp.id = id;
         tmp.count = v;
-        tmp.gp = class.gp or def.gp;
+        if not tmp.pane then
+            tmp.pane = getPane(self, id);
+        end
 
         ExG:AcceptItem(id);
 
@@ -1067,15 +1062,13 @@ end
 function ExG.RollFrame:AcceptItem(itemId, source)
     local item = self.items[itemId];
 
-    if not item then
+    if not item or not item.pane then
         return;
     end
 
     item.accepted[source] = true;
 
-    local pane = getPane(self, item.id);
-
-    pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
+    item.pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
 end
 
 function ExG.RollFrame:RemoveItem(itemId)
@@ -1136,11 +1129,9 @@ function ExG.RollFrame:RollItem(data, unit)
     item.rolls[unit].slot1 = ExG:LinkInfo(data.slot1);
     item.rolls[unit].slot2 = ExG:LinkInfo(data.slot2);
 
-    local pane = getPane(self, item.id);
+    item.pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
 
-    pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
-
-    renderRolls(self, pane);
+    renderRolls(self, item.pane);
 end
 
 function ExG.RollFrame:DistributeItem(unit, itemId)

@@ -405,7 +405,11 @@ function ExG:Equipped(slots)
 end
 
 function ExG:GetEG(offNote)
-    local ep, gp;
+    if not offNote then
+        local ep, gp = getEG(0, 0);
+
+        return { ep = ep, gp = gp, pr = floor(100 * ep / gp) / 100, };
+    end
 
     local ep, gp = string.match(offNote or '', 'cep{(-?%d+%.?%d*),(-?%d+%.?%d*)}');
 
