@@ -143,6 +143,7 @@ ExG.messages = {
         pull = 'ExG_Pull',
         share = 'ExG_Share',
         options = 'ExG_Options',
+        version = 'ExG_Version',
     },
     raid = 'RAID',
     warning = 'RAID_WARNING',
@@ -1059,6 +1060,8 @@ function ExG:HandleChatCommand(input)
         self:AnnounceItems(items);
     elseif arg == 'debug' then
         store().debug = not (store().debug or false);
+    elseif arg == 'scan' then
+        ExG:ScanVersions();
     elseif arg == 'his' then
         self.HistoryFrame:Show();
     elseif arg == 'inv' then
@@ -1091,6 +1094,7 @@ function ExG:OnInitialize()
     self:RegisterComm(self.messages.prefix.pull, 'handleHistoryPull');
     self:RegisterComm(self.messages.prefix.share, 'handleHistoryShare');
     self:RegisterComm(self.messages.prefix.options, 'handleOptionsShare');
+    self:RegisterComm(self.messages.prefix.version, 'handleScanVersions');
 
     self.state.name = UnitName('player');
     self.state.class = select(2, UnitClass('player'));
@@ -1320,6 +1324,32 @@ function ExG:handleOptionsShare(_, message, _, sender)
     store().items.data = itemsData;
     store().buttons = buttons;
     store().bosses = bosses;
+end
+
+function ExG:ScanVersions(msg)
+    self:SendCommMessage(self.messages.prefix.version, msg or 'scan', self.messages.guild);
+end
+
+function ExG:handleScanVersions(_, message, _, sender)
+    local success, msg = Serializer:Deserialize(message);
+
+    if not success then
+        return
+    end
+
+    print('handleScanVersions: msg = ', msg);
+
+    if msg == 'scan' then
+        local version = GetAddOnMetadata(self.name, 'Version');
+
+        self:ScanVersions(version or 'none');
+    else
+        local version = GetAddOnMetadata(self.name, 'Version');
+
+        if msg ~= version then
+            self:Print('|cff33ff99', sender, ' - version ', version, '|r');
+        end
+    end
 end
 
 function ExG:ENCOUNTER_END(_, id, _, _, _, success)
