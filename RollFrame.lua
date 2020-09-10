@@ -874,12 +874,9 @@ local function renderItem(self, item)
     local pane = item.pane;
 
     local settings = store().items.data[item.id];
-    local spec = settings and settings[getClassSpec()] or {};
-    local class = settings and settings[ExG.state.class] or {};
-    local def = settings and settings['DEFAULT'] or {};
 
     pane.head:SetImage(item.texture);
-    pane.cost:SetText((spec.gp or class.gp or def.gp or item.gp or 0) .. ' GP');
+    pane.cost:SetText(item.gp .. ' GP');
     pane.count:SetText('x ' .. (item.count or 0));
     pane.head:SetLabel(item.link);
     pane.head:SetCallback('OnEnter', onEnter(pane.head.frame, item.link));
@@ -1028,35 +1025,33 @@ function ExG.RollFrame:Hide()
     self.frame:Hide();
 end
 
-function ExG.RollFrame:AddItems(items)
-    for id, v in pairs(items) do
-        self.items[id] = self.items[id] or { count = 1, accepted = {}, rolls = {} };
+function ExG.RollFrame:AddItem(item)
+    self.items[item.id] = self.items[item.id] or { count = 1, accepted = {}, rolls = {} };
 
-        local tmp = self.items[id];
+    local settings = store().items.data[item.id];
+    local spec = settings and settings[getClassSpec()] or {};
+    local class = settings and settings[ExG.state.class] or {};
+    local def = settings and settings['DEFAULT'] or {};
 
-        tmp.id = id;
-        tmp.count = v;
-        if not tmp.pane then
-            tmp.pane = getPane(self, id);
-        end
+    local tmp = self.items[item.id];
 
-        ExG:AcceptItem(id);
+    tmp.id = item.id;
+    tmp.count = item.count;
+    tmp.mode = item.mode;
+    tmp.gp = spec.gp or class.gp or def.gp or item.gp or 0;
+    tmp.name = item.name;
+    tmp.loc = item.loc;
+    tmp.slots = item.slots;
+    tmp.link = item.link;
+    tmp.texture = item.texture;
 
-        local obj = Item:CreateFromItemID(id);
-        obj:ContinueOnItemLoad(function()
-            local info = ExG:ItemInfo(id);
-
-            local tmp = self.items[id];
-            tmp.gp = tmp.gp or ExG:CalcGP(id);
-            tmp.name = info.name;
-            tmp.loc = info.loc;
-            tmp.slots = info.slots;
-            tmp.link = info.link;
-            tmp.texture = info.texture;
-
-            renderItems(self);
-        end);
+    if not tmp.pane then
+        tmp.pane = getPane(self, item.id);
     end
+
+    ExG:AcceptItem(tmp.id);
+
+    renderItems(self);
 end
 
 function ExG.RollFrame:AcceptItem(itemId, source)

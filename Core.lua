@@ -1054,14 +1054,12 @@ function ExG:HandleChatCommand(input)
         local items = {};
 
         for i = 2, #ids do
-            items[tonumber(ids[i])] = { count = 1 };
+            items[tonumber(ids[i])] = { count = 1, mode = 'loot', };
         end
 
         self:AnnounceItems(items);
     elseif arg == 'debug' then
         store().debug = not (store().debug or false);
-    elseif arg == 'scan' then
-        ExG:ScanVersions();
     elseif arg == 'his' then
         self.HistoryFrame:Show();
     elseif arg == 'inv' then
@@ -1113,7 +1111,7 @@ function ExG:OnInitialize()
 end
 
 function ExG:PostInit()
-    store().debug = false;
+    --    store().debug = false;
 
     self.state.name = UnitName('player');
     self.state.class = select(2, UnitClass('player'));
@@ -1133,28 +1131,31 @@ function ExG:PostInit()
 end
 
 function ExG:AnnounceItems(ids)
-    local settings, items = {}, {};
-
-    for id, v in pairs(ids) do
-        settings[id] = store().items.data[id] or false;
-
+    for id, item in pairs(ids) do
         local hasOne = self.RollFrame.items[id];
 
         if not hasOne then
-            items[id] = v.count or 0;
+            local obj = Item:CreateFromItemID(id);
+            obj:ContinueOnItemLoad(function()
+                local info = ExG:ItemInfo(id);
+
+                if not info or not info.id then
+                    return;
+                end
+
+                info.gp = self:CalcGP(id);
+                info.count = item.count or 1;
+                info.mode = item.mode;
+
+                local data = Serializer:Serialize(info, { [id] = store().items.data[id] or false, }, store().buttons, store().items.formula);
+
+                if store().debug and not IsInRaid() then
+                    self:SendCommMessage(self.messages.prefix.announce, data, self.messages.whisper, self.state.name);
+                else
+                    self:SendCommMessage(self.messages.prefix.announce, data, self.messages.raid);
+                end
+            end);
         end
-    end
-
-    if self:Size(items) == 0 then
-        return;
-    end
-
-    local data = Serializer:Serialize(items, settings, store().buttons, store().items.formula);
-
-    if store().debug and not IsInRaid() then
-        self:SendCommMessage(self.messages.prefix.announce, data, self.messages.whisper, self.state.name);
-    else
-        self:SendCommMessage(self.messages.prefix.announce, data, self.messages.raid);
     end
 end
 
@@ -1163,20 +1164,20 @@ function ExG:handleAnnounceItems(_, message, _, sender)
         return;
     end
 
-    local success, items, settings, buttons, formula = Serializer:Deserialize(message);
+    local success, item, settings, buttons, formula = Serializer:Deserialize(message);
 
     if not success then
         return
     end
 
-    for i, v in pairs(settings) do
-        store().items.data[i] = v or nil;
+    for id, v in pairs(settings) do
+        store().items.data[id] = v or nil;
     end
 
     store().buttons = buttons;
     store().items.formula = formula;
 
-    self.RollFrame:AddItems(items);
+    self.RollFrame:AddItem(item);
     self.RollFrame:Show();
 end
 
@@ -1326,29 +1327,31 @@ function ExG:handleOptionsShare(_, message, _, sender)
     store().bosses = bosses;
 end
 
-function ExG:ScanVersions(msg)
-    self:SendCommMessage(self.messages.prefix.version, msg or 'scan', self.messages.guild);
+function ExG:ScanVersions(msg, target)
+    local data = Serializer:Serialize(msg);
+
+    if target then
+        self:SendCommMessage(self.messages.prefix.version, data, self.messages.whisper, target);
+    else
+        self:SendCommMessage(self.messages.prefix.version, data, self.messages.raid);
+    end
 end
 
 function ExG:handleScanVersions(_, message, _, sender)
-    local success, msg = Serializer:Deserialize(message);
+    local success, data = Serializer:Deserialize(message);
 
     if not success then
         return
     end
 
-    print('handleScanVersions: msg = ', msg);
-
-    if msg == 'scan' then
+    if data.event == 'request' then
         local version = GetAddOnMetadata(self.name, 'Version');
 
-        self:ScanVersions(version or 'none');
-    else
+        self:ScanVersions({ event = 'response', version = version, }, sender);
+    elseif data.event == 'response' then
         local version = GetAddOnMetadata(self.name, 'Version');
 
-        if msg ~= version then
-            self:Print('|cff33ff99', sender, ' - version ', version, '|r');
-        end
+        self.RosterFrame.VersionDialog:Update({ name = sender, version = version, });
     end
 end
 
@@ -1432,7 +1435,7 @@ function ExG:LOOT_OPENED()
                 local itemData = store().items.data[info.id];
 
                 if info.rarity >= store().items.threshold or itemData then
-                    ids[info.id] = (ids[info.id] or { count = 0 });
+                    ids[info.id] = (ids[info.id] or { count = 0, mode = 'loot', });
                     ids[info.id].count = ids[info.id].count + 1;
                 end
             end

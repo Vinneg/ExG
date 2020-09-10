@@ -210,10 +210,6 @@ function ExG:IsMl(unit)
 end
 
 function ExG:GuildInfo(unit)
-    if not IsInGuild() then
-        return nil;
-    end
-
     for i = 1, GetNumGuildMembers() do
         local name, rank, rankId, level, classLoc, zone, publicNote, officerNote, online, status, class, achievementPoints, achievementRank, isMobile, canSoR, repStanding, GUID = GetGuildRosterInfo(i);
 
@@ -420,7 +416,9 @@ end
 
 function ExG:SetEG(info, ep, gp)
     if not info.index then
-        return;
+        local ep, gp = getEG(0, 0);
+
+        return { ep = ep, gp = gp, pr = floor(100 * ep / gp) / 100, };
     end
 
     local newEp, newGp = getEG(ep, gp);

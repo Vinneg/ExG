@@ -238,6 +238,48 @@ local function makeHeaders(self)
     ep:SetPoint('TOPRIGHT', gp.frame, 'TOPLEFT');
 end
 
+local function makeBottom(self)
+    self.frame.guild = AceGUI:Create('Button');
+    self.frame.guild:SetWidth(120);
+    self.frame.guild:SetHeight(25);
+    self.frame.guild:SetText(L['Add Guild EPGP']);
+    self.frame.guild:SetCallback('OnClick', function() self.AdjustDialog:Show('guild'); end);
+    self.frame:AddChild(self.frame.guild);
+
+    self.frame.guild:SetPoint('BOTTOMLEFT', self.frame.frame, 'BOTTOMLEFT', 10, 5);
+    self.frame.guild:SetPoint('TOPRIGHT', self.frame.frame, 'BOTTOMLEFT', 180, 25);
+
+    self.frame.raid = AceGUI:Create('Button');
+    self.frame.raid:SetWidth(120);
+    self.frame.raid:SetHeight(25);
+    self.frame.raid:SetText(L['Add Raid EPGP']);
+    self.frame.raid:SetCallback('OnClick', function() self.AdjustDialog:Show('raid'); end);
+    self.frame:AddChild(self.frame.raid);
+
+    self.frame.raid:SetPoint('BOTTOMLEFT', self.frame.frame, 'BOTTOMLEFT', 10, 5);
+    self.frame.raid:SetPoint('TOPRIGHT', self.frame.frame, 'BOTTOMLEFT', 180, 25);
+
+    self.frame.decay = AceGUI:Create('Button');
+    self.frame.decay:SetWidth(120);
+    self.frame.decay:SetHeight(25);
+    self.frame.decay:SetText(L['Guild Decay']);
+    self.frame.decay:SetCallback('OnClick', function() self.DecayDialog:Show(); end);
+    self.frame:AddChild(self.frame.decay);
+
+    self.frame.decay:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -10, 5);
+    self.frame.decay:SetPoint('TOPLEFT', self.frame.frame, 'BOTTOMRIGHT', -180, 25);
+
+    self.frame.version = AceGUI:Create('Button');
+    self.frame.version:SetWidth(120);
+    self.frame.version:SetHeight(25);
+    self.frame.version:SetText(L['Version'](GetAddOnMetadata(ExG.name, 'Version')));
+    self.frame.version:SetCallback('OnClick', function() self.VersionDialog:Show(); end);
+    self.frame:AddChild(self.frame.version);
+
+    self.frame.version:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -10, 5);
+    self.frame.version:SetPoint('TOPLEFT', self.frame.frame, 'BOTTOMRIGHT', -180, 25);
+end
+
 local function renderItem(self, item)
     if not item then
         return;
@@ -334,10 +376,12 @@ local function renderItems(self)
         self.frame.guild.frame:Show();
         self.frame.raid.frame:Hide();
         self.frame.decay.frame:Show();
+        self.frame.version.frame:Hide();
     elseif self.current == 'raid' then
         self.frame.guild.frame:Hide();
         self.frame.raid.frame:Show();
         self.frame.decay.frame:Hide();
+        self.frame.version.frame:Show();
     end
 
     self.list:ReleaseChildren();
@@ -379,41 +423,11 @@ function ExG.RosterFrame:Create()
 
     group:AddChild(self.list);
 
-    self.frame.guild = AceGUI:Create('Button');
-    self.frame.guild:SetWidth(120);
-    self.frame.guild:SetHeight(25);
-    self.frame.guild:SetText(L['Add Guild EPGP']);
-    self.frame.guild:SetDisabled(not CanEditOfficerNote());
-    self.frame.guild:SetCallback('OnClick', function() self.AdjustDialog:Show('guild'); end);
-    self.frame:AddChild(self.frame.guild);
-
-    self.frame.guild:SetPoint('BOTTOMLEFT', self.frame.frame, 'BOTTOMLEFT', 10, 5);
-    self.frame.guild:SetPoint('TOPRIGHT', self.frame.frame, 'BOTTOMLEFT', 180, 25);
-
-    self.frame.raid = AceGUI:Create('Button');
-    self.frame.raid:SetWidth(120);
-    self.frame.raid:SetHeight(25);
-    self.frame.raid:SetText(L['Add Raid EPGP']);
-    self.frame.raid:SetDisabled(not CanEditOfficerNote());
-    self.frame.raid:SetCallback('OnClick', function() self.AdjustDialog:Show('raid'); end);
-    self.frame:AddChild(self.frame.raid);
-
-    self.frame.raid:SetPoint('BOTTOMLEFT', self.frame.frame, 'BOTTOMLEFT', 10, 5);
-    self.frame.raid:SetPoint('TOPRIGHT', self.frame.frame, 'BOTTOMLEFT', 180, 25);
-
-    self.frame.decay = AceGUI:Create('Button');
-    self.frame.decay:SetWidth(120);
-    self.frame.decay:SetHeight(25);
-    self.frame.decay:SetText(L['Guild Decay']);
-    self.frame.decay:SetDisabled(not CanEditOfficerNote());
-    self.frame.decay:SetCallback('OnClick', function() self.DecayDialog:Show(); end);
-    self.frame:AddChild(self.frame.decay);
-
-    self.frame.decay:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -10, 5);
-    self.frame.decay:SetPoint('TOPLEFT', self.frame.frame, 'BOTTOMRIGHT', -180, 25);
+    makeBottom(self);
 
     self.AdjustDialog:Create();
     self.DecayDialog:Create();
+    self.VersionDialog:Create();
 end
 
 function ExG.RosterFrame:Show()
@@ -694,7 +708,7 @@ function ExG.RosterFrame.AdjustDialog:Create()
     self.frame:EnableResize(false);
     self.frame:SetWidth(300);
     self.frame:SetHeight(210);
-    self.frame:SetCallback('OnClose', function() self.frame:Hide(); end);
+    self.frame:SetCallback('OnClose', function() self:Hide(); end);
     self.frame:Hide();
 
     renderAdjustDialog(self);
@@ -787,7 +801,7 @@ function ExG.RosterFrame.DecayDialog:Create()
     self.frame:EnableResize(false);
     self.frame:SetWidth(300);
     self.frame:SetHeight(107);
-    self.frame:SetCallback('OnClose', function() self.frame:Hide(); end);
+    self.frame:SetCallback('OnClose', function() self:Hide(); end);
     self.frame:Hide();
 
     renderDecayDialog(self);
@@ -857,4 +871,174 @@ function ExG.RosterFrame.DecayDialog:Adjust()
     ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
 
     self:Hide();
+end
+
+ExG.RosterFrame.VersionDialog = {
+    frame = nil,
+    raid = {},
+    colors = {
+        offline = { 0.7, 0.7, 0.7 },
+        normal = { 0.25, 1, 0.25 },
+        error = { 0.77, 0.12, 0.23 },
+    },
+};
+
+local function makeVersionDialog(self)
+    local refresh = AceGUI:Create('Button');
+    refresh:SetWidth(120);
+    refresh:SetHeight(25);
+    refresh:SetText(L['Refresh']);
+    refresh:SetCallback('OnClick', function() self:Refresh(); ExG:ScanVersions({ event = 'request', }); end);
+    self.frame:AddChild(refresh);
+
+    refresh:SetPoint('TOP', self.frame.frame, 'TOP', 0, -30);
+
+    local points = {
+        { point = 'TOPLEFT', frame = self.frame.frame, rel = 'TOPLEFT', x = 5, y = -60 },
+        { point = 'TOPLEFT', frame = self.frame.frame, rel = 'TOPLEFT', x = 145, y = -60 },
+        { point = 'TOPLEFT', frame = self.frame.frame, rel = 'TOPLEFT', x = 285, y = -60 },
+        { point = 'TOPLEFT', frame = self.frame.frame, rel = 'TOPLEFT', x = 425, y = -60 },
+        { point = 'TOPLEFT', frame = self.frame.frame, rel = 'TOPLEFT', x = 5, y = -230 },
+        { point = 'TOPLEFT', frame = self.frame.frame, rel = 'TOPLEFT', x = 145, y = -230 },
+        { point = 'TOPLEFT', frame = self.frame.frame, rel = 'TOPLEFT', x = 285, y = -230 },
+        { point = 'TOPLEFT', frame = self.frame.frame, rel = 'TOPLEFT', x = 425, y = -230 },
+    };
+
+    self.group = {};
+
+    for i = 1, 8 do
+        self.group[i] = {};
+
+        self.group[i].label = AceGUI:Create('Label');
+        self.group[i].label:SetText(L['Group'](i));
+        self.frame:AddChild(self.group[i].label);
+
+        self.group[i].label:SetPoint(points[i].point, points[i].frame, points[i].rel, points[i].x, points[i].y);
+
+        for k = 1, 5 do
+            local unit = AceGUI:Create('SimpleGroup');
+
+            unit = AceGUI:Create('SimpleGroup');
+            unit:SetLayout(nil);
+            unit:SetWidth(120);
+            unit:SetHeight(25);
+
+            unit.name = unit.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            unit.name:SetFont(DEFAULT_FONT, 10);
+            unit.name:ClearAllPoints();
+            unit.name:SetAllPoints();
+            unit.name:SetJustifyH('LEFT');
+            unit.name:SetJustifyV('MIDDLE');
+
+            unit.status = unit.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            unit.status:SetFont(DEFAULT_FONT, 10);
+            unit.status:ClearAllPoints();
+            unit.status:SetAllPoints();
+            unit.status:SetJustifyH('RIGHT');
+            unit.status:SetJustifyV('MIDDLE');
+
+            self.frame:AddChild(unit);
+
+            unit:SetPoint(points[i].point, points[i].frame, points[i].rel, points[i].x, points[i].y - (k == 1 and 20 or 20 + 28 * (k - 1)));
+
+            self.group[i][k] = unit;
+        end
+    end
+end
+
+local function renderVersionDialog(self)
+    for i = 1, 8 do
+        for k = 1, 5 do
+            self.group[i][k].unit = nil;
+
+            self.group[i][k].name:SetText('-');
+            self.group[i][k].name:SetVertexColor(ExG:ClassColor('PRIEST'));
+
+            self.group[i][k].status:SetText('');
+            self.group[i][k].status:SetVertexColor(unpack(self.colors.normal));
+        end
+    end
+
+    if not IsInRaid() then
+        return;
+    end
+
+    self.raid = {};
+
+    for i = 1, MAX_RAID_MEMBERS do
+        local name, rank, subgroup, level, classLoc, class, zone, online, isDead, role, isMl, combatRole = GetRaidRosterInfo(i);
+
+        if name then
+            self.raid[subgroup] = self.raid[subgroup] or {};
+            tinsert(self.raid[subgroup], { name = Ambiguate(name, 'all'), class = class, online = online, });
+        end
+    end
+
+    for i, group in pairs(self.raid) do
+        sort(group, function(a, b) return a.name < b.name; end);
+
+        for k, unit in ipairs(group) do
+            self.group[i][k].unit = unit.name;
+
+            self.group[i][k].name:SetText(unit.name);
+            self.group[i][k].name:SetVertexColor(ExG:ClassColor(unit.class));
+
+            if unit.online then
+                self.group[i][k].status:SetText(L['No response']);
+                self.group[i][k].status:SetVertexColor(unpack(self.colors.error));
+            else
+                self.group[i][k].status:SetText(L['Offline']);
+                self.group[i][k].status:SetVertexColor(unpack(self.colors.offline));
+            end
+        end
+    end
+end
+
+local function updateVersionDialog(self, unit, status)
+    local version = GetAddOnMetadata(ExG.name, 'Version');
+
+    if unit.unit == status.name then
+        if status.version == version then
+            unit.status:SetText(status.version);
+            unit.status:SetVertexColor(unpack(self.colors.normal));
+        elseif status.version then
+            unit.status:SetText(status.version);
+            unit.status:SetVertexColor(unpack(self.colors.error));
+        end
+    end
+end
+
+function ExG.RosterFrame.VersionDialog:Create()
+    self.frame = AceGUI:Create('Window');
+    self.frame:SetTitle(L['Version'](GetAddOnMetadata(ExG.name, 'Version')));
+    self.frame:SetLayout(nil);
+    self.frame:EnableResize(false);
+    self.frame:SetWidth(550);
+    self.frame:SetHeight(395);
+    self.frame:SetCallback('OnClose', function() self:Hide(); end);
+    self.frame:Hide();
+
+    makeVersionDialog(self);
+end
+
+function ExG.RosterFrame.VersionDialog:Show()
+    renderVersionDialog(self);
+
+    self.frame:Show();
+end
+
+function ExG.RosterFrame.VersionDialog:Hide()
+    self.frame:Hide();
+end
+
+function ExG.RosterFrame.VersionDialog:Update(status)
+    for i = 1, 8 do
+        for k = 1, 5 do
+            updateVersionDialog(self, self.group[i][k], status);
+        end
+    end
+end
+
+function ExG.RosterFrame.VersionDialog:Refresh()
+    renderVersionDialog(self);
 end
