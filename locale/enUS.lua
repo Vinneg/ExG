@@ -123,6 +123,7 @@ L['Amount'] = true;
 L['Reason'] = true;
 L['ExG Debug'] = 'Debug mode';
 L['ExG Debug Desc'] = 'In debug mode, EP and GP values are not saved to officer notes';
+L['Debug mode'] = function(mode) return format('|cff33ff99Debug mode %s|r', (mode or false) and 'on' or 'off'); end;
 L['Share Options'] = true;
 L['Options sent'] = '|cff33ff99Options sent to all online guild members|r';
 L['Options received'] = function(sender) return format('|cff33ff99Options received from %s|r', sender); end;

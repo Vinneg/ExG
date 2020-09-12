@@ -851,7 +851,7 @@ local function renderRolls(self, pane)
         roll.item2:SetCallback('OnLeave', onLeave);
 
         if ExG:IsMl() then
-            roll.pane.frame:SetScript('OnMouseDown', function() self.Dialog:Show(item, tmp); end); -- self:GiveItem(tmp.name, tmp.class, pane.itemId, tmp.option);
+            roll.pane.frame:SetScript('OnMouseDown', function() self.Dialog:Show(item, tmp); end);
         end
 
         roll.pane.frame:Show();
@@ -1004,20 +1004,24 @@ function ExG.RollFrame:Show()
 end
 
 function ExG.RollFrame:Hide()
-    for id, item in pairs(self.items) do
-        if not (item.rolled or false) then
-            ExG:RollItem({
-                id = id,
-                class = ExG.state.class,
-                gp = item.gp,
-                option = 'button6',
-                slot1 = nil,
-                slot2 = nil,
-                rnd = random(1, 100),
-            });
-        end
+    if ExG:IsMl() then
+        ExG:CancelRolls();
+    else
+        for id, item in pairs(self.items) do
+            if not (item.rolled or false) then
+                ExG:RollItem({
+                    id = id,
+                    class = ExG.state.class,
+                    gp = item.gp,
+                    option = 'button6',
+                    slot1 = nil,
+                    slot2 = nil,
+                    rnd = random(1, 100),
+                });
+            end
 
-        self:RemoveItem(id);
+            self:RemoveItem(id);
+        end
     end
 
     self.Dialog:Hide();
@@ -1055,15 +1059,70 @@ function ExG.RollFrame:AddItem(item)
 end
 
 function ExG.RollFrame:AcceptItem(itemId, source)
+    self.items[itemId] = self.items[itemId] or { count = 1, accepted = {}, rolls = {} };
+
     local item = self.items[itemId];
 
-    if not item or not item.pane then
+    if item.pane then
+        item.accepted[source] = true;
+
+        item.pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
+    end
+end
+
+function ExG.RollFrame:RollItem(data, unit)
+    self.items[data.id] = self.items[data.id] or { count = 1, accepted = {}, rolls = {} };
+
+    local item = self.items[data.id];
+
+    item.rolls[unit] = item.rolls[unit] or {};
+    item.rolls[unit].name = unit;
+    item.rolls[unit].class = data.class;
+    item.rolls[unit].gp = data.gp;
+    item.rolls[unit].option = data.option;
+    item.rolls[unit].rnd = item.rolls[unit].rnd or data.rnd;
+    item.rolls[unit].slot1 = ExG:LinkInfo(data.slot1);
+    item.rolls[unit].slot2 = ExG:LinkInfo(data.slot2);
+
+    if item.pane then
+        item.pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
+
+        renderRolls(self, item.pane);
+    end
+end
+
+function ExG.RollFrame:DistributeItem(unit, itemId)
+    local item = self.items[itemId];
+
+    if not item then
         return;
     end
 
-    item.accepted[source] = true;
+    item.count = item.count - 1;
 
-    item.pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
+    if (item.count or 0) == 0 then
+        self:RemoveItem(itemId);
+    else
+        item.rolls[unit] = nil;
+        renderItems(self);
+    end
+end
+
+function ExG.RollFrame:CancelRolls()
+    for id, item in pairs(self.items) do
+        self.items[id] = nil;
+    end
+
+    for i = 1, #self.frame.children do
+        local pane = self.frame.children[i];
+
+        pane.itemId = nil;
+        pane.frame:Hide();
+    end
+
+    self.Dialog:Hide();
+
+    self.frame:Hide();
 end
 
 function ExG.RollFrame:RemoveItem(itemId)
@@ -1105,44 +1164,6 @@ function ExG.RollFrame:RemoveItem(itemId)
 
     if self.Dialog.item and self.Dialog.item.id == itemId then
         self.Dialog:Hide();
-    end
-end
-
-function ExG.RollFrame:RollItem(data, unit)
-    local item = self.items[data.id];
-
-    if not item then
-        return;
-    end
-
-    item.rolls[unit] = item.rolls[unit] or {};
-    item.rolls[unit].name = unit;
-    item.rolls[unit].class = data.class;
-    item.rolls[unit].gp = data.gp;
-    item.rolls[unit].option = data.option;
-    item.rolls[unit].rnd = item.rolls[unit].rnd or data.rnd;
-    item.rolls[unit].slot1 = ExG:LinkInfo(data.slot1);
-    item.rolls[unit].slot2 = ExG:LinkInfo(data.slot2);
-
-    item.pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
-
-    renderRolls(self, item.pane);
-end
-
-function ExG.RollFrame:DistributeItem(unit, itemId)
-    local item = self.items[itemId];
-
-    if not item then
-        return;
-    end
-
-    item.count = item.count - 1;
-
-    if (item.count or 0) == 0 then
-        self:RemoveItem(itemId);
-    else
-        item.rolls[unit] = nil;
-        renderItems(self);
     end
 end
 

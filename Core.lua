@@ -140,6 +140,7 @@ ExG.messages = {
         accept = 'ExG_Accept',
         roll = 'ExG_Roll',
         distribute = 'ExG_Distribute',
+        cancel = 'ExG_Cancel',
         pull = 'ExG_Pull',
         share = 'ExG_Share',
         options = 'ExG_Options',
@@ -1060,6 +1061,8 @@ function ExG:HandleChatCommand(input)
         self:AnnounceItems(items);
     elseif arg == 'debug' then
         store().debug = not (store().debug or false);
+
+        self:Print(L['Debug mode'](store().debug));
     elseif arg == 'his' then
         self.HistoryFrame:Show();
     elseif arg == 'inv' then
@@ -1089,6 +1092,7 @@ function ExG:OnInitialize()
     self:RegisterComm(self.messages.prefix.accept, 'handleAcceptItem');
     self:RegisterComm(self.messages.prefix.roll, 'handleRollItem');
     self:RegisterComm(self.messages.prefix.distribute, 'handleDistributeItem');
+    self:RegisterComm(self.messages.prefix.cancel, 'handleCancelRolls');
     self:RegisterComm(self.messages.prefix.pull, 'handleHistoryPull');
     self:RegisterComm(self.messages.prefix.share, 'handleHistoryShare');
     self:RegisterComm(self.messages.prefix.options, 'handleOptionsShare');
@@ -1147,7 +1151,7 @@ function ExG:AnnounceItems(ids)
                 info.count = item.count or 1;
                 info.mode = item.mode;
 
-                local data = Serializer:Serialize(info, { [id] = store().items.data[id] or false, }, store().buttons, store().items.formula);
+                local data = Serializer:Serialize(info, store().items.data[id] or false);
 
                 if store().debug and not IsInRaid() then
                     self:SendCommMessage(self.messages.prefix.announce, data, self.messages.whisper, self.state.name);
@@ -1164,18 +1168,15 @@ function ExG:handleAnnounceItems(_, message, _, sender)
         return;
     end
 
-    local success, item, settings, buttons, formula = Serializer:Deserialize(message);
+    local success, item, settings = Serializer:Deserialize(message);
 
     if not success then
         return
     end
 
-    for id, v in pairs(settings) do
-        store().items.data[id] = v or nil;
+    if settings and settings.id then
+        store().items.data[settings.id] = settings;
     end
-
-    store().buttons = buttons;
-    store().items.formula = formula;
 
     self.RollFrame:AddItem(item);
     self.RollFrame:Show();
@@ -1234,7 +1235,27 @@ end
 function ExG:handleDistributeItem(_, message, _, sender)
     local success, unit, itemId = Serializer:Deserialize(message);
 
+    if not success then
+        return
+    end
+
     self.RollFrame:DistributeItem(unit, itemId);
+end
+
+function ExG:CancelRolls()
+    if store().debug and not IsInRaid() then
+        self:SendCommMessage(self.messages.prefix.cancel, 'cancel', self.messages.whisper, self.state.name);
+    else
+        self:SendCommMessage(self.messages.prefix.cancel, 'cancel', self.messages.raid);
+    end
+end
+
+function ExG:handleCancelRolls(_, message, _, sender)
+    if not self:IsMl(sender) then
+        return;
+    end
+
+    self.RollFrame:CancelRolls();
 end
 
 function ExG:HistoryPull()

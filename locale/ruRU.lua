@@ -120,6 +120,7 @@ L['Amount'] = 'Сумма';
 L['Reason'] = 'Причина';
 L['ExG Debug'] = 'Режим отладки';
 L['ExG Debug Desc'] = 'В режиме отладки не происходит сохранение значений EP и GP в офицерские записки';
+L['Debug mode'] = function(mode) return format('|cff33ff99Режим отладки %s|r', (mode or false) and 'on' or 'off'); end;
 L['Share Options'] = 'Поделиться настройками';
 L['Options sent'] = '|cff33ff99Настройки отправлены всем членам гильдии онлайн|r';
 L['Options received'] = function(sender) return format('|cff33ff99Получены настройки от %s|r', sender); end;
