@@ -64,7 +64,7 @@ local onRoll = function(owner, name, class, rank, rankId, pr, rnd)
     return function()
         GameTooltip:SetOwner(owner, 'ANCHOR_TOP');
         GameTooltip:AddDoubleLine(name, format('%s #%d', rank, rankId), ExG:ClassColor(class));
-        GameTooltip:AddDoubleLine(format('PR: %d', pr), format('%d :ROLL', rnd), guildR, guildG, guildB, raidR, raidG, raidB);
+        GameTooltip:AddDoubleLine(format('PR: %.2f', pr), format('%d :ROLL', rnd), guildR, guildG, guildB, raidR, raidG, raidB);
         GameTooltip:Show();
     end;
 end;
@@ -719,6 +719,22 @@ local function makePane(self)
     pane.frame:Hide();
 end
 
+local function getPane(self, id)
+    for i, pane in ipairs(self.frame.children) do
+        if pane.itemId == id then
+            return pane;
+        end
+    end
+
+    for i, pane in ipairs(self.frame.children) do
+        if not pane.itemId then
+            pane.itemId = id;
+
+            return pane;
+        end
+    end
+end
+
 local function renderTips(self, pane, settings)
     local scan = function(res, class)
         if not settings then
@@ -802,7 +818,11 @@ local function renderTips(self, pane, settings)
 end
 
 local function renderButons(self, item, settings)
-    local pane = item.pane;
+    local pane = getPane(self, item.id);
+
+    if not pane then
+        return
+    end
 
     for _, btn in pairs(store().buttons.data) do
         if pane[btn.id] then
@@ -832,9 +852,7 @@ local function renderButons(self, item, settings)
     end
 end
 
-local function renderRolls(self, pane)
-    local item = self.items[pane.itemId];
-
+local function renderRolls(self, item, pane)
     if not item then
         for i = 1, #pane.rolls do
             pane.rolls[i].pane.frame:Hide();
@@ -901,11 +919,11 @@ local function renderItem(self, item)
         return;
     end
 
-    if not item.pane or not item.pane.itemId then
+    local pane = getPane(self, item.id);
+
+    if not pane then
         return;
     end
-
-    local pane = item.pane;
 
     local settings = store().items.data[item.id];
 
@@ -917,7 +935,7 @@ local function renderItem(self, item)
 
     renderTips(self, pane, settings);
     renderButons(self, item, settings);
-    renderRolls(self, pane);
+    renderRolls(self, item, pane);
 
     self.frame:SetWidth(count(self) * (PANE_WIDTH + 5) + 15);
 
@@ -926,16 +944,6 @@ local function renderItem(self, item)
     end
 
     pane.frame:Show();
-end
-
-local function getPane(self, id)
-    for i, v in ipairs(self.frame.children) do
-        if not v.itemId then
-            v.itemId = id;
-
-            return v;
-        end
-    end
 end
 
 local function renderItems(self)
@@ -1083,13 +1091,13 @@ function ExG.RollFrame:AddItem(item)
     tmp.link = item.link;
     tmp.texture = item.texture;
 
-    if not tmp.pane then
-        tmp.pane = getPane(self, item.id);
+    local pane = getPane(self, item.id);
+
+    if pane then
+        ExG:AcceptItem(tmp.id);
+
+        renderItems(self);
     end
-
-    ExG:AcceptItem(tmp.id);
-
-    renderItems(self);
 end
 
 function ExG.RollFrame:AcceptItem(itemId, source)
@@ -1097,10 +1105,12 @@ function ExG.RollFrame:AcceptItem(itemId, source)
 
     local item = self.items[itemId];
 
-    if item.pane then
-        item.accepted[source] = true;
+    item.accepted[source] = true;
 
-        item.pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
+    local pane = getPane(self, itemId);
+
+    if pane then
+        pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
     end
 end
 
@@ -1118,10 +1128,12 @@ function ExG.RollFrame:RollItem(data, unit)
     item.rolls[unit].slot1 = ExG:LinkInfo(data.slot1);
     item.rolls[unit].slot2 = ExG:LinkInfo(data.slot2);
 
-    if item.pane then
-        item.pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
+    local pane = getPane(self, item.id);
 
-        renderRolls(self, item.pane);
+    if pane then
+        pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
+
+        renderRolls(self, item, pane);
     end
 end
 
@@ -1173,27 +1185,20 @@ function ExG.RollFrame:RemoveItem(itemId)
                 local right = self.frame.children[i + 1];
 
                 pane.itemId = right.itemId;
-                if self.items[pane.itemId].pane then
-                    self.items[pane.itemId].pane = pane;
-                end
                 right.itemId = nil;
             else
                 pane.itemId = nil;
             end
 
-            if pane.itemId then
-                renderItem(self, pane);
-            else
+            if not pane.itemId then
                 pane.frame:Hide();
             end
-
-            self.frame:SetWidth(count(self) * (PANE_WIDTH + 5) + 15);
         end
     end
 
     self.items[itemId] = nil;
 
-    self.frame:SetWidth(count(self) * (PANE_WIDTH + 5) + 15);
+    renderItems(self);
 
     if count(self) == 0 then
         self.frame:Hide();
