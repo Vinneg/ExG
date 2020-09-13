@@ -346,7 +346,7 @@ ExG.options = {
                     order = 61,
                     width = 0.7,
                     style = 'dropdown',
-                    values = function() local res = {}; for i = 1, GuildControlGetNumRanks() do res[i] = format('%s #%d', GuildControlGetRankName(i), i); end return res; end,
+                    values = function() local res = {}; for i = 1, GuildControlGetNumRanks() do res[i - 1] = format('%s #%d', GuildControlGetRankName(i), i - 1); end return res; end,
                     get = function() return store().optionFilter; end,
                     set = function(_, value) store().optionFilter = value; end,
                 },
@@ -1115,7 +1115,8 @@ function ExG:OnInitialize()
 end
 
 function ExG:PostInit()
-    --    store().debug = false;
+    store().debug = false; -- TODO remove after a while
+    store().optionFilter = 2; -- TODO remove after a while
 
     self.state.name = UnitName('player');
     self.state.class = select(2, UnitClass('player'));
@@ -1323,9 +1324,9 @@ function ExG:handleOptionsShare(_, message, _, sender)
         return
     end
 
-    if sender == self.state.name then
-        return;
-    end
+        if sender == self.state.name then
+            return;
+        end
 
     local info = self:GuildInfo(sender);
 
