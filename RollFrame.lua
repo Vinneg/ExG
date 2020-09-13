@@ -985,8 +985,6 @@ local function appendHistory(item, roll)
         details = {},
     };
 
-    print('appendHistory: gp = ', roll.gp);
-
     local info = ExG:GuildInfo(roll.name);
     local old = ExG:GetEG(info.officerNote);
     local new = ExG:SetEG(info, old.ep, old.gp + roll.gp);
@@ -1334,8 +1332,6 @@ function ExG.RollFrame.Dialog:GiveItem(item, roll)
     end
 
     GiveMasterLoot(lootIndex, unitIndex);
-
-    print('RollFrame.Dialog:GiveItem: gp = ', roll.gp);
 
     if not roll.option then
         disenchantHistory(item);

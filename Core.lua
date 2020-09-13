@@ -1324,13 +1324,11 @@ function ExG:handleOptionsShare(_, message, _, sender)
         return
     end
 
-    --    if sender == self.state.name then
-    --        return;
-    --    end
+        if sender == self.state.name then
+            return;
+        end
 
     local info = self:GuildInfo(sender);
-
-    print('handleOptionsShare: info.rankId = ', info.rankId);
 
     if (info and info.rankId or 99) > store().optionFilter then
         self:Print(L['Options ignored'](sender));
