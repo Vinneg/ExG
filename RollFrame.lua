@@ -37,9 +37,41 @@ local btnPass = function(self, pane, btn)
     end
 end
 
-local onEnter = function(owner, link) if link then return function() GameTooltip:SetOwner(owner, 'ANCHOR_RIGHT'); GameTooltip:SetHyperlink(link); GameTooltip:Show(); end; else return function() end; end end;
-local onTip = function(owner, class, desc, spec) local r, g, b = ExG:ClassColor(class); return function() GameTooltip:SetOwner(owner, 'ANCHOR_TOP'); GameTooltip:SetText(desc .. (spec and ': ' .. spec or ''), r, g, b); GameTooltip:Show(); end; end;
-local onLeave = function() return GameTooltip:Hide(); end;
+local onEnter = function(owner, link)
+    if link then
+        return function()
+            GameTooltip:SetOwner(owner, 'ANCHOR_RIGHT');
+            GameTooltip:SetHyperlink(link);
+            GameTooltip:Show();
+        end;
+    else
+        return function() end;
+    end
+end;
+
+local onTip = function(owner, class, desc, spec)
+    return function()
+        GameTooltip:SetOwner(owner, 'ANCHOR_TOP');
+        GameTooltip:SetText(desc .. (spec and ': ' .. spec or ''), ExG:ClassColor(class));
+        GameTooltip:Show();
+    end;
+end;
+
+local onRoll = function(owner, name, class, rank, rankId, pr, rnd)
+    local guildR, guildG, guildB = ExG:ClassColor('GUILD');
+    local raidR, raidG, raidB = ExG:ClassColor('RAID');
+
+    return function()
+        GameTooltip:SetOwner(owner, 'ANCHOR_TOP');
+        GameTooltip:AddDoubleLine(name, format('%s #%d', rank, rankId), ExG:ClassColor(class));
+        GameTooltip:AddDoubleLine(format('PR: %d', pr), format('%d :ROLL', rnd), guildR, guildG, guildB, raidR, raidG, raidB);
+        GameTooltip:Show();
+    end;
+end;
+
+local onLeave = function()
+    return GameTooltip:Hide();
+end;
 
 local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
 
@@ -819,7 +851,7 @@ local function renderRolls(self, pane)
             local button = roll.option and store().buttons.data[roll.option];
             local pr = button and button.roll and roll.rnd or ExG:GetEG(info.officerNote).pr;
 
-            tinsert(rolls, { name = roll.name, class = roll.class, gp = roll.gp, option = roll.option, pr = pr, slot1 = roll.slot1, slot2 = roll.slot2, rnd = roll.rnd });
+            tinsert(rolls, { name = roll.name, class = roll.class, rank = info.rank, rankId = info.rankId, gp = roll.gp, option = roll.option, pr = pr, slot1 = roll.slot1, slot2 = roll.slot2, rnd = roll.rnd });
         end
     end
 
@@ -851,6 +883,8 @@ local function renderRolls(self, pane)
         roll.item2:SetCallback('OnLeave', onLeave);
 
         if ExG:IsMl() then
+            roll.pane.frame:SetScript('OnEnter', onRoll(roll.pane.frame, tmp.name, tmp.class, tmp.rank, tmp.rankId, tmp.pr, tmp.rnd));
+            roll.pane.frame:SetScript('OnLeave', onLeave);
             roll.pane.frame:SetScript('OnMouseDown', function() self.Dialog:Show(item, tmp); end);
         end
 
@@ -950,6 +984,8 @@ local function appendHistory(item, roll)
         dt = dt,
         details = {},
     };
+
+    print('appendHistory: gp = ', roll.gp);
 
     local info = ExG:GuildInfo(roll.name);
     local old = ExG:GetEG(info.officerNote);
@@ -1139,6 +1175,9 @@ function ExG.RollFrame:RemoveItem(itemId)
                 local right = self.frame.children[i + 1];
 
                 pane.itemId = right.itemId;
+                if self.items[pane.itemId].pane then
+                    self.items[pane.itemId].pane = pane;
+                end
                 right.itemId = nil;
             else
                 pane.itemId = nil;
@@ -1175,10 +1214,11 @@ ExG.RollFrame.Dialog = {
 
 local function renderDialog(self)
     local main = store().buttons.data[self.roll.option];
+    local gp = floor(self.roll.gp * main.ratio);
 
     self.frame.head:SetText(L['Unit will receive item'](self.roll.name, self.item.link));
-    self.frame.main:SetText(format('%s - %d GP', main.text, floor(self.roll.gp * main.ratio)));
-    self.frame.main:SetCallback('OnClick', function() self:GiveItem(self.item, self.roll); end);
+    self.frame.main:SetText(format('%s - %d GP', main.text, gp));
+    self.frame.main:SetCallback('OnClick', function() self:GiveItem(self.item, { name = self.roll.name, class = self.roll.class, gp = gp, option = self.roll.option, }); end);
 
     local btns = {};
 
@@ -1191,7 +1231,7 @@ local function renderDialog(self)
     sort(btns, function(a, b) return a.id < b.id; end);
 
     for i, btn in ipairs(btns) do
-        local gp = floor(self.roll.gp * btn.ratio);
+        gp = floor(self.roll.gp * btn.ratio);
 
         self.frame.btn[i]:SetText(format('%s\n%d GP', btn.text, gp));
         self.frame.btn[i]:SetCallback('OnClick', function() self:GiveItem(self.item, { name = self.roll.name, class = self.roll.class, gp = gp, option = btn.id, }); end);
@@ -1294,6 +1334,8 @@ function ExG.RollFrame.Dialog:GiveItem(item, roll)
     end
 
     GiveMasterLoot(lootIndex, unitIndex);
+
+    print('RollFrame.Dialog:GiveItem: gp = ', roll.gp);
 
     if not roll.option then
         disenchantHistory(item);
