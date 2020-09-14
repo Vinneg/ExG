@@ -356,12 +356,17 @@ ExG.options = {
                     order = 62,
                     width = 1.7,
                 },
-                share = {
+                shareGuild = {
                     type = 'execute',
-                    name = L['Share Options'],
+                    name = L['Share Options Guild'],
                     order = 67,
-                    width = 'full',
-                    func = function() ExG:OptionsShare(); end,
+                    func = function() ExG:OptionsShare(ExG.messages.guild); end,
+                },
+                shareRaid = {
+                    type = 'execute',
+                    name = L['Share Options Raid'],
+                    order = 68,
+                    func = function() ExG:OptionsShare(ExG.messages.raid); end,
                 },
                 shareFiller = {
                     type = 'description',
@@ -1309,12 +1314,12 @@ function ExG:handleHistoryShare(_, message, _, sender)
     end
 end
 
-function ExG:OptionsShare()
+function ExG:OptionsShare(channel)
     local data = Serializer:Serialize(store().baseEP, store().baseGP, store().optionFilter, store().channel, store().items.threshold, store().items.formula, store().items.data, store().buttons, store().bosses);
 
-    self:Print(L['Options sent']);
+    self:Print(L['Options sending'](channel or self.messages.guild));
 
-    self:SendCommMessage(self.messages.prefix.options, data, self.messages.guild);
+    self:SendCommMessage(self.messages.prefix.options, data, channel or self.messages.guild, nil, 'NORMAL', function(name, sent, total) if (sent == total) then self:Print(L['Options sent'](channel or self.messages.guild)); end; end);
 end
 
 function ExG:handleOptionsShare(_, message, _, sender)
@@ -1324,9 +1329,9 @@ function ExG:handleOptionsShare(_, message, _, sender)
         return
     end
 
-        if sender == self.state.name then
-            return;
-        end
+    if sender == self.state.name then
+        return;
+    end
 
     local info = self:GuildInfo(sender);
 
@@ -1371,9 +1376,7 @@ function ExG:handleScanVersions(_, message, _, sender)
 
         self:ScanVersions({ event = 'response', version = version, }, sender);
     elseif data.event == 'response' then
-        local version = GetAddOnMetadata(self.name, 'Version');
-
-        self.RosterFrame.VersionDialog:Update({ name = sender, version = version, });
+        self.RosterFrame.VersionDialog:Update({ name = sender, version = data.version, });
     end
 end
 
