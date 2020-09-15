@@ -28,7 +28,8 @@ local btnPass = function(self, pane, btn)
         ExG:RollItem({
             id = pane.itemId,
             class = ExG.state.class,
-            option = btn.id,
+            option = 'button6',
+            rnd = random(1, 100),
         });
 
         if store().items.closeOnPass and not ExG:IsMl() then
@@ -1216,12 +1217,16 @@ ExG.RollFrame.Dialog = {
 };
 
 local function renderDialog(self)
+    local onClick = function(item, roll)
+        return function() self:GiveItem(item, roll); end
+    end;
+
     local main = store().buttons.data[self.roll.option];
     local gp = floor(self.roll.gp * main.ratio);
 
     self.frame.head:SetText(L['Unit will receive item'](self.roll.name, self.item.link));
     self.frame.main:SetText(format('%s - %d GP', main.text, gp));
-    self.frame.main:SetCallback('OnClick', function() self:GiveItem(self.item, { name = self.roll.name, class = self.roll.class, gp = gp, option = self.roll.option, }); end);
+    self.frame.main:SetCallback('OnClick', onClick(self.item, { name = self.roll.name, class = self.roll.class, gp = gp, option = self.roll.option, }));
 
     local btns = {};
 
@@ -1237,7 +1242,7 @@ local function renderDialog(self)
         gp = floor(self.roll.gp * btn.ratio);
 
         self.frame.btn[i]:SetText(format('%s\n%d GP', btn.text, gp));
-        self.frame.btn[i]:SetCallback('OnClick', function() self:GiveItem(self.item, { name = self.roll.name, class = self.roll.class, gp = gp, option = btn.id, }); end);
+        self.frame.btn[i]:SetCallback('OnClick', onClick(self.item, { name = self.roll.name, class = self.roll.class, gp = gp, option = btn.id, }));
     end
 end
 
