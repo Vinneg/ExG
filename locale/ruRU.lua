@@ -171,6 +171,9 @@ L['SHAMAN'] = 'Шаман';
 L['DRUID'] = 'Друид';
 L['MONK'] = 'Монах';
 L['PALADIN'] = 'Паладин';
+L['Report'] = 'Сообщить';
+L['Need to update ExG version'] = function(version) return format('Нужно обновить аддон ExG до %s', version and ('версии ' .. version) or 'последней версии'); end;
+L['Undecided yet'] = 'Не определились';
 
 L['ExG Boss 785'] = 'Верховная жрица Джеклик';
 L['ExG Boss 784'] = 'Верховный жрец Веноксис';

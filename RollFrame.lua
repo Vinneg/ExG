@@ -74,385 +74,27 @@ local onLeave = function()
     return GameTooltip:Hide();
 end;
 
+local onAccepted = function(owner, item)
+    return function()
+        GameTooltip:SetOwner(owner, 'ANCHOR_TOP');
+        GameTooltip:AddLine(L['Undecided yet']);
+
+        for i in pairs(item.accepted) do
+            if not item.rolls[i] then
+                local info = ExG:RaidInfo(i);
+                local r, g, b = ExG:ClassColor(info and info.class or 'DEFAULT');
+
+                GameTooltip:AddLine(i, r, g, b);
+            end
+        end
+
+        GameTooltip:Show();
+    end;
+end;
+
 local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
 
-local CLASSES = {
-    WARRIOR = {
-        id = 1,
-        name = 'WARRIOR',
-        icon = 626008,
-        specs = {
-            ARMS = {
-                id = 1,
-                name = 'ARMS',
-                icon = 132349,
-            },
-            FURY = {
-                id = 2,
-                name = 'FURY',
-                icon = 132347,
-            },
-            PROT = {
-                id = 3,
-                name = 'PROT',
-                icon = 132341,
-            },
-        },
-        scan = function()
-            local _, _, prot = GetTalentTabInfo(3);
-
-            if prot > 10 then
-                return 'PROT';
-            end
-
-            local _, _, arms = GetTalentTabInfo(1);
-            local _, _, fury = GetTalentTabInfo(2);
-
-            if arms > fury then
-                return 'ARMS';
-            elseif arms < fury then
-                return 'FURY';
-            end
-
-            return nil;
-        end,
-    },
-    PALADIN = {
-        id = 2,
-        name = 'PALADIN',
-        icon = 626003,
-        specs = {
-            HOLY = {
-                id = 1,
-                name = 'HOLY',
-                icon = 135920,
-            },
-            PROT = {
-                id = 2,
-                name = 'PROT',
-                icon = 135880,
-            },
-            RETRI = {
-                id = 3,
-                name = 'RETRI',
-                icon = 135873,
-            },
-        },
-        scan = function()
-            local _, _, holy = GetTalentTabInfo(1);
-            local _, _, prot = GetTalentTabInfo(2);
-            local _, _, retri = GetTalentTabInfo(3);
-
-            if holy > prot and holy > retri then
-                return 'HOLY';
-            elseif prot > holy and prot > retri then
-                return 'PROT';
-            elseif retri > holy and retri > prot then
-                return 'RETRI';
-            end
-
-            return nil;
-        end,
-    },
-    HUNTER = {
-        id = 3,
-        name = 'HUNTER',
-        icon = 626000,
-        specs = {
-            BM = {
-                id = 1,
-                name = 'BM',
-                icon = 132164,
-            },
-            MM = {
-                id = 2,
-                name = 'MM',
-                icon = 132222,
-            },
-            SURV = {
-                id = 3,
-                name = 'SURV',
-                icon = 132215,
-            },
-        },
-        scan = function()
-            return nil;
-        end,
-    },
-    ROGUE = {
-        id = 4,
-        name = 'ROGUE',
-        icon = 626005,
-        specs = {
-            ASSASSIN = {
-                id = 1,
-                name = 'ASSASSIN',
-                icon = 132292,
-            },
-            COMBAT = {
-                id = 2,
-                name = 'COMBAT',
-                icon = 132090,
-            },
-            SUBTLETY = {
-                id = 3,
-                name = 'SUBTLETY',
-                icon = 132089,
-            },
-        },
-        scan = function()
-            return nil;
-        end,
-    },
-    PRIEST = {
-        id = 5,
-        name = 'PRIEST',
-        icon = 626004,
-        specs = {
-            DISC = {
-                id = 1,
-                name = 'DISC',
-                icon = 135987,
-            },
-            HOLY = {
-                id = 2,
-                name = 'HOLY',
-                icon = 626004,
-            },
-            SHADOW = {
-                id = 3,
-                name = 'SHADOW',
-                icon = 136207,
-            },
-        },
-        scan = function()
-            local _, _, shadow = GetTalentTabInfo(3);
-
-            if shadow > 30 then
-                return 'SHADOW';
-            end
-
-            return 'HOLY';
-        end,
-    },
-    DEATHKNIGHT = {
-        id = 6,
-        name = 'DEATHKNIGHT',
-        icon = 0,
-        specs = {
-            DISC = {
-                id = 1,
-                icon = 0,
-            },
-            HOLY = {
-                id = 2,
-                icon = 0,
-            },
-            SHADOW = {
-                id = 3,
-                icon = 0,
-            },
-        },
-        scan = function()
-            return nil;
-        end,
-    },
-    SHAMAN = {
-        id = 7,
-        name = 'SHAMAN',
-        icon = 626006,
-        specs = {
-            ELEM = {
-                id = 1,
-                name = 'ELEM',
-                icon = 136048,
-            },
-            ENH = {
-                id = 2,
-                name = 'ENH',
-                icon = 136114,
-            },
-            RESTOR = {
-                id = 3,
-                name = 'RESTOR',
-                icon = 136052,
-            },
-        },
-        scan = function()
-            local _, _, elem = GetTalentTabInfo(1);
-            local _, _, enh = GetTalentTabInfo(2);
-            local _, _, restor = GetTalentTabInfo(3);
-
-            if restor > elem and restor > enh then
-                return 'RESTOR';
-            elseif elem > restor and elem > enh then
-                return 'ELEM';
-            elseif enh > restor and enh > elem then
-                return 'ENH';
-            end
-
-            return nil;
-        end,
-    },
-    MAGE = {
-        id = 8,
-        name = 'MAGE',
-        icon = 626001,
-        specs = {
-            ARCANE = {
-                id = 1,
-                name = 'ARCANE',
-                icon = 135932,
-            },
-            FIRE = {
-                id = 2,
-                name = 'FIRE',
-                icon = 135812,
-            },
-            FROST = {
-                id = 3,
-                name = 'FROST',
-                icon = 135846,
-            },
-        },
-        scan = function()
-            local _, _, fire = GetTalentTabInfo(2);
-            local _, _, frost = GetTalentTabInfo(3);
-
-            if fire > frost then
-                return 'FIRE';
-            elseif frost > fire then
-                return 'FROST';
-            end
-
-            return nil;
-        end,
-    },
-    WARLOCK = {
-        id = 9,
-        name = 'WARLOCK',
-        icon = 626007,
-        specs = {
-            AFFLI = {
-                id = 1,
-                name = 'AFFLI',
-                icon = 136145,
-            },
-            DEMON = {
-                id = 2,
-                name = 'DEMON',
-                icon = 136172,
-            },
-            DESTR = {
-                id = 3,
-                name = 'DESTR',
-                icon = 136186,
-            },
-        },
-        scan = function()
-            return nil;
-        end,
-    },
-    MONK = {
-        id = 10,
-        name = 'MONK',
-        icon = 0,
-        specs = {
-            AFFLI = {
-                id = 1,
-                name = 'DESTR',
-                icon = 0,
-            },
-            DEMON = {
-                id = 2,
-                name = 'DESTR',
-                icon = 0,
-            },
-            DESTR = {
-                id = 3,
-                name = 'DESTR',
-                icon = 0,
-            },
-        },
-        scan = function()
-            return nil;
-        end,
-    },
-    DRUID = {
-        id = 11,
-        name = 'DRUID',
-        icon = 625999,
-        specs = {
-            BALANCE = {
-                id = 1,
-                name = 'BALANCE',
-                icon = 136096,
-            },
-            FERAL = {
-                id = 2,
-                name = 'FERAL',
-                icon = 132276,
-            },
-            RESTOR = {
-                id = 3,
-                name = 'RESTOR',
-                icon = 136041,
-            },
-        },
-        scan = function()
-            local _, _, heal = GetTalentTabInfo(3);
-
-            if heal > 15 then
-                return 'RESTOR';
-            end
-
-            local _, _, balance = GetTalentTabInfo(1);
-            local _, _, feral = GetTalentTabInfo(2);
-
-            if balance > feral then
-                return 'BALANCE';
-            elseif feral > balance then
-                return 'FERAL';
-            end
-
-            return nil;
-        end,
-    },
-    DEMONHUNTER = {
-        id = 12,
-        name = 'DEMONHUNTER',
-        icon = 0,
-        specs = {
-            AFFLI = {
-                id = 1,
-                name = 'RESTOR',
-                icon = 0,
-            },
-            DEMON = {
-                id = 2,
-                name = 'RESTOR',
-                icon = 0,
-            },
-            DESTR = {
-                id = 3,
-                name = 'RESTOR',
-                icon = 0,
-            },
-        },
-        scan = function()
-            return nil;
-        end,
-    },
-};
-
 local CLASSES_ORDER = { 'WARRIOR', 'PALADIN', 'HUNTER', 'ROGUE', 'PRIEST', 'DEATHKNIGHT', 'SHAMAN', 'MAGE', 'WARLOCK', 'MONK', 'DRUID', 'DEMONHUNTER', };
-
-local function getClassSpec()
-    local class = ExG.state.class;
-    local spec = CLASSES[class] and CLASSES[class].scan() or nil;
-
-    return spec and (class .. '_' .. spec) or class;
-end
 
 local MAX_TIPS = 12;
 local MAX_PANES = 10;
@@ -696,9 +338,9 @@ local function makePane(self)
 
     local last = makeButtons(self, pane);
 
-    pane.accepted = AceGUI:Create('Label');
+    pane.accepted = AceGUI:Create('InteractiveLabel');
     pane.accepted:SetText('none');
-    pane.accepted:SetFullWidth(true);
+    pane.accepted:SetCallback('OnLeave', onLeave);
     pane:AddChild(pane.accepted);
 
     pane.accepted:SetPoint('TOP', last.frame, 'BOTTOM', 0, -5);
@@ -736,8 +378,10 @@ local function getPane(self, id)
     end
 end
 
-local function renderTips(self, pane, settings)
-    local scan = function(res, class)
+local function renderTips(self, pane)
+    local scan = function(res, class, id)
+        local settings = store().items.data[id];
+
         if not settings then
             return;
         end
@@ -754,7 +398,7 @@ local function renderTips(self, pane, settings)
     local res = {};
 
     for i, v in ipairs(CLASSES_ORDER) do
-        scan(res, v);
+        scan(res, v, pane.itemId);
     end
 
     for i, v in ipairs(res) do
@@ -762,7 +406,7 @@ local function renderTips(self, pane, settings)
 
         v.class = class;
 
-        class = CLASSES[class];
+        class = ExG:Classes()[class];
 
         v.id = class.id;
         v.desc = L[class.name];
@@ -818,7 +462,7 @@ local function renderTips(self, pane, settings)
     end
 end
 
-local function renderButons(self, item, settings)
+local function renderButons(self, item)
     local pane = getPane(self, item.id);
 
     if not pane then
@@ -829,17 +473,15 @@ local function renderButons(self, item, settings)
         if pane[btn.id] then
             local enabled = true;
 
-            if settings and btn.id ~= 'button6' then
-                local spec = settings[getClassSpec()];
-                local class = settings[ExG.state.class];
-                local def = settings['DEFAULT'] or {};
+            if btn.id ~= 'button6' and store().items.data[item.id] then
+                local settings = ExG:PullSettings(item.id, true);
 
-                if spec then
-                    enabled = spec[btn.id];
-                elseif class then
-                    enabled = class[btn.id];
+                if settings.spec then
+                    enabled = settings.spec[btn.id];
+                elseif settings.class then
+                    enabled = settings.class[btn.id];
                 else
-                    enabled = def[btn.id];
+                    enabled = settings.def[btn.id];
                 end
             end
 
@@ -853,6 +495,10 @@ local function renderButons(self, item, settings)
     end
 end
 
+local function renderAccepted(self, item, pane)
+    pane.accepted:SetCallback('OnEnter', onAccepted(pane.accepted.frame, item));
+end
+
 local function renderRolls(self, item, pane)
     if not item then
         for i = 1, #pane.rolls do
@@ -861,6 +507,8 @@ local function renderRolls(self, item, pane)
 
         return;
     end
+
+    renderAccepted(self, item, pane);
 
     local rolls = {};
 
@@ -926,16 +574,14 @@ local function renderItem(self, item)
         return;
     end
 
-    local settings = store().items.data[item.id];
-
     pane.head:SetImage(item.texture);
     pane.cost:SetText(item.gp .. ' GP');
     pane.count:SetText('x ' .. (item.count or 0));
     pane.head:SetLabel(item.link);
     pane.head:SetCallback('OnEnter', onEnter(pane.head.frame, item.link));
 
-    renderTips(self, pane, settings);
-    renderButons(self, item, settings);
+    renderTips(self, pane);
+    renderButons(self, item);
     renderRolls(self, item, pane);
 
     self.frame:SetWidth(count(self) * (PANE_WIDTH + 5) + 15);
@@ -1075,17 +721,14 @@ end
 function ExG.RollFrame:AddItem(item)
     self.items[item.id] = self.items[item.id] or { count = 1, accepted = {}, rolls = {} };
 
-    local settings = store().items.data[item.id];
-    local spec = settings and settings[getClassSpec()] or {};
-    local class = settings and settings[ExG.state.class] or {};
-    local def = settings and settings['DEFAULT'] or {};
+    local settings = ExG:PullSettings(item.id);
 
     local tmp = self.items[item.id];
 
     tmp.id = item.id;
     tmp.count = item.count;
     tmp.mode = item.mode;
-    tmp.gp = spec.gp or class.gp or def.gp or item.gp or 0;
+    tmp.gp = settings and ((settings.spec and settings.spec.gp) or (settings.class and settings.class.gp) or (settings.def and settings.def.gp)) or item.gp or 0;
     tmp.name = item.name;
     tmp.loc = item.loc;
     tmp.slots = item.slots;
@@ -1112,6 +755,8 @@ function ExG.RollFrame:AcceptItem(itemId, source)
 
     if pane then
         pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
+
+        renderAccepted(self, item, pane);
     end
 end
 

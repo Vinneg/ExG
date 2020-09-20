@@ -25,12 +25,6 @@ local function toString(info, ep, gp)
     return newOffNote;
 end
 
-local LINK_PATTERN = '|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*):?(%-?%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?';
-
-local LOCS_OVER = {
-    INVTYPE_ROBE = 'INVTYPE_ROBE',
-};
-
 local LOCS = {
     INVTYPE_AMMO = { 0 },
     INVTYPE_HEAD = { 1 },
@@ -314,6 +308,8 @@ local RARITY_COLORS = {
     ['00ccff'] = 7,
 };
 
+local LINK_PATTERN = '|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*):?(%-?%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?';
+
 function ExG:LinkInfo(link)
     if not link then
         return nil;
@@ -329,7 +325,6 @@ function ExG:LinkInfo(link)
         name = name,
         rarity = color and RARITY_COLORS[color],
         type = type,
-        subtype = subtype,
         loc = loc,
         texture = texture,
         classID = classID,
@@ -364,19 +359,11 @@ function ExG:ItemInfo(linkOrId)
         name = name,
         rarity = rarity,
         level = level,
-        minLevel = minLevel,
         type = type,
-        subtype = subtype,
-        stackCount = stackCount,
         loc = loc,
         texture = texture,
-        sellPrice = sellPrice,
         classID = classID,
         subClassID = subClassID,
-        bindType = bindType,
-        expacID = expacID,
-        setID = setID,
-        isCraftReg = isCraftReg
     };
 
     item.slots = toSlots(item);
@@ -434,19 +421,13 @@ function ExG:SetEG(info, ep, gp)
     return { ep = newEp, gp = newGp, pr = floor(100 * newEp / newGp) / 100, };
 end
 
-function ExG:CalcGP(linkOrId)
-    local info = self:ItemInfo(linkOrId);
+local LOCS_OVER = {
+    INVTYPE_ROBE = 'INVTYPE_ROBE',
+};
 
+function ExG:CalcGP(info)
     if not info then
         return 0;
-    end
-
-    local settings = store().items.data[info.id];
-    local class = settings and settings[ExG.state.class] or {};
-    local def = settings and settings['DEFAULT'] or {};
-
-    if class.gp or def.gp then
-        return class.gp or def.gp;
     end
 
     local token = TOKENS[info.id];
@@ -468,7 +449,399 @@ function ExG:CalcGP(linkOrId)
 
     local formula = store().items.formula;
 
-    return math.floor(formula.coef * (formula.base ^ (lvl / 26 + info.rarity - 4)) * slot * formula.mod);
+    return floor(formula.coef * (formula.base ^ (lvl / 26 + info.rarity - 4)) * slot * formula.mod);
+end
+
+local CLASSES = {
+    WARRIOR = {
+        id = 1,
+        name = 'WARRIOR',
+        icon = 626008,
+        specs = {
+            ARMS = {
+                id = 1,
+                name = 'ARMS',
+                icon = 132349,
+            },
+            FURY = {
+                id = 2,
+                name = 'FURY',
+                icon = 132347,
+            },
+            PROT = {
+                id = 3,
+                name = 'PROT',
+                icon = 132341,
+            },
+        },
+        scan = function()
+            local _, _, prot = GetTalentTabInfo(3);
+
+            if prot > 10 then
+                return 'PROT';
+            end
+
+            local _, _, arms = GetTalentTabInfo(1);
+            local _, _, fury = GetTalentTabInfo(2);
+
+            if arms > fury then
+                return 'ARMS';
+            elseif arms < fury then
+                return 'FURY';
+            end
+
+            return nil;
+        end,
+    },
+    PALADIN = {
+        id = 2,
+        name = 'PALADIN',
+        icon = 626003,
+        specs = {
+            HOLY = {
+                id = 1,
+                name = 'HOLY',
+                icon = 135920,
+            },
+            PROT = {
+                id = 2,
+                name = 'PROT',
+                icon = 135880,
+            },
+            RETRI = {
+                id = 3,
+                name = 'RETRI',
+                icon = 135873,
+            },
+        },
+        scan = function()
+            local _, _, holy = GetTalentTabInfo(1);
+            local _, _, prot = GetTalentTabInfo(2);
+            local _, _, retri = GetTalentTabInfo(3);
+
+            if holy > prot and holy > retri then
+                return 'HOLY';
+            elseif prot > holy and prot > retri then
+                return 'PROT';
+            elseif retri > holy and retri > prot then
+                return 'RETRI';
+            end
+
+            return nil;
+        end,
+    },
+    HUNTER = {
+        id = 3,
+        name = 'HUNTER',
+        icon = 626000,
+        specs = {
+            BM = {
+                id = 1,
+                name = 'BM',
+                icon = 132164,
+            },
+            MM = {
+                id = 2,
+                name = 'MM',
+                icon = 132222,
+            },
+            SURV = {
+                id = 3,
+                name = 'SURV',
+                icon = 132215,
+            },
+        },
+        scan = function()
+            return nil;
+        end,
+    },
+    ROGUE = {
+        id = 4,
+        name = 'ROGUE',
+        icon = 626005,
+        specs = {
+            ASSASSIN = {
+                id = 1,
+                name = 'ASSASSIN',
+                icon = 132292,
+            },
+            COMBAT = {
+                id = 2,
+                name = 'COMBAT',
+                icon = 132090,
+            },
+            SUBTLETY = {
+                id = 3,
+                name = 'SUBTLETY',
+                icon = 132089,
+            },
+        },
+        scan = function()
+            return nil;
+        end,
+    },
+    PRIEST = {
+        id = 5,
+        name = 'PRIEST',
+        icon = 626004,
+        specs = {
+            DISC = {
+                id = 1,
+                name = 'DISC',
+                icon = 135987,
+            },
+            HOLY = {
+                id = 2,
+                name = 'HOLY',
+                icon = 626004,
+            },
+            SHADOW = {
+                id = 3,
+                name = 'SHADOW',
+                icon = 136207,
+            },
+        },
+        scan = function()
+            local _, _, shadow = GetTalentTabInfo(3);
+
+            if shadow > 30 then
+                return 'SHADOW';
+            end
+
+            return 'HOLY';
+        end,
+    },
+    DEATHKNIGHT = {
+        id = 6,
+        name = 'DEATHKNIGHT',
+        icon = 0,
+        specs = {
+            DISC = {
+                id = 1,
+                icon = 0,
+            },
+            HOLY = {
+                id = 2,
+                icon = 0,
+            },
+            SHADOW = {
+                id = 3,
+                icon = 0,
+            },
+        },
+        scan = function()
+            return nil;
+        end,
+    },
+    SHAMAN = {
+        id = 7,
+        name = 'SHAMAN',
+        icon = 626006,
+        specs = {
+            ELEM = {
+                id = 1,
+                name = 'ELEM',
+                icon = 136048,
+            },
+            ENH = {
+                id = 2,
+                name = 'ENH',
+                icon = 136114,
+            },
+            RESTOR = {
+                id = 3,
+                name = 'RESTOR',
+                icon = 136052,
+            },
+        },
+        scan = function()
+            local _, _, elem = GetTalentTabInfo(1);
+            local _, _, enh = GetTalentTabInfo(2);
+            local _, _, restor = GetTalentTabInfo(3);
+
+            if restor > elem and restor > enh then
+                return 'RESTOR';
+            elseif elem > restor and elem > enh then
+                return 'ELEM';
+            elseif enh > restor and enh > elem then
+                return 'ENH';
+            end
+
+            return nil;
+        end,
+    },
+    MAGE = {
+        id = 8,
+        name = 'MAGE',
+        icon = 626001,
+        specs = {
+            ARCANE = {
+                id = 1,
+                name = 'ARCANE',
+                icon = 135932,
+            },
+            FIRE = {
+                id = 2,
+                name = 'FIRE',
+                icon = 135812,
+            },
+            FROST = {
+                id = 3,
+                name = 'FROST',
+                icon = 135846,
+            },
+        },
+        scan = function()
+            local _, _, fire = GetTalentTabInfo(2);
+            local _, _, frost = GetTalentTabInfo(3);
+
+            if fire > frost then
+                return 'FIRE';
+            elseif frost > fire then
+                return 'FROST';
+            end
+
+            return nil;
+        end,
+    },
+    WARLOCK = {
+        id = 9,
+        name = 'WARLOCK',
+        icon = 626007,
+        specs = {
+            AFFLI = {
+                id = 1,
+                name = 'AFFLI',
+                icon = 136145,
+            },
+            DEMON = {
+                id = 2,
+                name = 'DEMON',
+                icon = 136172,
+            },
+            DESTR = {
+                id = 3,
+                name = 'DESTR',
+                icon = 136186,
+            },
+        },
+        scan = function()
+            return nil;
+        end,
+    },
+    MONK = {
+        id = 10,
+        name = 'MONK',
+        icon = 0,
+        specs = {
+            AFFLI = {
+                id = 1,
+                name = 'DESTR',
+                icon = 0,
+            },
+            DEMON = {
+                id = 2,
+                name = 'DESTR',
+                icon = 0,
+            },
+            DESTR = {
+                id = 3,
+                name = 'DESTR',
+                icon = 0,
+            },
+        },
+        scan = function()
+            return nil;
+        end,
+    },
+    DRUID = {
+        id = 11,
+        name = 'DRUID',
+        icon = 625999,
+        specs = {
+            BALANCE = {
+                id = 1,
+                name = 'BALANCE',
+                icon = 136096,
+            },
+            FERAL = {
+                id = 2,
+                name = 'FERAL',
+                icon = 132276,
+            },
+            RESTOR = {
+                id = 3,
+                name = 'RESTOR',
+                icon = 136041,
+            },
+        },
+        scan = function()
+            local _, _, heal = GetTalentTabInfo(3);
+
+            if heal > 15 then
+                return 'RESTOR';
+            end
+
+            local _, _, balance = GetTalentTabInfo(1);
+            local _, _, feral = GetTalentTabInfo(2);
+
+            if balance > feral then
+                return 'BALANCE';
+            elseif feral > balance then
+                return 'FERAL';
+            end
+
+            return nil;
+        end,
+    },
+    DEMONHUNTER = {
+        id = 12,
+        name = 'DEMONHUNTER',
+        icon = 0,
+        specs = {
+            AFFLI = {
+                id = 1,
+                name = 'RESTOR',
+                icon = 0,
+            },
+            DEMON = {
+                id = 2,
+                name = 'RESTOR',
+                icon = 0,
+            },
+            DESTR = {
+                id = 3,
+                name = 'RESTOR',
+                icon = 0,
+            },
+        },
+        scan = function()
+            return nil;
+        end,
+    },
+};
+
+function ExG:Classes()
+    return CLASSES;
+end
+
+local function getClassSpec()
+    local class = ExG.state.class;
+    local spec = CLASSES[class] and CLASSES[class].scan() or nil;
+
+    return spec and (class .. '_' .. spec) or class;
+end
+
+function ExG:PullSettings(id, defNil)
+    local settings = store().items.data[id];
+
+    local null = ((not defNil) and {} or nil);
+
+    local spec = settings and settings[getClassSpec()] or null;
+    local class = settings and settings[ExG.state.class] or null;
+    local def = settings and settings['DEFAULT'] or {};
+
+    return { spec = spec, class = class, def = def };
 end
 
 function ExG:Report(msg)

@@ -21,7 +21,8 @@ local function tooltipGp(self)
         return;
     end
 
-    local gp = ExG:CalcGP(info.id);
+    local settings = ExG:PullSettings(info.id);
+    local gp = settings and ((settings.spec and settings.spec.gp) or (settings.class and settings.class.gp) or (settings.def and settings.def.gp)) or ExG:CalcGP(info);
 
     GameTooltip:AddLine(L['ExG Tooltip GP value'](gp), { 1, 1, 1 });
 end
@@ -37,7 +38,8 @@ local function hyperlinkGp(self, link)
         return;
     end
 
-    local gp = ExG:CalcGP(info.id);
+    local settings = ExG:PullSettings(info.id);
+    local gp = settings and ((settings.spec and settings.spec.gp) or (settings.class and settings.class.gp) or (settings.def and settings.def.gp)) or ExG:CalcGP(info);
 
     ItemRefTooltip:AddLine(L['ExG Tooltip GP value'](gp), { 1, 1, 1 });
     ItemRefTooltip:Show();
@@ -157,6 +159,7 @@ ExG.state = {
     class = nil,
     looting = false,
     options = nil,
+    version = nil,
 };
 
 ExG.defaults = {
@@ -1087,6 +1090,8 @@ function ExG:HandleChatCommand(input)
 end
 
 function ExG:OnInitialize()
+    self.state.version = GetAddOnMetadata(self.name, 'Version');
+
     self:RegisterChatCommand('exg', 'HandleChatCommand');
 
     AceConfig:RegisterOptionsTable('ExGOptions', self.options);
@@ -1135,36 +1140,38 @@ function ExG:PostInit()
     GameTooltip:HookScript("OnTooltipSetItem", tooltipGp);
     hooksecurefunc("ChatFrame_OnHyperlinkShow", hyperlinkGp);
 
-    local version = GetAddOnMetadata(self.name, 'Version');
-
-    self:Print('|cff33ff99Version ', version, ' loaded!|r');
+    self:Print('|cff33ff99Version ', self.state.version, ' loaded!|r');
 end
 
 function ExG:AnnounceItems(ids)
+    local handler = function(id, item)
+        return function()
+            local info = ExG:ItemInfo(id);
+
+            if not info or not info.id then
+                return;
+            end
+
+            info.gp = self:CalcGP(info);
+            info.count = item.count or 1;
+            info.mode = item.mode;
+
+            local data = Serializer:Serialize(info, store().items.data[id] or false);
+
+            if store().debug and not IsInRaid() then
+                self:SendCommMessage(self.messages.prefix.announce, data, self.messages.whisper, self.state.name);
+            else
+                self:SendCommMessage(self.messages.prefix.announce, data, self.messages.raid);
+            end
+        end
+    end;
+
     for id, item in pairs(ids) do
         local hasOne = self.RollFrame.items[id];
 
         if not hasOne then
             local obj = Item:CreateFromItemID(id);
-            obj:ContinueOnItemLoad(function()
-                local info = ExG:ItemInfo(id);
-
-                if not info or not info.id then
-                    return;
-                end
-
-                info.gp = self:CalcGP(id);
-                info.count = item.count or 1;
-                info.mode = item.mode;
-
-                local data = Serializer:Serialize(info, store().items.data[id] or false);
-
-                if store().debug and not IsInRaid() then
-                    self:SendCommMessage(self.messages.prefix.announce, data, self.messages.whisper, self.state.name);
-                else
-                    self:SendCommMessage(self.messages.prefix.announce, data, self.messages.raid);
-                end
-            end);
+            obj:ContinueOnItemLoad(handler(id, item));
         end
     end
 end
@@ -1372,9 +1379,7 @@ function ExG:handleScanVersions(_, message, _, sender)
     end
 
     if data.event == 'request' then
-        local version = GetAddOnMetadata(self.name, 'Version');
-
-        self:ScanVersions({ event = 'response', version = version, }, sender);
+        self:ScanVersions({ event = 'response', version = self.state.version, }, sender);
     elseif data.event == 'response' then
         self.RosterFrame.VersionDialog:Update({ name = sender, version = data.version, });
     end
