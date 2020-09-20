@@ -175,6 +175,9 @@ L['SHAMAN'] = 'Shaman';
 L['DRUID'] = 'Druid';
 L['MONK'] = 'Monk';
 L['PALADIN'] = 'Paladin';
+L['Report'] = true;
+L['Need to update ExG version'] = function(version) return format('You need to update your ExG addon to %s', version and ('version ' .. version) or 'latest version'); end;
+L['Undecided yet'] = true;
 
 L['Poor'] = '|cff9d9d9dPoor|r';
 L['Common'] = '|cffffffffCommon|r';

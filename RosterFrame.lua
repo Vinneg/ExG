@@ -272,7 +272,7 @@ local function makeBottom(self)
     self.frame.version = AceGUI:Create('Button');
     self.frame.version:SetWidth(120);
     self.frame.version:SetHeight(25);
-    self.frame.version:SetText(L['Version'](GetAddOnMetadata(ExG.name, 'Version')));
+    self.frame.version:SetText(L['Version'](ExG.state.version));
     self.frame.version:SetCallback('OnClick', function() self.VersionDialog:Show(); end);
     self.frame:AddChild(self.frame.version);
 
@@ -876,6 +876,7 @@ end
 ExG.RosterFrame.VersionDialog = {
     frame = nil,
     raid = {},
+    group = {},
     colors = {
         offline = { 0.7, 0.7, 0.7 },
         normal = { 0.25, 1, 0.25 },
@@ -892,6 +893,15 @@ local function makeVersionDialog(self)
     self.frame:AddChild(refresh);
 
     refresh:SetPoint('TOP', self.frame.frame, 'TOP', 0, -30);
+
+    local report = AceGUI:Create('Button');
+    report:SetWidth(120);
+    report:SetHeight(25);
+    report:SetText(L['Report']);
+    report:SetCallback('OnClick', function() self:Report(); end);
+    self.frame:AddChild(report);
+
+    report:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -5, -30);
 
     local points = {
         { point = 'TOPLEFT', frame = self.frame.frame, rel = 'TOPLEFT', x = 5, y = -60 },
@@ -963,22 +973,24 @@ local function renderVersionDialog(self)
         return;
     end
 
+    local raid = {};
     self.raid = {};
 
     for i = 1, MAX_RAID_MEMBERS do
         local name, rank, subgroup, level, classLoc, class, zone, online, isDead, role, isMl, combatRole = GetRaidRosterInfo(i);
 
         if name then
-            self.raid[subgroup] = self.raid[subgroup] or {};
-            tinsert(self.raid[subgroup], { name = Ambiguate(name, 'all'), class = class, online = online, });
+            raid[subgroup] = raid[subgroup] or {};
+
+            tinsert(raid[subgroup], { name = Ambiguate(name, 'all'), class = class, online = online, });
         end
     end
 
-    for i, group in pairs(self.raid) do
+    for i, group in pairs(raid) do
         sort(group, function(a, b) return a.name < b.name; end);
 
         for k, unit in ipairs(group) do
-            self.group[i][k].unit = unit.name;
+            self.raid[unit.name] = { group = i, idx = k, name = unit.name, old = true, };
 
             self.group[i][k].name:SetText(unit.name);
             self.group[i][k].name:SetVertexColor(ExG:ClassColor(unit.class));
@@ -994,23 +1006,9 @@ local function renderVersionDialog(self)
     end
 end
 
-local function updateVersionDialog(self, unit, status)
-    local version = GetAddOnMetadata(ExG.name, 'Version');
-
-    if unit.unit == status.name then
-        if status.version == version then
-            unit.status:SetText(status.version);
-            unit.status:SetVertexColor(unpack(self.colors.normal));
-        elseif status.version then
-            unit.status:SetText(status.version);
-            unit.status:SetVertexColor(unpack(self.colors.error));
-        end
-    end
-end
-
 function ExG.RosterFrame.VersionDialog:Create()
     self.frame = AceGUI:Create('Window');
-    self.frame:SetTitle(L['Version'](GetAddOnMetadata(ExG.name, 'Version')));
+    self.frame:SetTitle(L['Version'](ExG.state.version));
     self.frame:SetLayout(nil);
     self.frame:EnableResize(false);
     self.frame:SetWidth(550);
@@ -1032,13 +1030,49 @@ function ExG.RosterFrame.VersionDialog:Hide()
 end
 
 function ExG.RosterFrame.VersionDialog:Update(status)
-    for i = 1, 8 do
-        for k = 1, 5 do
-            updateVersionDialog(self, self.group[i][k], status);
-        end
+    local unit = self.raid[status.name];
+
+    if not unit then
+        return;
+    end
+
+    unit.old = (status.version ~= ExG.state.version);
+
+    local pane = self.group[unit.group][unit.idx];
+
+    if not pane then
+        return;
+    end
+
+    if status.version == ExG.state.version then
+        pane.status:SetText(status.version);
+        pane.status:SetVertexColor(unpack(self.colors.normal));
+    elseif status.version then
+        pane.status:SetText(status.version);
+        pane.status:SetVertexColor(unpack(self.colors.error));
     end
 end
 
 function ExG.RosterFrame.VersionDialog:Refresh()
     renderVersionDialog(self);
+end
+
+function ExG.RosterFrame.VersionDialog:Report()
+    local res = {};
+
+    for _, v in pairs(self.raid) do
+        if v.old then
+            tinsert(res, v);
+        end
+    end
+
+    if #res == 0 then
+        return;
+    end
+
+    sort(res, function(a, b) return a.name < b.name; end);
+
+    for _, v in ipairs(res) do
+        SendChatMessage(L['Need to update ExG version'](ExG.state.version), ExG.messages.whisper, nil, v.name);
+    end
 end
