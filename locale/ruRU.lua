@@ -174,6 +174,7 @@ L['PALADIN'] = 'Паладин';
 L['Report'] = 'Сообщить';
 L['Need to update ExG version'] = function(version) return format('Нужно обновить аддон ExG до %s', version and ('версии ' .. version) or 'последней версии'); end;
 L['Undecided yet'] = 'Не определились';
+L['Critical error occurs'] = function(module, method, message) return format('|cffC41F3BКритическая ошибка в |r%s:%s|cffC41F3B. Детали: |r%s|cffC41F3B.\nПолучите настройки от мастерлутера и |r/reload ui', module, method, message); end;
 
 L['ExG Boss 785'] = 'Верховная жрица Джеклик';
 L['ExG Boss 784'] = 'Верховный жрец Веноксис';

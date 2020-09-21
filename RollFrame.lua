@@ -364,15 +364,17 @@ end
 
 local function getPane(self, id)
     for i, pane in ipairs(self.frame.children) do
-        if pane.itemId == id then
-            return pane;
-        end
-    end
-
-    for i, pane in ipairs(self.frame.children) do
         if not pane.itemId then
             pane.itemId = id;
 
+            return pane;
+        end
+    end
+end
+
+local function findPane(self, id)
+    for i, pane in ipairs(self.frame.children) do
+        if pane.itemId == id then
             return pane;
         end
     end
@@ -463,7 +465,7 @@ local function renderTips(self, pane)
 end
 
 local function renderButons(self, item)
-    local pane = getPane(self, item.id);
+    local pane = findPane(self, item.id);
 
     if not pane then
         return
@@ -516,9 +518,10 @@ local function renderRolls(self, item, pane)
         if roll.option < 'button6' then
             local info = ExG:GuildInfo(roll.name);
             local button = roll.option and store().buttons.data[roll.option];
-            local pr = button and button.roll and roll.rnd or ExG:GetEG(info.officerNote).pr;
 
-            tinsert(rolls, { name = roll.name, class = roll.class, rank = info.rank, rankId = info.rankId, gp = roll.gp, option = roll.option, pr = pr, slot1 = roll.slot1, slot2 = roll.slot2, rnd = roll.rnd });
+            roll.pr = button and button.roll and roll.rnd or ExG:GetEG(info.officerNote).pr;
+
+            tinsert(rolls, { name = roll.name, class = roll.class, rank = info.rank, rankId = info.rankId, gp = roll.gp, option = roll.option, pr = roll.pr, slot1 = roll.slot1, slot2 = roll.slot2, rnd = roll.rnd, });
         end
     end
 
@@ -568,10 +571,14 @@ local function renderItem(self, item)
         return;
     end
 
-    local pane = getPane(self, item.id);
+    local pane = findPane(self, item.id);
 
     if not pane then
         return;
+    end
+
+    if not item.gp then
+        ExG:Print(L['Critical error occurs']('RollFrame', 'renderItem', 'item.gp = nil'));
     end
 
     pane.head:SetImage(item.texture);
@@ -652,14 +659,15 @@ local function appendHistory(item, roll)
     for unit, v in pairs(item.rolls) do
         local st = dt + i / 1000;
 
-        button = store().buttons.data[v.text];
-
-        details[st] = {
-            target = { name = unit, class = v.class, },
-            option = v.option,
-            pr = v.pr,
-            dt = st,
-        };
+        if v.option < 'button6' then
+            details[st] = {
+                target = { name = unit, class = v.class, },
+                option = v.option,
+                pr = v.pr,
+                rnd = v.rnd,
+                dt = st,
+            };
+        end
 
         i = i + 1;
     end
@@ -721,19 +729,20 @@ end
 function ExG.RollFrame:AddItem(item)
     self.items[item.id] = self.items[item.id] or { count = 1, accepted = {}, rolls = {} };
 
-    local settings = ExG:PullSettings(item.id);
-
     local tmp = self.items[item.id];
 
     tmp.id = item.id;
     tmp.count = item.count;
     tmp.mode = item.mode;
-    tmp.gp = settings and ((settings.spec and settings.spec.gp) or (settings.class and settings.class.gp) or (settings.def and settings.def.gp)) or item.gp or 0;
     tmp.name = item.name;
     tmp.loc = item.loc;
     tmp.slots = item.slots;
     tmp.link = item.link;
     tmp.texture = item.texture;
+
+    local settings = ExG:PullSettings(item.id);
+    local cost = settings and ((settings.spec and settings.spec.gp) or (settings.class and settings.class.gp) or (settings.def and settings.def.gp));
+    tmp.gp = cost or item.gp or 0;
 
     local pane = getPane(self, item.id);
 
@@ -751,7 +760,7 @@ function ExG.RollFrame:AcceptItem(itemId, source)
 
     item.accepted[source] = true;
 
-    local pane = getPane(self, itemId);
+    local pane = findPane(self, itemId);
 
     if pane then
         pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
@@ -774,7 +783,7 @@ function ExG.RollFrame:RollItem(data, unit)
     item.rolls[unit].slot1 = ExG:LinkInfo(data.slot1);
     item.rolls[unit].slot2 = ExG:LinkInfo(data.slot2);
 
-    local pane = getPane(self, item.id);
+    local pane = findPane(self, item.id);
 
     if pane then
         pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));

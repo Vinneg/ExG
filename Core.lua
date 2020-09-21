@@ -1187,9 +1187,7 @@ function ExG:handleAnnounceItems(_, message, _, sender)
         return
     end
 
-    if settings and settings.id then
-        store().items.data[settings.id] = settings;
-    end
+    store().items.data[item.id] = settings;
 
     self.RollFrame:AddItem(item);
     self.RollFrame:Show();
