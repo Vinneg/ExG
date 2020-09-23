@@ -747,9 +747,9 @@ function ExG.RollFrame:AddItem(item)
     local pane = getPane(self, item.id);
 
     if pane then
-        ExG:AcceptItem(tmp.id);
-
         renderItems(self);
+
+        ExG:AcceptItem(tmp.id);
     end
 end
 

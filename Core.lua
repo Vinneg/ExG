@@ -205,6 +205,9 @@ ExG.defaults = {
                 INVTYPE_THROWN = 0.6,
             },
             data = {},
+            ignore = {
+                [20725] = true,
+            },
         },
         buttons = {
             count = 2,
@@ -1168,8 +1171,9 @@ function ExG:AnnounceItems(ids)
 
     for id, item in pairs(ids) do
         local hasOne = self.RollFrame.items[id];
+        local ignoreOne = store().items.ignore[id];
 
-        if not hasOne then
+        if not hasOne and not ignoreOne then
             local obj = Item:CreateFromItemID(id);
             obj:ContinueOnItemLoad(handler(id, item));
         end

@@ -851,7 +851,7 @@ function ExG.RosterFrame.DecayDialog:Adjust()
         local st = dt + i / 1000;
 
         local name, _, _, _, _, _, _, officerNote, _, _, class = GetGuildRosterInfo(i);
-        local info = { index = i, name = Ambiguate(name, 'all'), class = class, officerNote = officerNote };
+        local info = { index = i, name = Ambiguate(name, 'all'), class = class, officerNote = officerNote, };
 
         if info.name then
             local old = ExG:GetEG(officerNote);
