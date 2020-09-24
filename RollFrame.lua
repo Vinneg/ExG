@@ -364,6 +364,10 @@ end
 
 local function getPane(self, id)
     for i, pane in ipairs(self.frame.children) do
+        if pane.itemId and not (self.items[pane.itemId] and self.items[pane.itemId].active) then
+            pane.itemId = nil;
+        end
+
         if not pane.itemId then
             pane.itemId = id;
 
@@ -577,27 +581,31 @@ local function renderItem(self, item)
         return;
     end
 
-    if not item.gp then
-        ExG:Print(L['Critical error occurs']('RollFrame', 'renderItem', 'item.gp = nil'));
+    if item.active then
+        if not item.gp then
+            ExG:Print(L['Critical error occurs']('RollFrame', 'renderItem', 'item.gp = nil'));
+        end
+
+        pane.head:SetImage(item.texture);
+        pane.cost:SetText(item.gp .. ' GP');
+        pane.count:SetText('x ' .. (item.count or 0));
+        pane.head:SetLabel(item.link);
+        pane.head:SetCallback('OnEnter', onEnter(pane.head.frame, item.link));
+
+        renderTips(self, pane);
+        renderButons(self, item);
+        renderRolls(self, item, pane);
+    else
+        pane.itemId = nil;
     end
 
-    pane.head:SetImage(item.texture);
-    pane.cost:SetText(item.gp .. ' GP');
-    pane.count:SetText('x ' .. (item.count or 0));
-    pane.head:SetLabel(item.link);
-    pane.head:SetCallback('OnEnter', onEnter(pane.head.frame, item.link));
-
-    renderTips(self, pane);
-    renderButons(self, item);
-    renderRolls(self, item, pane);
-
     self.frame:SetWidth(count(self) * (PANE_WIDTH + 5) + 15);
+
+    pane.frame:Show();
 
     if count(self) == 0 then
         self.frame:Hide();
     end
-
-    pane.frame:Show();
 end
 
 local function renderItems(self)
@@ -727,10 +735,11 @@ function ExG.RollFrame:Hide()
 end
 
 function ExG.RollFrame:AddItem(item)
-    self.items[item.id] = self.items[item.id] or { count = 1, accepted = {}, rolls = {} };
+    self.items[item.id] = self.items[item.id] or { count = 1, accepted = {}, rolls = {}, };
 
     local tmp = self.items[item.id];
 
+    tmp.active = true;
     tmp.id = item.id;
     tmp.count = item.count;
     tmp.mode = item.mode;
@@ -747,14 +756,14 @@ function ExG.RollFrame:AddItem(item)
     local pane = getPane(self, item.id);
 
     if pane then
-        renderItems(self);
-
         ExG:AcceptItem(tmp.id);
+
+        renderItems(self);
     end
 end
 
 function ExG.RollFrame:AcceptItem(itemId, source)
-    self.items[itemId] = self.items[itemId] or { count = 1, accepted = {}, rolls = {} };
+    self.items[itemId] = self.items[itemId] or { count = 1, accepted = {}, rolls = {}, };
 
     local item = self.items[itemId];
 
