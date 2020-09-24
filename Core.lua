@@ -1170,7 +1170,7 @@ function ExG:AnnounceItems(ids)
     end;
 
     for id, item in pairs(ids) do
-        local hasOne = self.RollFrame.items[id];
+        local hasOne = self.RollFrame.items[id] and self.RollFrame.items[id].active;
         local ignoreOne = store().items.ignore[id];
 
         if not hasOne and not ignoreOne then
