@@ -597,6 +597,7 @@ local function renderItem(self, item)
         renderRolls(self, item, pane);
     else
         pane.itemId = nil;
+        pane.frame:Hide();
     end
 
     self.frame:SetWidth(count(self) * (PANE_WIDTH + 5) + 15);
@@ -610,7 +611,12 @@ end
 
 local function renderItems(self)
     for id, item in pairs(self.items) do
-        renderItem(self, item);
+        if not (item and item.id) then
+            local pane = findPane(self, id);
+            pane.frame:Hide();
+        else
+            renderItem(self, item);
+        end
     end
 end
 
@@ -735,6 +741,10 @@ function ExG.RollFrame:Hide()
 end
 
 function ExG.RollFrame:AddItem(item)
+    if not (item and item.id) then
+        return;
+    end
+
     self.items[item.id] = self.items[item.id] or { count = 1, accepted = {}, rolls = {}, };
 
     local tmp = self.items[item.id];
@@ -763,6 +773,10 @@ function ExG.RollFrame:AddItem(item)
 end
 
 function ExG.RollFrame:AcceptItem(itemId, source)
+    if not itemId then
+        return;
+    end
+
     self.items[itemId] = self.items[itemId] or { count = 1, accepted = {}, rolls = {}, };
 
     local item = self.items[itemId];
@@ -779,7 +793,11 @@ function ExG.RollFrame:AcceptItem(itemId, source)
 end
 
 function ExG.RollFrame:RollItem(data, unit)
-    self.items[data.id] = self.items[data.id] or { count = 1, accepted = {}, rolls = {} };
+    if not (data and data.id) then
+        return;
+    end
+
+    self.items[data.id] = self.items[data.id] or { count = 1, accepted = {}, rolls = {}, };
 
     local item = self.items[data.id];
 
@@ -802,6 +820,10 @@ function ExG.RollFrame:RollItem(data, unit)
 end
 
 function ExG.RollFrame:DistributeItem(unit, itemId)
+    if not itemId then
+        return;
+    end
+
     local item = self.items[itemId];
 
     if not item then
@@ -819,9 +841,7 @@ function ExG.RollFrame:DistributeItem(unit, itemId)
 end
 
 function ExG.RollFrame:CancelRolls()
-    for id, item in pairs(self.items) do
-        self.items[id] = nil;
-    end
+    self.items = {};
 
     for i = 1, #self.frame.children do
         local pane = self.frame.children[i];
@@ -836,6 +856,10 @@ function ExG.RollFrame:CancelRolls()
 end
 
 function ExG.RollFrame:RemoveItem(itemId)
+    if not itemId then
+        return;
+    end
+
     local found = false;
 
     for i = 1, #self.frame.children do
