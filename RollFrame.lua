@@ -364,8 +364,9 @@ end
 
 local function getPane(self, id)
     for i, pane in ipairs(self.frame.children) do
-        if pane.itemId and not (self.items[pane.itemId] and self.items[pane.itemId].active) then
+        if (pane and pane.itemId) and not (self.items[pane.itemId] and self.items[pane.itemId].active) then
             pane.itemId = nil;
+            pane.frame:Hide();
         end
 
         if not pane.itemId then
@@ -613,7 +614,11 @@ local function renderItems(self)
     for id, item in pairs(self.items) do
         if not (item and item.id) then
             local pane = findPane(self, id);
-            pane.frame:Hide();
+
+            if pane then
+                pane.itemId = nil;
+                pane.frame:Hide();
+            end
         else
             renderItem(self, item);
         end
