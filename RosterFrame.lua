@@ -477,171 +477,6 @@ ExG.RosterFrame.AdjustDialog = {
     unit = nil,
 }
 
-local function guidEG(self, ep, gp, desc)
-    ep = (ep or 0);
-    gp = (gp or 0);
-
-    if (ep or 0) == 0 and (gp or 0) == 0 then
-        return;
-    end
-
-    local dt, offset = time(), 0;
-
-    while store().history.data[dt + offset / 1000] do
-        offset = offset + 1;
-    end
-
-    dt = dt + offset / 1000;
-
-    store().history.data[dt] = {
-        type = 'guild',
-        target = { name = L['ExG History GUILD'], class = 'GUILD', },
-        master = { name = ExG.state.name, class = ExG.state.class, },
-        desc = L['ExG Guid EG'](ep, gp, desc);
-        dt = dt,
-        details = {},
-    };
-
-    local details = {};
-
-    for i = 1, GetNumGuildMembers() do
-        local st = dt + i / 1000;
-
-        local name, _, _, _, _, _, _, officerNote, _, _, class = GetGuildRosterInfo(i);
-        local info = { index = i, name = Ambiguate(name, 'all'), class = class, officerNote = officerNote };
-
-        if info.name then
-            local old = ExG:GetEG(officerNote);
-            local new = ExG:SetEG(info, old.ep + ep, old.gp + gp);
-
-            details[st] = {
-                target = { name = info.name, class = info.class, },
-                ep = { before = old.ep, after = new.ep, };
-                gp = { before = old.gp, after = new.gp, };
-                dt = st,
-            };
-        end
-    end
-
-    store().history.data[dt].details = details;
-
-    ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
-
-    ExG:Report(L['ExG Report Guild EG'](ep, gp, desc));
-
-    self:Hide();
-end
-
-local function raidEG(self, ep, gp, desc)
-    ep = (ep or 0);
-    gp = (gp or 0);
-
-    if (ep or 0) == 0 and (gp or 0) == 0 then
-        return;
-    end
-
-    local dt, offset = time(), 0;
-
-    while store().history.data[dt + offset / 1000] do
-        offset = offset + 1;
-    end
-
-    dt = dt + offset / 1000;
-
-    store().history.data[dt] = {
-        type = 'raid',
-        target = { name = L['ExG History RAID'], class = 'RAID', },
-        master = { name = ExG.state.name, class = ExG.state.class, },
-        desc = L['ExG Raid EG'](ep, gp, desc);
-        dt = dt,
-        details = {},
-    };
-
-    local details = {};
-
-    for i = 1, MAX_RAID_MEMBERS do
-        local name = GetRaidRosterInfo(i);
-
-        if name then
-            local st = dt + i / 1000;
-
-            local info = ExG:GuildInfo(Ambiguate(name, 'all'));
-
-            if info.name then
-                local old = ExG:GetEG(info.officerNote);
-                local new = ExG:SetEG(info, old.ep + ep, old.gp + gp);
-
-                details[st] = {
-                    target = { name = info.name, class = info.class, },
-                    ep = { before = old.ep, after = new.ep, };
-                    gp = { before = old.gp, after = new.gp, };
-                    dt = st,
-                };
-            end
-        end
-    end
-
-    store().history.data[dt].details = details;
-
-    ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
-
-    ExG:Report(L['ExG Report Raid EG'](ep, gp, desc));
-
-    self:Hide();
-end
-
-local function unitEG(self, unit, ep, gp, desc)
-    ep = (ep or 0);
-    gp = (gp or 0);
-
-    local info = ExG:GuildInfo(self.unit);
-
-    if not info then
-        return;
-    end
-
-    local old = ExG:GetEG(info.officerNote);
-    local new, type, diff;
-
-    if ep ~= 0 then
-        type = 'EP';
-        diff = ep;
-        new = ExG:SetEG(info, old.ep + ep, old.gp);
-    elseif gp ~= 0 then
-        type = 'GP';
-        diff = gp;
-        new = ExG:SetEG(info, old.ep, old.gp + gp);
-    end
-
-    if not new then
-        return;
-    end
-
-    local dt, offset = time(), 0;
-
-    while store().history.data[dt + offset / 1000] do
-        offset = offset + 1;
-    end
-
-    dt = dt + offset / 1000;
-
-    store().history.data[dt] = {
-        type = 'unit',
-        target = { name = unit, class = info.class, },
-        master = { name = ExG.state.name, class = ExG.state.class, },
-        desc = L['Unit Adjust Desc'](type, diff, desc);
-        ep = { before = old.ep, after = new.ep, };
-        gp = { before = old.gp, after = new.gp, };
-        dt = dt,
-    };
-
-    ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
-
-    ExG:Report(L['ExG Report Unit EG'](unit, type, diff, desc));
-
-    self:Hide();
-end
-
 local function renderAdjustDialog(self)
     self.ep = AceGUI:Create('CheckBox');
     self.ep:SetLabel(L['EP']);
@@ -750,12 +585,173 @@ function ExG.RosterFrame.AdjustDialog:Adjust()
     local desc = self.reason:GetText();
 
     if strlower(self.unit) == 'guild' then
-        guidEG(self, ep, gp, desc);
+        self:GuidEG(ep, gp, desc);
     elseif strlower(self.unit) == 'raid' then
-        raidEG(self, ep, gp, desc);
+        self:RaidEG(ep, gp, desc);
     else
-        unitEG(self, self.unit, ep, gp, desc);
+        self:UnitEG(self.unit, ep, gp, desc);
     end
+
+    self:Hide();
+end
+
+function ExG.RosterFrame.AdjustDialog:GuidEG(ep, gp, desc)
+    ep = (ep or 0);
+    gp = (gp or 0);
+
+    if (ep or 0) == 0 and (gp or 0) == 0 then
+        return;
+    end
+
+    local dt, offset = time(), 0;
+
+    while store().history.data[dt + offset / 1000] do
+        offset = offset + 1;
+    end
+
+    dt = dt + offset / 1000;
+
+    store().history.data[dt] = {
+        type = 'guild',
+        target = { name = L['ExG History GUILD'], class = 'GUILD', },
+        master = { name = ExG.state.name, class = ExG.state.class, },
+        desc = L['ExG Guid EG'](ep, gp, desc);
+        dt = dt,
+        details = {},
+    };
+
+    local details = {};
+
+    for i = 1, GetNumGuildMembers() do
+        local st = dt + i / 1000;
+
+        local name, _, _, _, _, _, _, officerNote, _, _, class = GetGuildRosterInfo(i);
+        local info = { index = i, name = Ambiguate(name, 'all'), class = class, officerNote = officerNote };
+
+        if info.name then
+            local old = ExG:GetEG(officerNote);
+            local new = ExG:SetEG(info, old.ep + ep, old.gp + gp);
+
+            details[st] = {
+                target = { name = info.name, class = info.class, },
+                ep = { before = old.ep, after = new.ep, };
+                gp = { before = old.gp, after = new.gp, };
+                dt = st,
+            };
+        end
+    end
+
+    store().history.data[dt].details = details;
+
+    ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
+
+    ExG:Report(L['ExG Report Guild EG'](ep, gp, desc));
+end
+
+function ExG.RosterFrame.AdjustDialog:RaidEG(ep, gp, desc)
+    ep = (ep or 0);
+    gp = (gp or 0);
+
+    if (ep or 0) == 0 and (gp or 0) == 0 then
+        return;
+    end
+
+    local dt, offset = time(), 0;
+
+    while store().history.data[dt + offset / 1000] do
+        offset = offset + 1;
+    end
+
+    dt = dt + offset / 1000;
+
+    store().history.data[dt] = {
+        type = 'raid',
+        target = { name = L['ExG History RAID'], class = 'RAID', },
+        master = { name = ExG.state.name, class = ExG.state.class, },
+        desc = L['ExG Raid EG'](ep, gp, desc);
+        dt = dt,
+        details = {},
+    };
+
+    local details = {};
+
+    for i = 1, MAX_RAID_MEMBERS do
+        local name = GetRaidRosterInfo(i);
+
+        if name then
+            local st = dt + i / 1000;
+
+            local info = ExG:GuildInfo(Ambiguate(name, 'all'));
+
+            if info.name then
+                local old = ExG:GetEG(info.officerNote);
+                local new = ExG:SetEG(info, old.ep + ep, old.gp + gp);
+
+                details[st] = {
+                    target = { name = info.name, class = info.class, },
+                    ep = { before = old.ep, after = new.ep, };
+                    gp = { before = old.gp, after = new.gp, };
+                    dt = st,
+                };
+            end
+        end
+    end
+
+    store().history.data[dt].details = details;
+
+    ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
+
+    ExG:Report(L['ExG Report Raid EG'](ep, gp, desc));
+end
+
+function ExG.RosterFrame.AdjustDialog:UnitEG(unit, ep, gp, desc)
+    ep = (ep or 0);
+    gp = (gp or 0);
+
+    local info = ExG:GuildInfo(unit);
+
+    if not info then
+        return;
+    end
+
+    local old = ExG:GetEG(info.officerNote);
+    local new, type, diff;
+
+    if ep ~= 0 then
+        type = 'EP';
+        diff = ep;
+        new = ExG:SetEG(info, old.ep + ep, old.gp);
+    elseif gp ~= 0 then
+        type = 'GP';
+        diff = gp;
+        new = ExG:SetEG(info, old.ep, old.gp + gp);
+    end
+
+    if not new then
+        return;
+    end
+
+    local dt, offset = time(), 0;
+
+    while store().history.data[dt + offset / 1000] do
+        offset = offset + 1;
+    end
+
+    dt = dt + offset / 1000;
+
+    store().history.data[dt] = {
+        type = 'unit',
+        target = { name = unit, class = info.class, },
+        master = { name = ExG.state.name, class = ExG.state.class, },
+        desc = L['Unit Adjust Desc'](type, diff, desc);
+        ep = { before = old.ep, after = new.ep, };
+        gp = { before = old.gp, after = new.gp, };
+        dt = dt,
+    };
+
+    ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
+
+    ExG:Report(L['ExG Report Unit EG'](unit, type, diff, desc));
 end
 
 ExG.RosterFrame.DecayDialog = {

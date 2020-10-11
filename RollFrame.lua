@@ -999,7 +999,7 @@ function ExG.RollFrame.Dialog:Hide()
 end
 
 function ExG.RollFrame.Dialog:GiveItem(item, roll)
-    if not ExG.state.looting then
+    if item.mode == 'loot' and not ExG.state.looting then
         return;
     end
 
@@ -1011,29 +1011,31 @@ function ExG.RollFrame.Dialog:GiveItem(item, roll)
         return;
     end
 
-    local lootIndex, unitIndex
+    if item.mode == 'loot' then
+        local lootIndex, unitIndex
 
-    for i = 1, GetNumLootItems() do
-        local tmp = ExG:LinkInfo(GetLootSlotLink(i));
+        for i = 1, GetNumLootItems() do
+            local tmp = ExG:LinkInfo(GetLootSlotLink(i));
 
-        lootIndex = tmp and item.id == tmp.id and i or lootIndex;
+            lootIndex = tmp and item.id == tmp.id and i or lootIndex;
+        end
+
+        if not lootIndex then
+            return;
+        end
+
+        for i = 1, MAX_RAID_MEMBERS do
+            local name = GetMasterLootCandidate(lootIndex, i);
+
+            unitIndex = name and roll.name == Ambiguate(name, 'all') and i or unitIndex;
+        end
+
+        if not unitIndex then
+            return;
+        end
+
+        GiveMasterLoot(lootIndex, unitIndex);
     end
-
-    if not lootIndex then
-        return;
-    end
-
-    for i = 1, MAX_RAID_MEMBERS do
-        local name = GetMasterLootCandidate(lootIndex, i);
-
-        unitIndex = name and roll.name == Ambiguate(name, 'all') and i or unitIndex;
-    end
-
-    if not unitIndex then
-        return;
-    end
-
-    GiveMasterLoot(lootIndex, unitIndex);
 
     if not roll.option then
         disenchantHistory(item);

@@ -8,7 +8,7 @@ local store = function() return ExG.store.char; end;
 
 local onEnter = function(owner, link) return function() GameTooltip:SetOwner(owner, 'ANCHOR_RIGHT'); GameTooltip:SetHyperlink(link); GameTooltip:Show(); end; end;
 local onLeave = function() return GameTooltip:Hide(); end;
-local onClick = function(itemId) return function() ExG:AnnounceItems({ [itemId] = { count = 1 } }); end; end;
+local onClick = function(itemId) return function() ExG:AnnounceItems({ [itemId] = { count = 1, mode = 'inv', } }); end; end;
 
 local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
 
@@ -21,6 +21,8 @@ ExG.InventoryFrame = {
 local function scan(self)
     self.items = {};
 
+    local counter = 0;
+
     for i = 0, NUM_BAG_SLOTS do
         local slots = GetContainerNumSlots(i);
 
@@ -28,7 +30,7 @@ local function scan(self)
             for j = 1, slots do
                 local info = ExG:ItemInfo(GetContainerItemLink(i, j));
 
-                if info then
+                if info and counter < 10 then
                     local itemData = store().items.data[info.id];
 
                     if itemData then
@@ -36,6 +38,8 @@ local function scan(self)
                     elseif info.rarity >= store().items.threshold then
                         self.items[info.id] = info;
                     end
+
+                    counter = counter + 1;
                 end
             end
         end
