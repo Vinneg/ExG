@@ -207,6 +207,7 @@ ExG.defaults = {
             data = {},
             ignore = {
                 [20725] = true,
+                [18562] = true,
             },
         },
         buttons = {
@@ -287,6 +288,9 @@ ExG.defaults = {
             [1120] = { enable = true, ep = 15 }, --'Thaddius',
             [1119] = { enable = true, ep = 15 }, --'Sapphiron',
             [1114] = { enable = true, ep = 15 }, --'Kel'Thuzad'
+        },
+        raid = {
+            speedrun = false,
         },
     },
 };
@@ -1048,6 +1052,21 @@ ExG.options = {
                 },
             },
         },
+        raid = {
+            type = 'group',
+            name = L['ExG Raid'],
+            order = 50,
+            args = {
+                speedrun = {
+                    type = 'toggle',
+                    name = L['ExG Raid Speedrun'],
+                    order = 15,
+                    width = 'full',
+                    get = function() return store().raid.speedrun; end,
+                    set = function(_, value) store().raid.speedrun = value; end,
+                },
+            },
+        },
     }
 };
 
@@ -1066,7 +1085,7 @@ function ExG:HandleChatCommand(input)
         local items = {};
 
         for i = 2, #ids do
-            items[tonumber(ids[i])] = { count = 1, mode = 'loot', };
+            items[tonumber(ids[i])] = { count = 1, mode = 'inv', };
         end
 
         self:AnnounceItems(items);
@@ -1452,6 +1471,10 @@ end
 
 function ExG:LOOT_OPENED()
     self.state.looting = true;
+
+    if store().raid.speedrun then
+        return;
+    end
 
     if not self:IsMl() then
         return;
