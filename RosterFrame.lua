@@ -33,32 +33,19 @@ ExG.RosterFrame = {
     order = {},
 };
 
-local function getData(self)
+local function switchView(self)
     if self.current == 'guild' then
-        self.guild = {};
-
-        for i = 1, GetNumGuildMembers() do
-            local name, rank, rankId, level, classLoc, _, _, officerNote, isOnline, _, class = GetGuildRosterInfo(i);
-
-            local eg = ExG:GetEG(officerNote);
-
-            tinsert(self.guild, { name = Ambiguate(name, 'all'), rank = rank, rankId = rankId, level = level, class = class, classLoc = classLoc, offNote = officerNote, isOnline = isOnline, ep = eg.ep, gp = eg.gp, pr = eg.pr, });
-        end
+        self.Guild:Open();
+        self.Raid:Close();
+        self.Reserve:Close();
     elseif self.current == 'raid' then
-        self.raid = {};
-
-        for i = 1, MAX_RAID_MEMBERS do
-            local name, rank, subgroup, level, classDisplayName, class, zone, online, isDead, role, isMl, combatRole = GetRaidRosterInfo(i);
-
-            if name then
-                name = Ambiguate(name, 'all');
-
-                local info = ExG:GuildInfo(name);
-                local eg = ExG:GetEG(info.officerNote);
-
-                tinsert(self.raid, { name = name, rank = info.rank, rankId = info.rankId, level = level, class = class, classLoc = info.classLoc, offNote = info.officerNote, isOnline = info.isOnline, ep = eg.ep, gp = eg.gp, pr = eg.pr, });
-            end
-        end
+        self.Guild:Close();
+        self.Raid:Open();
+        self.Reserve:Close();
+    elseif self.current == 'reserve' then
+        self.Guild:Close();
+        self.Raid:Close();
+        self.Reserve:Open();
     end
 end
 
@@ -67,7 +54,7 @@ local function makeTopLine(self)
     guild:SetWidth(120);
     guild:SetHeight(25);
     guild:SetText(L['View Guild']);
-    guild:SetCallback('OnClick', function() self.current = 'guild'; getData(self); self:RenderItems(); end);
+    guild:SetCallback('OnClick', function() self.current = 'guild'; switchView(self); end);
     self.frame:AddChild(guild);
 
     guild:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -30);
@@ -76,14 +63,23 @@ local function makeTopLine(self)
     raid:SetWidth(120);
     raid:SetHeight(25);
     raid:SetText(L['View Raid']);
-    raid:SetCallback('OnClick', function() self.current = 'raid'; getData(self); self:RenderItems(); end);
+    raid:SetCallback('OnClick', function() self.current = 'raid'; switchView(self); end);
     self.frame:AddChild(raid);
 
     raid:SetPoint('LEFT', guild.frame, 'RIGHT', 5, 0);
 
+    local reserve = AceGUI:Create('Button');
+    reserve:SetWidth(120);
+    reserve:SetHeight(25);
+    reserve:SetText(L['View Reserve']);
+    reserve:SetCallback('OnClick', function() self.current = 'reserve'; switchView(self); end);
+    self.frame:AddChild(reserve);
+
+    reserve:SetPoint('LEFT', raid.frame, 'RIGHT', 5, 0);
+
     local options = AceGUI:Create('Button');
     options:SetWidth(120);
-    options:SetHeight(20);
+    options:SetHeight(25);
     options:SetText(L['View Options']);
     options:SetCallback('OnClick', function() InterfaceOptionsFrame_OpenToCategory(ExG.state.options); InterfaceOptionsFrame_OpenToCategory(ExG.state.options); end);
     self.frame:AddChild(options);
@@ -91,72 +87,52 @@ local function makeTopLine(self)
     options:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -10, -30);
 end
 
-local function makeFilters(self)
-    local classes = {
-        ALL = '',
-        DEATHKNIGHT = L['DEATHKNIGHT'],
-        WARRIOR = L['WARRIOR'],
-        ROGUE = L['ROGUE'],
-        MAGE = L['MAGE'],
-        PRIEST = L['PRIEST'],
-        WARLOCK = L['WARLOCK'],
-        HUNTER = L['HUNTER'],
-        SHAMAN = L['SHAMAN'],
-        DRUID = L['DRUID'],
-        MONK = L['MONK'],
-        PALADIN = L['PALADIN'],
-    };
-    local cOrder = { 'ALL', 'DEATHKNIGHT', 'WARRIOR', 'ROGUE', 'MAGE', 'PRIEST', 'WARLOCK', 'HUNTER', 'SHAMAN', 'DRUID', 'MONK', 'PALADIN', };
+function ExG.RosterFrame:Create()
+    self.frame = AceGUI:Create('Window');
+    self.frame:SetTitle(L['ExG']);
+    self.frame:SetLayout(nil);
+    self.frame:EnableResize(false);
+    self.frame:SetWidth(570);
+    self.frame:SetHeight(60);
+    self.frame:Hide();
 
-    local ranks, rOrder = { [0] = nil }, { 0 };
+    self.frame:SetCallback('OnClose', function() self:Close(); end);
 
-    for i = 1, GuildControlGetNumRanks() do
-        ranks[i] = GuildControlGetRankName(i);
-        tinsert(rOrder, i);
-    end
+    makeTopLine(self);
 
-    local cText = AceGUI:Create('Label');
-    cText:SetWidth(100);
-    cText:SetHeight(25);
-    cText:SetText(L['Class Filter']);
-    cText:SetJustifyH('RIGHT');
-    cText:SetColor(ExG:ClassColor('SYSTEM'));
-    self.frame:AddChild(cText);
+    self.Guild:Create();
+    self.Raid:Create();
+    self.Reserve:Create();
 
-    cText:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -65);
-
-    local class = AceGUI:Create('Dropdown');
-    class:SetWidth(120);
-    class:SetHeight(25);
-    class:SetLabel('');
-    class:SetCallback('OnClick', function() end);
-    class:SetList(classes, cOrder);
-    self.frame:AddChild(class);
-
-    class:SetPoint('LEFT', cText.frame, 'RIGHT', 5, 0);
-
-    local rText = AceGUI:Create('Label');
-    rText:SetWidth(100);
-    rText:SetHeight(25);
-    rText:SetText(L['Rank Filter']);
-    rText:SetJustifyH('RIGHT');
-    rText:SetColor(ExG:ClassColor('SYSTEM'));
-    self.frame:AddChild(rText);
-
-    rText:SetPoint('LEFT', class.frame, 'RIGHT', 5, 0);
-
-    local rank = AceGUI:Create('Dropdown');
-    rank:SetWidth(120);
-    rank:SetHeight(25);
-    rank:SetLabel('');
-    rank:SetCallback('OnClick', function() end);
-    rank:SetList(ranks, rOrder);
-    self.frame:AddChild(rank);
-
-    rank:SetPoint('LEFT', rText.frame, 'RIGHT', 5, 0);
+    self.AdjustDialog:Create();
+    self.DecayDialog:Create();
+    self.VersionDialog:Create();
 end
 
-local function makeHeaders(self)
+function ExG.RosterFrame:Open()
+    self.frame:Show();
+
+    switchView(self);
+end
+
+function ExG.RosterFrame:Close()
+    self.Guild:Close();
+    self.Raid:Close();
+    self.Reserve:Close();
+
+    self.AdjustDialog:Close();
+    self.DecayDialog:Close();
+
+    self.frame:Hide();
+end
+
+ExG.RosterFrame.Guild = {
+    frame = nil,
+    list = nil,
+    data = {},
+};
+
+local function makeGuildHeaders(self)
     local name = AceGUI:Create('InteractiveLabel');
     name:SetFont(DEFAULT_FONT, 10);
     name:SetWidth(80);
@@ -168,7 +144,7 @@ local function makeHeaders(self)
     name:SetCallback('OnClick', order(self, 'name'));
     self.frame:AddChild(name);
 
-    name:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -90);
+    name:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -35);
 
     local class = AceGUI:Create('InteractiveLabel');
     class:SetFont(DEFAULT_FONT, 10);
@@ -207,7 +183,7 @@ local function makeHeaders(self)
     pr:SetCallback('OnClick', order(self, 'pr'));
     self.frame:AddChild(pr);
 
-    pr:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -20, -90);
+    pr:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -20, -35);
 
     local gp = AceGUI:Create('InteractiveLabel');
     gp:SetFont(DEFAULT_FONT, 10);
@@ -238,173 +214,138 @@ local function makeHeaders(self)
     ep:SetPoint('TOPRIGHT', gp.frame, 'TOPLEFT');
 end
 
-local function makeBottom(self)
-    self.frame.guild = AceGUI:Create('Button');
-    self.frame.guild:SetWidth(120);
-    self.frame.guild:SetHeight(25);
-    self.frame.guild:SetText(L['Add Guild EPGP']);
-    self.frame.guild:SetCallback('OnClick', function() self.AdjustDialog:Show('guild'); end);
-    self.frame:AddChild(self.frame.guild);
+local function makeGuildButtons(self)
+    self.frame.eg = AceGUI:Create('Button');
+    self.frame.eg:SetWidth(120);
+    self.frame.eg:SetHeight(25);
+    self.frame.eg:SetText(L['Change Guild EPGP']);
+    self.frame.eg:SetCallback('OnClick', function() ExG.RosterFrame.AdjustDialog:Open('guild'); end);
+    self.frame:AddChild(self.frame.eg);
 
-    self.frame.guild:SetPoint('BOTTOMLEFT', self.frame.frame, 'BOTTOMLEFT', 10, 5);
-    self.frame.guild:SetPoint('TOPRIGHT', self.frame.frame, 'BOTTOMLEFT', 180, 25);
-
-    self.frame.raid = AceGUI:Create('Button');
-    self.frame.raid:SetWidth(120);
-    self.frame.raid:SetHeight(25);
-    self.frame.raid:SetText(L['Add Raid EPGP']);
-    self.frame.raid:SetCallback('OnClick', function() self.AdjustDialog:Show('raid'); end);
-    self.frame:AddChild(self.frame.raid);
-
-    self.frame.raid:SetPoint('BOTTOMLEFT', self.frame.frame, 'BOTTOMLEFT', 10, 5);
-    self.frame.raid:SetPoint('TOPRIGHT', self.frame.frame, 'BOTTOMLEFT', 180, 25);
+    self.frame.eg:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 5, -5);
 
     self.frame.decay = AceGUI:Create('Button');
     self.frame.decay:SetWidth(120);
     self.frame.decay:SetHeight(25);
     self.frame.decay:SetText(L['Guild Decay']);
-    self.frame.decay:SetCallback('OnClick', function() self.DecayDialog:Show(); end);
+    self.frame.decay:SetCallback('OnClick', function() ExG.RosterFrame.DecayDialog:Open(); end);
     self.frame:AddChild(self.frame.decay);
 
-    self.frame.decay:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -10, 5);
-    self.frame.decay:SetPoint('TOPLEFT', self.frame.frame, 'BOTTOMRIGHT', -180, 25);
-
-    self.frame.version = AceGUI:Create('Button');
-    self.frame.version:SetWidth(120);
-    self.frame.version:SetHeight(25);
-    self.frame.version:SetText(L['Version'](ExG.state.version));
-    self.frame.version:SetCallback('OnClick', function() self.VersionDialog:Show(); end);
-    self.frame:AddChild(self.frame.version);
-
-    self.frame.version:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -10, 5);
-    self.frame.version:SetPoint('TOPLEFT', self.frame.frame, 'BOTTOMRIGHT', -180, 25);
+    self.frame.decay:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -5, -5);
 end
 
-local function renderItem(self, item)
-    if not item then
+local function makeGuildItems(self)
+    self.list:ReleaseChildren();
+
+    for _, item in ipairs(self.data) do
+        local row = AceGUI:Create('SimpleGroup');
+        row:SetFullWidth(true);
+        row:SetHeight(20);
+        row:SetLayout(nil);
+        row:SetAutoAdjustHeight(false);
+        row.frame:EnableMouse(true);
+
+        if not row.highlight then
+            row.highlight = row.frame:CreateTexture(nil, 'HIGHLIGHT');
+            row.highlight:SetTexture('Interface\\Buttons\\UI-Listbox-Highlight');
+            row.highlight:SetAllPoints(true);
+            row.highlight:SetBlendMode('ADD');
+        end
+
+        self.list:AddChild(row);
+
+        if not row.name then
+            row.name = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            row.name:SetFont(DEFAULT_FONT, 10);
+            row.name:ClearAllPoints();
+            row.name:SetPoint('TOPLEFT', 2, 0);
+            row.name:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 160, 0);
+            row.name:SetJustifyH('LEFT');
+            row.name:SetJustifyV('MIDDLE');
+        end
+
+        if not row.rank then
+            row.rank = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            row.rank:SetFont(DEFAULT_FONT, 10);
+            row.rank:ClearAllPoints();
+            row.rank:SetPoint('TOPLEFT', 160, 0);
+            row.rank:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 260, 0);
+            row.rank:SetJustifyH('CENTER');
+            row.rank:SetJustifyV('MIDDLE');
+        end
+
+        if not row.pr then
+            row.pr = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            row.pr:SetFont(DEFAULT_FONT, 10);
+            row.pr:ClearAllPoints();
+            row.pr:SetPoint('TOPRIGHT');
+            row.pr:SetPoint('BOTTOMLEFT', row.frame, 'BOTTOMRIGHT', -50, 0);
+            row.pr:SetJustifyH('CENTER');
+            row.pr:SetJustifyV('MIDDLE');
+        end
+
+        if not row.gp then
+            row.gp = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            row.gp:SetFont(DEFAULT_FONT, 10);
+            row.gp:ClearAllPoints();
+            row.gp:SetPoint('TOPRIGHT', row.pr, 'TOPLEFT');
+            row.gp:SetPoint('BOTTOMLEFT', row.pr, 'BOTTOMLEFT', -50, 0);
+            row.gp:SetJustifyH('CENTER');
+            row.gp:SetJustifyV('MIDDLE');
+        end
+
+        if not row.ep then
+            row.ep = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            row.ep:SetFont(DEFAULT_FONT, 10);
+            row.ep:ClearAllPoints();
+            row.ep:SetPoint('TOPRIGHT', row.gp, 'TOPLEFT');
+            row.ep:SetPoint('BOTTOMLEFT', row.gp, 'BOTTOMLEFT', -50, 0);
+            row.ep:SetJustifyH('CENTER');
+            row.ep:SetJustifyV('MIDDLE');
+        end
+    end
+end
+
+local function renderGuildItems(self)
+    if not self.list then
         return;
     end
 
-    local row = AceGUI:Create('SimpleGroup');
-    row:SetFullWidth(true);
-    row:SetHeight(20);
-    row:SetLayout(nil);
-    row:SetAutoAdjustHeight(false);
-    row.frame:EnableMouse(true);
+    for i, item in ipairs(self.data) do
+        local row = self.list.children[i];
 
-    if not row.highlight then
-        row.highlight = row.frame:CreateTexture(nil, 'HIGHLIGHT');
-        row.highlight:SetTexture('Interface\\Buttons\\UI-Listbox-Highlight');
-        row.highlight:SetAllPoints(true);
-        row.highlight:SetBlendMode('ADD');
-    end
+        if CanEditOfficerNote() then
+            row.frame:SetScript('OnMouseDown', function() self.AdjustDialog:Show(item.name); end);
+        end
 
-    self.list:AddChild(row);
+        row.name:SetVertexColor(ExG:ClassColor(item.class));
+        row.name:SetText(item.name);
 
-    if CanEditOfficerNote() then
-        row.frame:SetScript('OnMouseDown', function() self.AdjustDialog:Show(item.name); end);
-    end
+        row.rank:SetVertexColor(ExG:ClassColor(item.class));
+        row.rank:SetText(item.rank);
 
-    if not row.name then
-        row.name = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
-        row.name:SetFont(DEFAULT_FONT, 10);
-        row.name:ClearAllPoints();
-        row.name:SetPoint('TOPLEFT', 2, 0);
-        row.name:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 160, 0);
-        row.name:SetJustifyH('LEFT');
-        row.name:SetJustifyV('MIDDLE');
-    end
+        row.pr:SetVertexColor(ExG:ClassColor(item.class));
+        row.pr:SetText(item.pr);
 
-    row.name:SetVertexColor(ExG:ClassColor(item.class));
-    row.name:SetText(item.name);
+        row.gp:SetVertexColor(ExG:ClassColor(item.class));
+        row.gp:SetText(item.gp);
 
-    if not row.rank then
-        row.rank = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
-        row.rank:SetFont(DEFAULT_FONT, 10);
-        row.rank:ClearAllPoints();
-        row.rank:SetPoint('TOPLEFT', 160, 0);
-        row.rank:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 260, 0);
-        row.rank:SetJustifyH('CENTER');
-        row.rank:SetJustifyV('MIDDLE');
-    end
-
-    row.rank:SetVertexColor(ExG:ClassColor(item.class));
-    row.rank:SetText(item.rank);
-
-    if not row.pr then
-        row.pr = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
-        row.pr:SetFont(DEFAULT_FONT, 10);
-        row.pr:ClearAllPoints();
-        row.pr:SetPoint('TOPRIGHT');
-        row.pr:SetPoint('BOTTOMLEFT', row.frame, 'BOTTOMRIGHT', -50, 0);
-        row.pr:SetJustifyH('CENTER');
-        row.pr:SetJustifyV('MIDDLE');
-    end
-
-    row.pr:SetVertexColor(ExG:ClassColor(item.class));
-    row.pr:SetText(item.pr);
-
-    if not row.gp then
-        row.gp = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
-        row.gp:SetFont(DEFAULT_FONT, 10);
-        row.gp:ClearAllPoints();
-        row.gp:SetPoint('TOPRIGHT', row.pr, 'TOPLEFT');
-        row.gp:SetPoint('BOTTOMLEFT', row.pr, 'BOTTOMLEFT', -50, 0);
-        row.gp:SetJustifyH('CENTER');
-        row.gp:SetJustifyV('MIDDLE');
-    end
-
-    row.gp:SetVertexColor(ExG:ClassColor(item.class));
-    row.gp:SetText(item.gp);
-
-    if not row.ep then
-        row.ep = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
-        row.ep:SetFont(DEFAULT_FONT, 10);
-        row.ep:ClearAllPoints();
-        row.ep:SetPoint('TOPRIGHT', row.gp, 'TOPLEFT');
-        row.ep:SetPoint('BOTTOMLEFT', row.gp, 'BOTTOMLEFT', -50, 0);
-        row.ep:SetJustifyH('CENTER');
-        row.ep:SetJustifyV('MIDDLE');
-    end
-
-    row.ep:SetVertexColor(ExG:ClassColor(item.class));
-    row.ep:SetText(item.ep);
-end
-
-local function renderItems(self)
-    if self.current == 'guild' then
-        self.frame.guild.frame:Show();
-        self.frame.raid.frame:Hide();
-        self.frame.decay.frame:Show();
-        self.frame.version.frame:Hide();
-    elseif self.current == 'raid' then
-        self.frame.guild.frame:Hide();
-        self.frame.raid.frame:Show();
-        self.frame.decay.frame:Hide();
-        self.frame.version.frame:Show();
-    end
-
-    self.list:ReleaseChildren();
-
-    for i, v in ipairs(self[self.current]) do
-        renderItem(self, v);
+        row.ep:SetVertexColor(ExG:ClassColor(item.class));
+        row.ep:SetText(item.ep);
     end
 end
 
-function ExG.RosterFrame:Create()
-    self.frame = AceGUI:Create('Window');
-    self.frame:SetTitle(L['ExG']);
+function ExG.RosterFrame.Guild:Create()
+    self.frame = AceGUI:Create('SimpleGroup');
     self.frame:SetLayout(nil);
-    self.frame:EnableResize(false);
     self.frame:SetWidth(570);
     self.frame:SetHeight(700);
-    self.frame:Hide();
+    self.frame.frame:Hide();
 
-    self.frame:SetCallback('OnClose', function() self.frame:Hide(); self.AdjustDialog:Hide(); self.DecayDialog:Hide(); end);
+    self.frame:SetPoint('TOP', ExG.RosterFrame.frame.frame, 'BOTTOM', 0, -1);
 
-    makeTopLine(self);
-    makeFilters(self);
-    makeHeaders(self);
+    makeGuildButtons(self);
+    makeGuildHeaders(self);
 
     local group = AceGUI:Create('SimpleGroup');
     group:SetFullWidth(true);
@@ -413,8 +354,8 @@ function ExG.RosterFrame:Create()
 
     self.frame:AddChild(group);
 
-    group:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -105);
-    group:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -10, 30);
+    group:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 5, -50);
+    group:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -5, 5);
 
     self.list = AceGUI:Create('ScrollFrame');
     self.list:SetFullWidth(true);
@@ -422,54 +363,542 @@ function ExG.RosterFrame:Create()
     self.list:SetLayout('List');
 
     group:AddChild(self.list);
-
-    makeBottom(self);
-
-    self.AdjustDialog:Create();
-    self.DecayDialog:Create();
-    self.VersionDialog:Create();
 end
 
-function ExG.RosterFrame:Show()
-    self.frame:Show();
+function ExG.RosterFrame.Guild:Open()
+    self.data = {};
 
-    getData(self);
+    for i = 1, GetNumGuildMembers() do
+        local name, rank, rankId, level, classLoc, _, _, officerNote, isOnline, _, class = GetGuildRosterInfo(i);
 
-    self.frame.guild:SetDisabled(not CanEditOfficerNote());
-    self.frame.raid:SetDisabled(not CanEditOfficerNote());
+        local eg = ExG:GetEG(officerNote);
+
+        tinsert(self.data, { name = Ambiguate(name, 'all'), rank = rank, rankId = rankId, level = level, class = class, classLoc = classLoc, offNote = officerNote, isOnline = isOnline, ep = eg.ep, gp = eg.gp, pr = eg.pr, });
+    end
+
+    makeGuildItems(self);
+
+    self.frame.eg:SetDisabled(not CanEditOfficerNote());
     self.frame.decay:SetDisabled(not CanEditOfficerNote());
 
-    self:RenderItems();
+    self.frame.frame:Show();
 end
 
-function ExG.RosterFrame:Hide()
-    self.frame:Hide();
+function ExG.RosterFrame.Guild:Close()
+    self.data = {};
+    self.frame.frame:Hide();
 end
 
-function ExG.RosterFrame:RenderItems()
-    renderItems(self)
+ExG.RosterFrame.Raid = {
+    frame = nil,
+    list = nil,
+    data = {},
+};
+
+local function makeRaidHeaders(self)
+    local name = AceGUI:Create('InteractiveLabel');
+    name:SetFont(DEFAULT_FONT, 10);
+    name:SetWidth(80);
+    name:SetHeight(20);
+    name:SetJustifyH('CENTER');
+    name:SetJustifyV('MIDDLE');
+    name:SetColor(ExG:ClassColor('SYSTEM'));
+    name:SetText(L['Name']);
+    name:SetCallback('OnClick', order(self, 'name'));
+    self.frame:AddChild(name);
+
+    name:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -35);
+
+    local class = AceGUI:Create('InteractiveLabel');
+    class:SetFont(DEFAULT_FONT, 10);
+    class:SetWidth(80);
+    class:SetHeight(20);
+    class:SetJustifyH('CENTER');
+    class:SetJustifyV('MIDDLE');
+    class:SetColor(ExG:ClassColor('SYSTEM'));
+    class:SetText(L['Class']);
+    class:SetCallback('OnClick', order(self, 'classLoc'));
+    self.frame:AddChild(class);
+
+    class:SetPoint('TOPLEFT', name.frame, 'TOPRIGHT', 0, 0);
+
+    local rank = AceGUI:Create('InteractiveLabel');
+    rank:SetFont(DEFAULT_FONT, 10);
+    rank:SetWidth(100);
+    rank:SetHeight(20);
+    rank:SetJustifyH('CENTER');
+    rank:SetJustifyV('MIDDLE');
+    rank:SetColor(ExG:ClassColor('SYSTEM'));
+    rank:SetText(L['Rank']);
+    rank:SetCallback('OnClick', order(self, 'rankId'));
+    self.frame:AddChild(rank);
+
+    rank:SetPoint('TOPLEFT', class.frame, 'TOPRIGHT', 0, 0);
+
+    local pr = AceGUI:Create('InteractiveLabel');
+    pr:SetFont(DEFAULT_FONT, 10);
+    pr:SetWidth(50);
+    pr:SetHeight(20);
+    pr:SetJustifyH('CENTER');
+    pr:SetJustifyV('MIDDLE');
+    pr:SetColor(ExG:ClassColor('SYSTEM'));
+    pr:SetText(L['PR']);
+    pr:SetCallback('OnClick', order(self, 'pr'));
+    self.frame:AddChild(pr);
+
+    pr:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -20, -35);
+
+    local gp = AceGUI:Create('InteractiveLabel');
+    gp:SetFont(DEFAULT_FONT, 10);
+    gp:SetWidth(50);
+    gp:SetHeight(20);
+    gp:SetFullHeight(true);
+    gp:SetJustifyH('CENTER');
+    gp:SetJustifyV('MIDDLE');
+    gp:SetColor(ExG:ClassColor('SYSTEM'));
+    gp:SetText(L['GP']);
+    gp:SetCallback('OnClick', order(self, 'gp'));
+    self.frame:AddChild(gp);
+
+    gp:SetPoint('TOPRIGHT', pr.frame, 'TOPLEFT');
+
+    local ep = AceGUI:Create('InteractiveLabel');
+    ep:SetFont(DEFAULT_FONT, 10);
+    ep:SetWidth(50);
+    ep:SetHeight(20);
+    ep:SetFullHeight(true);
+    ep:SetJustifyH('CENTER');
+    ep:SetJustifyV('MIDDLE');
+    ep:SetColor(ExG:ClassColor('SYSTEM'));
+    ep:SetText(L['EP']);
+    ep:SetCallback('OnClick', order(self, 'ep'));
+    self.frame:AddChild(ep);
+
+    ep:SetPoint('TOPRIGHT', gp.frame, 'TOPLEFT');
 end
 
-function ExG.RosterFrame:Ajust(player)
-    local playerIndex;
+local function makeRaidButtons(self)
+    self.frame.eg = AceGUI:Create('Button');
+    self.frame.eg:SetWidth(120);
+    self.frame.eg:SetHeight(25);
+    self.frame.eg:SetText(L['Change Raid EPGP']);
+    self.frame.eg:SetCallback('OnClick', function() ExG.RosterFrame.AdjustDialog:Open('raid'); end);
+    self.frame:AddChild(self.frame.eg);
+
+    self.frame.eg:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 5, -5);
+
+    self.frame.version = AceGUI:Create('Button');
+    self.frame.version:SetWidth(120);
+    self.frame.version:SetHeight(25);
+    self.frame.version:SetText(L['Version'](ExG.state.version));
+    self.frame.version:SetCallback('OnClick', function() ExG.RosterFrame.VersionDialog:Open(); end);
+    self.frame:AddChild(self.frame.version);
+
+    self.frame.version:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -5, -5);
+end
+
+local function makeRaidItems(self)
+    self.list:ReleaseChildren();
+
+    for _, item in ipairs(self.data) do
+        local row = AceGUI:Create('SimpleGroup');
+        row:SetFullWidth(true);
+        row:SetHeight(20);
+        row:SetLayout(nil);
+        row:SetAutoAdjustHeight(false);
+        row.frame:EnableMouse(true);
+
+        if not row.highlight then
+            row.highlight = row.frame:CreateTexture(nil, 'HIGHLIGHT');
+            row.highlight:SetTexture('Interface\\Buttons\\UI-Listbox-Highlight');
+            row.highlight:SetAllPoints(true);
+            row.highlight:SetBlendMode('ADD');
+        end
+
+        self.list:AddChild(row);
+
+        if not row.name then
+            row.name = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            row.name:SetFont(DEFAULT_FONT, 10);
+            row.name:ClearAllPoints();
+            row.name:SetPoint('TOPLEFT', 2, 0);
+            row.name:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 160, 0);
+            row.name:SetJustifyH('LEFT');
+            row.name:SetJustifyV('MIDDLE');
+        end
+
+        if not row.rank then
+            row.rank = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            row.rank:SetFont(DEFAULT_FONT, 10);
+            row.rank:ClearAllPoints();
+            row.rank:SetPoint('TOPLEFT', 160, 0);
+            row.rank:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 260, 0);
+            row.rank:SetJustifyH('CENTER');
+            row.rank:SetJustifyV('MIDDLE');
+        end
+
+        if not row.pr then
+            row.pr = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            row.pr:SetFont(DEFAULT_FONT, 10);
+            row.pr:ClearAllPoints();
+            row.pr:SetPoint('TOPRIGHT');
+            row.pr:SetPoint('BOTTOMLEFT', row.frame, 'BOTTOMRIGHT', -50, 0);
+            row.pr:SetJustifyH('CENTER');
+            row.pr:SetJustifyV('MIDDLE');
+        end
+
+        if not row.gp then
+            row.gp = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            row.gp:SetFont(DEFAULT_FONT, 10);
+            row.gp:ClearAllPoints();
+            row.gp:SetPoint('TOPRIGHT', row.pr, 'TOPLEFT');
+            row.gp:SetPoint('BOTTOMLEFT', row.pr, 'BOTTOMLEFT', -50, 0);
+            row.gp:SetJustifyH('CENTER');
+            row.gp:SetJustifyV('MIDDLE');
+        end
+
+        if not row.ep then
+            row.ep = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            row.ep:SetFont(DEFAULT_FONT, 10);
+            row.ep:ClearAllPoints();
+            row.ep:SetPoint('TOPRIGHT', row.gp, 'TOPLEFT');
+            row.ep:SetPoint('BOTTOMLEFT', row.gp, 'BOTTOMLEFT', -50, 0);
+            row.ep:SetJustifyH('CENTER');
+            row.ep:SetJustifyV('MIDDLE');
+        end
+    end
+end
+
+local function renderRaidItems(self)
+    if not self.list then
+        return;
+    end
+
+    for i, item in ipairs(self.data) do
+        local row = self.list.children[i];
+
+        if CanEditOfficerNote() then
+            row.frame:SetScript('OnMouseDown', function() self.AdjustDialog:Show(item.name); end);
+        end
+
+        row.name:SetVertexColor(ExG:ClassColor(item.class));
+        row.name:SetText(item.name);
+
+        row.rank:SetVertexColor(ExG:ClassColor(item.class));
+        row.rank:SetText(item.rank);
+
+        row.pr:SetVertexColor(ExG:ClassColor(item.class));
+        row.pr:SetText(item.pr);
+
+        row.gp:SetVertexColor(ExG:ClassColor(item.class));
+        row.gp:SetText(item.gp);
+
+        row.ep:SetVertexColor(ExG:ClassColor(item.class));
+        row.ep:SetText(item.ep);
+    end
+end
+
+function ExG.RosterFrame.Raid:Create()
+    self.frame = AceGUI:Create('SimpleGroup');
+    self.frame:SetLayout(nil);
+    self.frame:SetWidth(570);
+    self.frame:SetHeight(700);
+    self.frame.frame:Hide();
+
+    self.frame:SetPoint('TOP', ExG.RosterFrame.frame.frame, 'BOTTOM', 0, -1);
+
+    makeRaidButtons(self);
+    makeRaidHeaders(self);
+
+    local group = AceGUI:Create('SimpleGroup');
+    group:SetFullWidth(true);
+    group:SetFullHeight(true);
+    group:SetLayout('Fill');
+
+    self.frame:AddChild(group);
+
+    group:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 5, -50);
+    group:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -5, 5);
+
+    self.list = AceGUI:Create('ScrollFrame');
+    self.list:SetFullWidth(true);
+    self.list:SetFullHeight(true);
+    self.list:SetLayout('List');
+
+    group:AddChild(self.list);
+end
+
+function ExG.RosterFrame.Raid:Open()
+    self.data = {};
 
     for i = 1, MAX_RAID_MEMBERS do
-        local name = GetMasterLootCandidate(lootIndex, i);
+        local name, rank, subgroup, level, classDisplayName, class, zone, online, isDead, role, isMl, combatRole = GetRaidRosterInfo(i);
 
         if name then
             name = Ambiguate(name, 'all');
 
-            if name == player then
-                playerIndex = i;
-            end
+            local info = ExG:GuildInfo(name);
+            local eg = ExG:GetEG(info.officerNote);
+
+            tinsert(self.data, { name = name, rank = info.rank, rankId = info.rankId, level = level, class = class, classLoc = info.classLoc, offNote = info.officerNote, isOnline = info.isOnline, ep = eg.ep, gp = eg.gp, pr = eg.pr, });
         end
     end
 
-    if not playerIndex then
+    makeRaidButtons(self);
+
+    self.frame.eg:SetDisabled(not CanEditOfficerNote());
+
+    self.frame.frame:Show();
+end
+
+function ExG.RosterFrame.Raid:Close()
+    self.data = {};
+    self.frame.frame:Hide();
+end
+
+ExG.RosterFrame.Reserve = {
+    frame = nil,
+    list = nil,
+    data = {},
+};
+
+local function makeReserveHeaders(self)
+    local name = AceGUI:Create('InteractiveLabel');
+    name:SetFont(DEFAULT_FONT, 10);
+    name:SetWidth(80);
+    name:SetHeight(20);
+    name:SetJustifyH('CENTER');
+    name:SetJustifyV('MIDDLE');
+    name:SetColor(ExG:ClassColor('SYSTEM'));
+    name:SetText(L['Name']);
+    name:SetCallback('OnClick', order(self, 'name'));
+    self.frame:AddChild(name);
+
+    name:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -35);
+
+    local class = AceGUI:Create('InteractiveLabel');
+    class:SetFont(DEFAULT_FONT, 10);
+    class:SetWidth(80);
+    class:SetHeight(20);
+    class:SetJustifyH('CENTER');
+    class:SetJustifyV('MIDDLE');
+    class:SetColor(ExG:ClassColor('SYSTEM'));
+    class:SetText(L['Class']);
+    class:SetCallback('OnClick', order(self, 'classLoc'));
+    self.frame:AddChild(class);
+
+    class:SetPoint('TOPLEFT', name.frame, 'TOPRIGHT', 0, 0);
+
+    local rank = AceGUI:Create('InteractiveLabel');
+    rank:SetFont(DEFAULT_FONT, 10);
+    rank:SetWidth(100);
+    rank:SetHeight(20);
+    rank:SetJustifyH('CENTER');
+    rank:SetJustifyV('MIDDLE');
+    rank:SetColor(ExG:ClassColor('SYSTEM'));
+    rank:SetText(L['Rank']);
+    rank:SetCallback('OnClick', order(self, 'rankId'));
+    self.frame:AddChild(rank);
+
+    rank:SetPoint('TOPLEFT', class.frame, 'TOPRIGHT', 0, 0);
+
+    local pr = AceGUI:Create('InteractiveLabel');
+    pr:SetFont(DEFAULT_FONT, 10);
+    pr:SetWidth(50);
+    pr:SetHeight(20);
+    pr:SetJustifyH('CENTER');
+    pr:SetJustifyV('MIDDLE');
+    pr:SetColor(ExG:ClassColor('SYSTEM'));
+    pr:SetText(L['PR']);
+    pr:SetCallback('OnClick', order(self, 'pr'));
+    self.frame:AddChild(pr);
+
+    pr:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -20, -35);
+
+    local gp = AceGUI:Create('InteractiveLabel');
+    gp:SetFont(DEFAULT_FONT, 10);
+    gp:SetWidth(50);
+    gp:SetHeight(20);
+    gp:SetFullHeight(true);
+    gp:SetJustifyH('CENTER');
+    gp:SetJustifyV('MIDDLE');
+    gp:SetColor(ExG:ClassColor('SYSTEM'));
+    gp:SetText(L['GP']);
+    gp:SetCallback('OnClick', order(self, 'gp'));
+    self.frame:AddChild(gp);
+
+    gp:SetPoint('TOPRIGHT', pr.frame, 'TOPLEFT');
+
+    local ep = AceGUI:Create('InteractiveLabel');
+    ep:SetFont(DEFAULT_FONT, 10);
+    ep:SetWidth(50);
+    ep:SetHeight(20);
+    ep:SetFullHeight(true);
+    ep:SetJustifyH('CENTER');
+    ep:SetJustifyV('MIDDLE');
+    ep:SetColor(ExG:ClassColor('SYSTEM'));
+    ep:SetText(L['EP']);
+    ep:SetCallback('OnClick', order(self, 'ep'));
+    self.frame:AddChild(ep);
+
+    ep:SetPoint('TOPRIGHT', gp.frame, 'TOPLEFT');
+end
+
+local function makeReserveButtons(self)
+    self.frame.eg = AceGUI:Create('Button');
+    self.frame.eg:SetWidth(120);
+    self.frame.eg:SetHeight(25);
+    self.frame.eg:SetText(L['Change Reserve EPGP']);
+    self.frame.eg:SetCallback('OnClick', function() ExG.RosterFrame.AdjustDialog:Open('reserve'); end);
+    self.frame:AddChild(self.frame.eg);
+
+    self.frame.eg:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 5, -5);
+end
+
+local function makeReserveItems(self)
+    self.list:ReleaseChildren();
+
+    for _, item in ipairs(self.data) do
+        local row = AceGUI:Create('SimpleGroup');
+        row:SetFullWidth(true);
+        row:SetHeight(20);
+        row:SetLayout(nil);
+        row:SetAutoAdjustHeight(false);
+        row.frame:EnableMouse(true);
+
+        if not row.highlight then
+            row.highlight = row.frame:CreateTexture(nil, 'HIGHLIGHT');
+            row.highlight:SetTexture('Interface\\Buttons\\UI-Listbox-Highlight');
+            row.highlight:SetAllPoints(true);
+            row.highlight:SetBlendMode('ADD');
+        end
+
+        self.list:AddChild(row);
+
+        if not row.name then
+            row.name = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            row.name:SetFont(DEFAULT_FONT, 10);
+            row.name:ClearAllPoints();
+            row.name:SetPoint('TOPLEFT', 2, 0);
+            row.name:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 160, 0);
+            row.name:SetJustifyH('LEFT');
+            row.name:SetJustifyV('MIDDLE');
+        end
+
+        if not row.rank then
+            row.rank = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            row.rank:SetFont(DEFAULT_FONT, 10);
+            row.rank:ClearAllPoints();
+            row.rank:SetPoint('TOPLEFT', 160, 0);
+            row.rank:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 260, 0);
+            row.rank:SetJustifyH('CENTER');
+            row.rank:SetJustifyV('MIDDLE');
+        end
+
+        if not row.pr then
+            row.pr = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            row.pr:SetFont(DEFAULT_FONT, 10);
+            row.pr:ClearAllPoints();
+            row.pr:SetPoint('TOPRIGHT');
+            row.pr:SetPoint('BOTTOMLEFT', row.frame, 'BOTTOMRIGHT', -50, 0);
+            row.pr:SetJustifyH('CENTER');
+            row.pr:SetJustifyV('MIDDLE');
+        end
+
+        if not row.gp then
+            row.gp = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            row.gp:SetFont(DEFAULT_FONT, 10);
+            row.gp:ClearAllPoints();
+            row.gp:SetPoint('TOPRIGHT', row.pr, 'TOPLEFT');
+            row.gp:SetPoint('BOTTOMLEFT', row.pr, 'BOTTOMLEFT', -50, 0);
+            row.gp:SetJustifyH('CENTER');
+            row.gp:SetJustifyV('MIDDLE');
+        end
+
+        if not row.ep then
+            row.ep = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            row.ep:SetFont(DEFAULT_FONT, 10);
+            row.ep:ClearAllPoints();
+            row.ep:SetPoint('TOPRIGHT', row.gp, 'TOPLEFT');
+            row.ep:SetPoint('BOTTOMLEFT', row.gp, 'BOTTOMLEFT', -50, 0);
+            row.ep:SetJustifyH('CENTER');
+            row.ep:SetJustifyV('MIDDLE');
+        end
+    end
+end
+
+local function renderReserveItems(self)
+    if not self.list then
         return;
     end
 
-    GiveMasterLoot(lootIndex, playerIndex);
+    for i, item in ipairs(self.data) do
+        local row = self.list.children[i];
+
+        if CanEditOfficerNote() then
+            row.frame:SetScript('OnMouseDown', function() self.AdjustDialog:Show(item.name); end);
+        end
+
+        row.name:SetVertexColor(ExG:ClassColor(item.class));
+        row.name:SetText(item.name);
+
+        row.rank:SetVertexColor(ExG:ClassColor(item.class));
+        row.rank:SetText(item.rank);
+
+        row.pr:SetVertexColor(ExG:ClassColor(item.class));
+        row.pr:SetText(item.pr);
+
+        row.gp:SetVertexColor(ExG:ClassColor(item.class));
+        row.gp:SetText(item.gp);
+
+        row.ep:SetVertexColor(ExG:ClassColor(item.class));
+        row.ep:SetText(item.ep);
+    end
+end
+
+function ExG.RosterFrame.Reserve:Create()
+    self.frame = AceGUI:Create('SimpleGroup');
+    self.frame:SetLayout(nil);
+    self.frame:SetWidth(570);
+    self.frame:SetHeight(700);
+    self.frame.frame:Hide();
+
+    self.frame:SetPoint('TOP', ExG.RosterFrame.frame.frame, 'BOTTOM', 0, -1);
+
+    makeReserveButtons(self);
+    makeReserveHeaders(self);
+
+    local group = AceGUI:Create('SimpleGroup');
+    group:SetFullWidth(true);
+    group:SetFullHeight(true);
+    group:SetLayout('Fill');
+
+    self.frame:AddChild(group);
+
+    group:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 5, -50);
+    group:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -5, 5);
+
+    self.list = AceGUI:Create('ScrollFrame');
+    self.list:SetFullWidth(true);
+    self.list:SetFullHeight(true);
+    self.list:SetLayout('List');
+
+    group:AddChild(self.list);
+end
+
+function ExG.RosterFrame.Reserve:Open()
+    self.data = {};
+
+    makeReserveButtons(self);
+
+    self.frame.eg:SetDisabled(not CanEditOfficerNote());
+
+    self.frame.frame:Show();
+end
+
+function ExG.RosterFrame.Reserve:Close()
+    self.data = {};
+    self.frame.frame:Hide();
 end
 
 ExG.RosterFrame.AdjustDialog = {
@@ -543,19 +972,21 @@ function ExG.RosterFrame.AdjustDialog:Create()
     self.frame:EnableResize(false);
     self.frame:SetWidth(300);
     self.frame:SetHeight(210);
-    self.frame:SetCallback('OnClose', function() self:Hide(); end);
+    self.frame:SetCallback('OnClose', function() self:Close(); end);
     self.frame:Hide();
 
     renderAdjustDialog(self);
 end
 
-function ExG.RosterFrame.AdjustDialog:Show(unit)
+function ExG.RosterFrame.AdjustDialog:Open(unit)
     self.unit = unit;
 
     if strlower(self.unit) == 'guild' then
         self.frame:SetTitle(L['GUILD']);
     elseif strlower(self.unit) == 'raid' then
         self.frame:SetTitle(L['RAID']);
+    elseif strlower(self.unit) == 'reserve' then
+        self.frame:SetTitle(L['RESERVE']);
     else
         self.frame:SetTitle(self.unit);
     end
@@ -563,7 +994,7 @@ function ExG.RosterFrame.AdjustDialog:Show(unit)
     self.frame:Show();
 end
 
-function ExG.RosterFrame.AdjustDialog:Hide()
+function ExG.RosterFrame.AdjustDialog:Close()
     self.unit = nil;
 
     self.frame:Hide();
@@ -797,19 +1228,19 @@ function ExG.RosterFrame.DecayDialog:Create()
     self.frame:EnableResize(false);
     self.frame:SetWidth(300);
     self.frame:SetHeight(107);
-    self.frame:SetCallback('OnClose', function() self:Hide(); end);
+    self.frame:SetCallback('OnClose', function() self:Close(); end);
     self.frame:Hide();
 
     renderDecayDialog(self);
 end
 
-function ExG.RosterFrame.DecayDialog:Show()
+function ExG.RosterFrame.DecayDialog:Open()
     self.frame:SetTitle(L['Guild Decay']);
 
     self.frame:Show();
 end
 
-function ExG.RosterFrame.DecayDialog:Hide()
+function ExG.RosterFrame.DecayDialog:Close()
     self.frame:Hide();
 end
 
@@ -1009,19 +1440,19 @@ function ExG.RosterFrame.VersionDialog:Create()
     self.frame:EnableResize(false);
     self.frame:SetWidth(550);
     self.frame:SetHeight(395);
-    self.frame:SetCallback('OnClose', function() self:Hide(); end);
+    self.frame:SetCallback('OnClose', function() self:Close(); end);
     self.frame:Hide();
 
     makeVersionDialog(self);
 end
 
-function ExG.RosterFrame.VersionDialog:Show()
+function ExG.RosterFrame.VersionDialog:Open()
     renderVersionDialog(self);
 
     self.frame:Show();
 end
 
-function ExG.RosterFrame.VersionDialog:Hide()
+function ExG.RosterFrame.VersionDialog:Close()
     self.frame:Hide();
 end
 

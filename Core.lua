@@ -1101,7 +1101,7 @@ function ExG:HandleChatCommand(input)
         InterfaceOptionsFrame_OpenToCategory(self.state.options);
         InterfaceOptionsFrame_OpenToCategory(self.state.options);
     elseif arg == 'open' then
-        self.RosterFrame:Show();
+        self.RosterFrame:Open();
     else
         self:Print('|cff33ff99', L['Usage:'], '|r');
         self:Print('opts|cff33ff99 - ', L['to open Options frame'], '|r');
