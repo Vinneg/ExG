@@ -626,7 +626,7 @@ local function renderItems(self)
 end
 
 local function disenchantHistory(item)
-    local dt, offset = time(), 0;
+    local dt, offset = ExG:ServerTime(), 0;
 
     while store().history.data[dt + offset / 1000] do
         offset = offset + 1;
@@ -649,7 +649,7 @@ end
 
 local function appendHistory(item, roll)
     local button = roll.option and store().buttons.data[roll.option];
-    local dt, offset = time(), 0;
+    local dt, offset = ExG:ServerTime(), 0;
 
     while store().history.data[dt + offset / 1000] do
         offset = offset + 1;

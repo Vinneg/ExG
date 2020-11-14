@@ -6,20 +6,42 @@ local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 
 local store = function() return ExG.store.char; end;
 
-local order = function(self, field)
-    return function()
-        self.order[field] = -(self.order[field] or -1);
+local sort = function(self, field)
+    local tmp = {};
 
-        sort(self[self.current], function(a, b)
-            if self.order[field] == 1 then
-                return a[field] < b[field];
+    tinsert(tmp, { name = field, dir = 1, });
+
+    for i, v in ipairs(self.sort) do
+        if #tmp < 4 then
+            if v.name == field then
+                tmp[1].dir = -v.dir;
             else
-                return a[field] > b[field];
+                tinsert(tmp, { name = v.name, dir = v.dir, });
             end
-        end);
+        end
+    end
 
-        self:RenderItems(self);
-    end;
+    self.sort = tmp;
+
+    local field1, field2, field3 = unpack(self.sort);
+
+    sort(self.data, function(a, b)
+        local c1 = (field1 and a[field1.name] < b[field1.name]) and 1 or -1;
+        local c2 = (field2 and a[field2.name] < b[field2.name]) and 1 or -1;
+        local c3 = (field3 and a[field3.name] < b[field3.name]) and 1 or -1;
+
+        if field1 and a[field1.name] ~= b[field1.name] then
+            return c1 * field1.dir > 0;
+        else
+            if field2 and a[field2.name] ~= b[field2.name] then
+                return c2 * field2.dir > 0;
+            elseif field3 then
+                return c3 * field3.dir > 0;
+            else
+                return true;
+            end
+        end
+    end);
 end
 
 local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
@@ -30,7 +52,6 @@ ExG.RosterFrame = {
     current = 'guild',
     guild = {},
     raid = {},
-    order = {},
 };
 
 local function switchView(self)
@@ -126,11 +147,63 @@ function ExG.RosterFrame:Close()
     self.frame:Hide();
 end
 
+function ExG.RosterFrame:Refresh()
+    if not self.frame:IsShown() then
+        return;
+    end
+
+    if self.current == 'guild' then
+        self.Guild:Open();
+    elseif self.current == 'raid' then
+        self.Raid:Open();
+    elseif self.current == 'reserve' then
+        self.Reserve:Open();
+    end
+end
+
 ExG.RosterFrame.Guild = {
     frame = nil,
     list = nil,
     data = {},
+    sort = {},
 };
+
+local function renderGuildItems(self)
+    if not self.list then
+        return;
+    end
+
+    for i, item in ipairs(self.data) do
+        local row = self.list.children[i];
+
+        if CanEditOfficerNote() then
+            row.frame:SetScript('OnMouseDown', function() ExG.RosterFrame.AdjustDialog:Open(item.name, function() ExG.RosterFrame.Guild:Refresh(); end); end);
+        end
+
+        row.name:SetVertexColor(ExG:ClassColor(item.class));
+        row.name:SetText(item.name);
+
+        row.rank:SetVertexColor(ExG:ClassColor(item.class));
+        row.rank:SetText(item.rank);
+
+        row.pr:SetVertexColor(ExG:ClassColor(item.class));
+        row.pr:SetText(item.pr);
+
+        row.gp:SetVertexColor(ExG:ClassColor(item.class));
+        row.gp:SetText(item.gp);
+
+        row.ep:SetVertexColor(ExG:ClassColor(item.class));
+        row.ep:SetText(item.ep);
+    end
+end
+
+local function sortGuildItems(self, field)
+    return function()
+        sort(self, field);
+
+        renderGuildItems(self);
+    end;
+end
 
 local function makeGuildHeaders(self)
     local name = AceGUI:Create('InteractiveLabel');
@@ -141,7 +214,7 @@ local function makeGuildHeaders(self)
     name:SetJustifyV('MIDDLE');
     name:SetColor(ExG:ClassColor('SYSTEM'));
     name:SetText(L['Name']);
-    name:SetCallback('OnClick', order(self, 'name'));
+    name:SetCallback('OnClick', sortGuildItems(self, 'name'));
     self.frame:AddChild(name);
 
     name:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -35);
@@ -154,7 +227,7 @@ local function makeGuildHeaders(self)
     class:SetJustifyV('MIDDLE');
     class:SetColor(ExG:ClassColor('SYSTEM'));
     class:SetText(L['Class']);
-    class:SetCallback('OnClick', order(self, 'classLoc'));
+    class:SetCallback('OnClick', sortGuildItems(self, 'classLoc'));
     self.frame:AddChild(class);
 
     class:SetPoint('TOPLEFT', name.frame, 'TOPRIGHT', 0, 0);
@@ -167,7 +240,7 @@ local function makeGuildHeaders(self)
     rank:SetJustifyV('MIDDLE');
     rank:SetColor(ExG:ClassColor('SYSTEM'));
     rank:SetText(L['Rank']);
-    rank:SetCallback('OnClick', order(self, 'rankId'));
+    rank:SetCallback('OnClick', sortGuildItems(self, 'rankId'));
     self.frame:AddChild(rank);
 
     rank:SetPoint('TOPLEFT', class.frame, 'TOPRIGHT', 0, 0);
@@ -180,7 +253,7 @@ local function makeGuildHeaders(self)
     pr:SetJustifyV('MIDDLE');
     pr:SetColor(ExG:ClassColor('SYSTEM'));
     pr:SetText(L['PR']);
-    pr:SetCallback('OnClick', order(self, 'pr'));
+    pr:SetCallback('OnClick', sortGuildItems(self, 'pr'));
     self.frame:AddChild(pr);
 
     pr:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -20, -35);
@@ -194,7 +267,7 @@ local function makeGuildHeaders(self)
     gp:SetJustifyV('MIDDLE');
     gp:SetColor(ExG:ClassColor('SYSTEM'));
     gp:SetText(L['GP']);
-    gp:SetCallback('OnClick', order(self, 'gp'));
+    gp:SetCallback('OnClick', sortGuildItems(self, 'gp'));
     self.frame:AddChild(gp);
 
     gp:SetPoint('TOPRIGHT', pr.frame, 'TOPLEFT');
@@ -208,7 +281,7 @@ local function makeGuildHeaders(self)
     ep:SetJustifyV('MIDDLE');
     ep:SetColor(ExG:ClassColor('SYSTEM'));
     ep:SetText(L['EP']);
-    ep:SetCallback('OnClick', order(self, 'ep'));
+    ep:SetCallback('OnClick', sortGuildItems(self, 'ep'));
     self.frame:AddChild(ep);
 
     ep:SetPoint('TOPRIGHT', gp.frame, 'TOPLEFT');
@@ -219,7 +292,7 @@ local function makeGuildButtons(self)
     self.frame.eg:SetWidth(120);
     self.frame.eg:SetHeight(25);
     self.frame.eg:SetText(L['Change Guild EPGP']);
-    self.frame.eg:SetCallback('OnClick', function() ExG.RosterFrame.AdjustDialog:Open('guild'); end);
+    self.frame.eg:SetCallback('OnClick', function() ExG.RosterFrame.AdjustDialog:Open('guild', function() ExG.RosterFrame.Guild:Refresh(); end); end);
     self.frame:AddChild(self.frame.eg);
 
     self.frame.eg:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 5, -5);
@@ -228,7 +301,7 @@ local function makeGuildButtons(self)
     self.frame.decay:SetWidth(120);
     self.frame.decay:SetHeight(25);
     self.frame.decay:SetText(L['Guild Decay']);
-    self.frame.decay:SetCallback('OnClick', function() ExG.RosterFrame.DecayDialog:Open(); end);
+    self.frame.decay:SetCallback('OnClick', function() ExG.RosterFrame.DecayDialog:Open(function() ExG.RosterFrame.Guild:Refresh(); end); end);
     self.frame:AddChild(self.frame.decay);
 
     self.frame.decay:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -5, -5);
@@ -306,35 +379,6 @@ local function makeGuildItems(self)
     end
 end
 
-local function renderGuildItems(self)
-    if not self.list then
-        return;
-    end
-
-    for i, item in ipairs(self.data) do
-        local row = self.list.children[i];
-
-        if CanEditOfficerNote() then
-            row.frame:SetScript('OnMouseDown', function() self.AdjustDialog:Show(item.name); end);
-        end
-
-        row.name:SetVertexColor(ExG:ClassColor(item.class));
-        row.name:SetText(item.name);
-
-        row.rank:SetVertexColor(ExG:ClassColor(item.class));
-        row.rank:SetText(item.rank);
-
-        row.pr:SetVertexColor(ExG:ClassColor(item.class));
-        row.pr:SetText(item.pr);
-
-        row.gp:SetVertexColor(ExG:ClassColor(item.class));
-        row.gp:SetText(item.gp);
-
-        row.ep:SetVertexColor(ExG:ClassColor(item.class));
-        row.ep:SetText(item.ep);
-    end
-end
-
 function ExG.RosterFrame.Guild:Create()
     self.frame = AceGUI:Create('SimpleGroup');
     self.frame:SetLayout(nil);
@@ -382,6 +426,8 @@ function ExG.RosterFrame.Guild:Open()
     self.frame.decay:SetDisabled(not CanEditOfficerNote());
 
     self.frame.frame:Show();
+
+    renderGuildItems(self);
 end
 
 function ExG.RosterFrame.Guild:Close()
@@ -389,11 +435,65 @@ function ExG.RosterFrame.Guild:Close()
     self.frame.frame:Hide();
 end
 
+function ExG.RosterFrame.Guild:Refresh()
+    for i, v in ipairs(self.data) do
+        local info = ExG:GuildInfo(v.name);
+        local eg = ExG:GetEG(info.officerNote);
+
+        v.ep = eg.ep;
+        v.gp = eg.gp;
+        v.pr = eg.pr;
+    end
+
+    renderGuildItems(self);
+end
+
 ExG.RosterFrame.Raid = {
     frame = nil,
     list = nil,
     data = {},
+    sort = {},
 };
+
+local function renderRaidItems(self)
+    if not self.list then
+        return;
+    end
+
+    for i, item in ipairs(self.data) do
+        local row = self.list.children[i];
+
+        if CanEditOfficerNote() then
+            row.frame:SetScript('OnMouseDown', function() ExG.RosterFrame.AdjustDialog:Open(item.name, function() ExG.RosterFrame.Raid:Refresh(); end); end);
+        end
+
+        row.name:SetVertexColor(ExG:ClassColor(item.class));
+        row.name:SetText(item.name);
+
+        row.rank:SetVertexColor(ExG:ClassColor(item.class));
+        row.rank:SetText(item.rank);
+
+        row.group:SetVertexColor(ExG:ClassColor(item.class));
+        row.group:SetText(L['Group Title'](item.group));
+
+        row.pr:SetVertexColor(ExG:ClassColor(item.class));
+        row.pr:SetText(item.pr);
+
+        row.gp:SetVertexColor(ExG:ClassColor(item.class));
+        row.gp:SetText(item.gp);
+
+        row.ep:SetVertexColor(ExG:ClassColor(item.class));
+        row.ep:SetText(item.ep);
+    end
+end
+
+local function sortRaidItems(self, field)
+    return function()
+        sort(self, field);
+
+        renderRaidItems(self);
+    end;
+end
 
 local function makeRaidHeaders(self)
     local name = AceGUI:Create('InteractiveLabel');
@@ -404,7 +504,7 @@ local function makeRaidHeaders(self)
     name:SetJustifyV('MIDDLE');
     name:SetColor(ExG:ClassColor('SYSTEM'));
     name:SetText(L['Name']);
-    name:SetCallback('OnClick', order(self, 'name'));
+    name:SetCallback('OnClick', sortRaidItems(self, 'name'));
     self.frame:AddChild(name);
 
     name:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -35);
@@ -417,7 +517,7 @@ local function makeRaidHeaders(self)
     class:SetJustifyV('MIDDLE');
     class:SetColor(ExG:ClassColor('SYSTEM'));
     class:SetText(L['Class']);
-    class:SetCallback('OnClick', order(self, 'classLoc'));
+    class:SetCallback('OnClick', sortRaidItems(self, 'classLoc'));
     self.frame:AddChild(class);
 
     class:SetPoint('TOPLEFT', name.frame, 'TOPRIGHT', 0, 0);
@@ -430,10 +530,23 @@ local function makeRaidHeaders(self)
     rank:SetJustifyV('MIDDLE');
     rank:SetColor(ExG:ClassColor('SYSTEM'));
     rank:SetText(L['Rank']);
-    rank:SetCallback('OnClick', order(self, 'rankId'));
+    rank:SetCallback('OnClick', sortRaidItems(self, 'rankId'));
     self.frame:AddChild(rank);
 
     rank:SetPoint('TOPLEFT', class.frame, 'TOPRIGHT', 0, 0);
+
+    local group = AceGUI:Create('InteractiveLabel');
+    group:SetFont(DEFAULT_FONT, 10);
+    group:SetWidth(140);
+    group:SetHeight(20);
+    group:SetJustifyH('CENTER');
+    group:SetJustifyV('MIDDLE');
+    group:SetColor(ExG:ClassColor('SYSTEM'));
+    group:SetText(L['Group']);
+    group:SetCallback('OnClick', sortRaidItems(self, 'group'));
+    self.frame:AddChild(group);
+
+    group:SetPoint('TOPLEFT', rank.frame, 'TOPRIGHT', 0, 0);
 
     local pr = AceGUI:Create('InteractiveLabel');
     pr:SetFont(DEFAULT_FONT, 10);
@@ -443,7 +556,7 @@ local function makeRaidHeaders(self)
     pr:SetJustifyV('MIDDLE');
     pr:SetColor(ExG:ClassColor('SYSTEM'));
     pr:SetText(L['PR']);
-    pr:SetCallback('OnClick', order(self, 'pr'));
+    pr:SetCallback('OnClick', sortRaidItems(self, 'pr'));
     self.frame:AddChild(pr);
 
     pr:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -20, -35);
@@ -457,7 +570,7 @@ local function makeRaidHeaders(self)
     gp:SetJustifyV('MIDDLE');
     gp:SetColor(ExG:ClassColor('SYSTEM'));
     gp:SetText(L['GP']);
-    gp:SetCallback('OnClick', order(self, 'gp'));
+    gp:SetCallback('OnClick', sortRaidItems(self, 'gp'));
     self.frame:AddChild(gp);
 
     gp:SetPoint('TOPRIGHT', pr.frame, 'TOPLEFT');
@@ -471,7 +584,7 @@ local function makeRaidHeaders(self)
     ep:SetJustifyV('MIDDLE');
     ep:SetColor(ExG:ClassColor('SYSTEM'));
     ep:SetText(L['EP']);
-    ep:SetCallback('OnClick', order(self, 'ep'));
+    ep:SetCallback('OnClick', sortGuildItems(self, 'ep'));
     self.frame:AddChild(ep);
 
     ep:SetPoint('TOPRIGHT', gp.frame, 'TOPLEFT');
@@ -482,7 +595,7 @@ local function makeRaidButtons(self)
     self.frame.eg:SetWidth(120);
     self.frame.eg:SetHeight(25);
     self.frame.eg:SetText(L['Change Raid EPGP']);
-    self.frame.eg:SetCallback('OnClick', function() ExG.RosterFrame.AdjustDialog:Open('raid'); end);
+    self.frame.eg:SetCallback('OnClick', function() ExG.RosterFrame.AdjustDialog:Open('raid', function() ExG.RosterFrame.Raid:Refresh(); end); end);
     self.frame:AddChild(self.frame.eg);
 
     self.frame.eg:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 5, -5);
@@ -537,6 +650,16 @@ local function makeRaidItems(self)
             row.rank:SetJustifyV('MIDDLE');
         end
 
+        if not row.group then
+            row.group = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+            row.group:SetFont(DEFAULT_FONT, 10);
+            row.group:ClearAllPoints();
+            row.group:SetPoint('TOPLEFT', 260, 0);
+            row.group:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 400, 0);
+            row.group:SetJustifyH('CENTER');
+            row.group:SetJustifyV('MIDDLE');
+        end
+
         if not row.pr then
             row.pr = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
             row.pr:SetFont(DEFAULT_FONT, 10);
@@ -566,35 +689,6 @@ local function makeRaidItems(self)
             row.ep:SetJustifyH('CENTER');
             row.ep:SetJustifyV('MIDDLE');
         end
-    end
-end
-
-local function renderRaidItems(self)
-    if not self.list then
-        return;
-    end
-
-    for i, item in ipairs(self.data) do
-        local row = self.list.children[i];
-
-        if CanEditOfficerNote() then
-            row.frame:SetScript('OnMouseDown', function() self.AdjustDialog:Show(item.name); end);
-        end
-
-        row.name:SetVertexColor(ExG:ClassColor(item.class));
-        row.name:SetText(item.name);
-
-        row.rank:SetVertexColor(ExG:ClassColor(item.class));
-        row.rank:SetText(item.rank);
-
-        row.pr:SetVertexColor(ExG:ClassColor(item.class));
-        row.pr:SetText(item.pr);
-
-        row.gp:SetVertexColor(ExG:ClassColor(item.class));
-        row.gp:SetText(item.gp);
-
-        row.ep:SetVertexColor(ExG:ClassColor(item.class));
-        row.ep:SetText(item.ep);
     end
 end
 
@@ -640,15 +734,17 @@ function ExG.RosterFrame.Raid:Open()
             local info = ExG:GuildInfo(name);
             local eg = ExG:GetEG(info.officerNote);
 
-            tinsert(self.data, { name = name, rank = info.rank, rankId = info.rankId, level = level, class = class, classLoc = info.classLoc, offNote = info.officerNote, isOnline = info.isOnline, ep = eg.ep, gp = eg.gp, pr = eg.pr, });
+            tinsert(self.data, { name = name, rank = info.rank, rankId = info.rankId, group = subgroup, level = level, class = class, classLoc = info.classLoc, offNote = info.officerNote, isOnline = info.isOnline, ep = eg.ep, gp = eg.gp, pr = eg.pr, });
         end
     end
 
-    makeRaidButtons(self);
+    makeRaidItems(self);
 
     self.frame.eg:SetDisabled(not CanEditOfficerNote());
 
     self.frame.frame:Show();
+
+    renderRaidItems(self);
 end
 
 function ExG.RosterFrame.Raid:Close()
@@ -656,11 +752,67 @@ function ExG.RosterFrame.Raid:Close()
     self.frame.frame:Hide();
 end
 
+function ExG.RosterFrame.Raid:Refresh()
+    for i, v in ipairs(self.data) do
+        local info = ExG:GuildInfo(v.name);
+        local eg = ExG:GetEG(info.officerNote);
+
+        v.ep = eg.ep;
+        v.gp = eg.gp;
+        v.pr = eg.pr;
+    end
+
+    renderRaidItems(self);
+end
+
 ExG.RosterFrame.Reserve = {
     frame = nil,
     list = nil,
     data = {},
+    sort = {},
 };
+
+local function renderReserveItems(self)
+    if not self.list then
+        return;
+    end
+
+    for i, item in ipairs(self.data) do
+        local row = self.list.children[i];
+
+        if CanEditOfficerNote() then
+            row.frame:SetScript('OnMouseDown', function() ExG.RosterFrame.AdjustDialog:Open(item.name, function() ExG.RosterFrame.Reserve:Refresh(); end); end);
+        end
+
+        row.name:SetVertexColor(ExG:ClassColor(item.class));
+        row.name:SetText(item.name);
+
+        row.rank:SetVertexColor(ExG:ClassColor(item.class));
+        row.rank:SetText(item.rank);
+
+        row.pr:SetVertexColor(ExG:ClassColor(item.class));
+        row.pr:SetText(item.pr);
+
+        row.gp:SetVertexColor(ExG:ClassColor(item.class));
+        row.gp:SetText(item.gp);
+
+        row.ep:SetVertexColor(ExG:ClassColor(item.class));
+        row.ep:SetText(item.ep);
+
+        row.remove:SetDisabled(not ExG:IsMl());
+        if ExG:IsMl() then
+            row.remove:SetCallback('OnClick', function() ExG:Reserve({ action = 'remove', name = item.name, }); end);
+        end
+    end
+end
+
+local function sortReserveItems(self, field)
+    return function()
+        sort(self, field);
+
+        renderReserveItems(self);
+    end;
+end
 
 local function makeReserveHeaders(self)
     local name = AceGUI:Create('InteractiveLabel');
@@ -671,7 +823,7 @@ local function makeReserveHeaders(self)
     name:SetJustifyV('MIDDLE');
     name:SetColor(ExG:ClassColor('SYSTEM'));
     name:SetText(L['Name']);
-    name:SetCallback('OnClick', order(self, 'name'));
+    name:SetCallback('OnClick', sortReserveItems(self, 'name'));
     self.frame:AddChild(name);
 
     name:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -35);
@@ -684,7 +836,7 @@ local function makeReserveHeaders(self)
     class:SetJustifyV('MIDDLE');
     class:SetColor(ExG:ClassColor('SYSTEM'));
     class:SetText(L['Class']);
-    class:SetCallback('OnClick', order(self, 'classLoc'));
+    class:SetCallback('OnClick', sortReserveItems(self, 'classLoc'));
     self.frame:AddChild(class);
 
     class:SetPoint('TOPLEFT', name.frame, 'TOPRIGHT', 0, 0);
@@ -697,7 +849,7 @@ local function makeReserveHeaders(self)
     rank:SetJustifyV('MIDDLE');
     rank:SetColor(ExG:ClassColor('SYSTEM'));
     rank:SetText(L['Rank']);
-    rank:SetCallback('OnClick', order(self, 'rankId'));
+    rank:SetCallback('OnClick', sortReserveItems(self, 'rankId'));
     self.frame:AddChild(rank);
 
     rank:SetPoint('TOPLEFT', class.frame, 'TOPRIGHT', 0, 0);
@@ -710,7 +862,7 @@ local function makeReserveHeaders(self)
     pr:SetJustifyV('MIDDLE');
     pr:SetColor(ExG:ClassColor('SYSTEM'));
     pr:SetText(L['PR']);
-    pr:SetCallback('OnClick', order(self, 'pr'));
+    pr:SetCallback('OnClick', sortReserveItems(self, 'pr'));
     self.frame:AddChild(pr);
 
     pr:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -20, -35);
@@ -724,7 +876,7 @@ local function makeReserveHeaders(self)
     gp:SetJustifyV('MIDDLE');
     gp:SetColor(ExG:ClassColor('SYSTEM'));
     gp:SetText(L['GP']);
-    gp:SetCallback('OnClick', order(self, 'gp'));
+    gp:SetCallback('OnClick', sortReserveItems(self, 'gp'));
     self.frame:AddChild(gp);
 
     gp:SetPoint('TOPRIGHT', pr.frame, 'TOPLEFT');
@@ -738,21 +890,49 @@ local function makeReserveHeaders(self)
     ep:SetJustifyV('MIDDLE');
     ep:SetColor(ExG:ClassColor('SYSTEM'));
     ep:SetText(L['EP']);
-    ep:SetCallback('OnClick', order(self, 'ep'));
+    ep:SetCallback('OnClick', sortReserveItems(self, 'ep'));
     self.frame:AddChild(ep);
 
     ep:SetPoint('TOPRIGHT', gp.frame, 'TOPLEFT');
 end
 
 local function makeReserveButtons(self)
-    self.frame.eg = AceGUI:Create('Button');
-    self.frame.eg:SetWidth(120);
-    self.frame.eg:SetHeight(25);
-    self.frame.eg:SetText(L['Change Reserve EPGP']);
-    self.frame.eg:SetCallback('OnClick', function() ExG.RosterFrame.AdjustDialog:Open('reserve'); end);
-    self.frame:AddChild(self.frame.eg);
+    self.eg = AceGUI:Create('Button');
+    self.eg:SetWidth(120);
+    self.eg:SetHeight(25);
+    self.eg:SetText(L['Change Reserve EPGP']);
+    self.eg:SetCallback('OnClick', function() ExG.RosterFrame.AdjustDialog:Open('reserve', function() ExG.RosterFrame.Reserve:Refresh(); end); end);
+    self.frame:AddChild(self.eg);
 
-    self.frame.eg:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 5, -5);
+    self.eg:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 5, -5);
+
+    self.join = AceGUI:Create('Button');
+    self.join:SetWidth(120);
+    self.join:SetHeight(25);
+    self.join:SetText(L['Join Reserve']);
+    self.join:SetCallback('OnClick', function() ExG:Reserve({ action = 'claim', }); end);
+    self.frame:AddChild(self.join);
+
+    self.join:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -5, -5);
+
+    self.label = AceGUI:Create('Label');
+    self.label:SetWidth(85);
+    self.label:SetHeight(25);
+    self.label:SetJustifyH('RIGHT');
+    self.label:SetJustifyV('MIDDLE');
+    self.label:SetText(L['Add Reserve Player']);
+    self.frame:AddChild(self.label);
+
+    self.label:SetPoint('LEFT', self.eg.frame, 'RIGHT', 25, 0);
+
+    self.unit = AceGUI:Create('EditBox');
+    self.unit:SetWidth(150);
+    self.unit:SetHeight(25);
+    self.unit:SetText(nil);
+    self.unit:SetCallback('OnEnterPressed', function() local info = ExG:GuildInfo(self.unit:GetText()); if info then ExG:Reserve({ action = 'add', name = info.name, }); self.unit:SetText(''); end end);
+    self.frame:AddChild(self.unit);
+
+    self.unit:SetPoint('LEFT', self.label.frame, 'RIGHT', 5, 0);
 end
 
 local function makeReserveItems(self)
@@ -795,6 +975,17 @@ local function makeReserveItems(self)
             row.rank:SetJustifyV('MIDDLE');
         end
 
+        row.remove = AceGUI:Create('Button');
+        row.remove:SetHeight(20);
+        row.remove:SetWidth(20);
+        row.remove:SetText('X');
+        row.remove:SetCallback('OnClick', function() end);
+
+        row:AddChild(row.remove);
+
+        row.remove:SetPoint('TOPLEFT', 300, 0);
+        row.remove:SetPoint('BOTTOMRIGHT', row.frame, 'BOTTOMLEFT', 340, 0);
+
         if not row.pr then
             row.pr = row.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
             row.pr:SetFont(DEFAULT_FONT, 10);
@@ -824,35 +1015,6 @@ local function makeReserveItems(self)
             row.ep:SetJustifyH('CENTER');
             row.ep:SetJustifyV('MIDDLE');
         end
-    end
-end
-
-local function renderReserveItems(self)
-    if not self.list then
-        return;
-    end
-
-    for i, item in ipairs(self.data) do
-        local row = self.list.children[i];
-
-        if CanEditOfficerNote() then
-            row.frame:SetScript('OnMouseDown', function() self.AdjustDialog:Show(item.name); end);
-        end
-
-        row.name:SetVertexColor(ExG:ClassColor(item.class));
-        row.name:SetText(item.name);
-
-        row.rank:SetVertexColor(ExG:ClassColor(item.class));
-        row.rank:SetText(item.rank);
-
-        row.pr:SetVertexColor(ExG:ClassColor(item.class));
-        row.pr:SetText(item.pr);
-
-        row.gp:SetVertexColor(ExG:ClassColor(item.class));
-        row.gp:SetText(item.gp);
-
-        row.ep:SetVertexColor(ExG:ClassColor(item.class));
-        row.ep:SetText(item.ep);
     end
 end
 
@@ -889,16 +1051,39 @@ end
 function ExG.RosterFrame.Reserve:Open()
     self.data = {};
 
-    makeReserveButtons(self);
+    for name in pairs(store().raid.reserve) do
+        local info = ExG:GuildInfo(name);
+        local eg = ExG:GetEG(info.officerNote);
 
-    self.frame.eg:SetDisabled(not CanEditOfficerNote());
+        tinsert(self.data, { name = name, rank = info.rank, rankId = info.rankId, level = info.level, class = info.class, classLoc = info.classLoc, offNote = info.officerNote, isOnline = info.isOnline, ep = eg.ep, gp = eg.gp, pr = eg.pr, });
+    end
+
+    makeReserveItems(self);
+
+    self.eg:SetDisabled(not CanEditOfficerNote());
+    self.unit:SetDisabled(not ExG:IsMl());
 
     self.frame.frame:Show();
+
+    renderReserveItems(self);
 end
 
 function ExG.RosterFrame.Reserve:Close()
     self.data = {};
     self.frame.frame:Hide();
+end
+
+function ExG.RosterFrame.Reserve:Refresh()
+    for i, v in ipairs(self.data) do
+        local info = ExG:GuildInfo(v.name);
+        local eg = ExG:GetEG(info.officerNote);
+
+        v.ep = eg.ep;
+        v.gp = eg.gp;
+        v.pr = eg.pr;
+    end
+
+    renderReserveItems(self);
 end
 
 ExG.RosterFrame.AdjustDialog = {
@@ -958,7 +1143,7 @@ local function renderAdjustDialog(self)
     self.cancel:SetWidth(120);
     self.cancel:SetHeight(25);
     self.cancel:SetText(L['Cancel']);
-    self.cancel:SetCallback('OnClick', function() self.frame:Hide(); end);
+    self.cancel:SetCallback('OnClick', function() self:Close(); end);
     self.frame:AddChild(self.cancel);
 
     self.cancel:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -5, 5);
@@ -978,8 +1163,9 @@ function ExG.RosterFrame.AdjustDialog:Create()
     renderAdjustDialog(self);
 end
 
-function ExG.RosterFrame.AdjustDialog:Open(unit)
+function ExG.RosterFrame.AdjustDialog:Open(unit, callback)
     self.unit = unit;
+    self.callback = callback;
 
     if strlower(self.unit) == 'guild' then
         self.frame:SetTitle(L['GUILD']);
@@ -995,7 +1181,12 @@ function ExG.RosterFrame.AdjustDialog:Open(unit)
 end
 
 function ExG.RosterFrame.AdjustDialog:Close()
+    if self.callback then
+        ExG:ScheduleTimer(self.callback, 0.5);
+    end
+
     self.unit = nil;
+    self.callback = nil;
 
     self.frame:Hide();
 end
@@ -1023,7 +1214,7 @@ function ExG.RosterFrame.AdjustDialog:Adjust()
         self:UnitEG(self.unit, ep, gp, desc);
     end
 
-    self:Hide();
+    self:Close();
 end
 
 function ExG.RosterFrame.AdjustDialog:GuidEG(ep, gp, desc)
@@ -1034,7 +1225,7 @@ function ExG.RosterFrame.AdjustDialog:GuidEG(ep, gp, desc)
         return;
     end
 
-    local dt, offset = time(), 0;
+    local dt, offset = ExG:ServerTime(), 0;
 
     while store().history.data[dt + offset / 1000] do
         offset = offset + 1;
@@ -1087,7 +1278,7 @@ function ExG.RosterFrame.AdjustDialog:RaidEG(ep, gp, desc)
         return;
     end
 
-    local dt, offset = time(), 0;
+    local dt, offset = ExG:ServerTime(), 0;
 
     while store().history.data[dt + offset / 1000] do
         offset = offset + 1;
@@ -1105,16 +1296,20 @@ function ExG.RosterFrame.AdjustDialog:RaidEG(ep, gp, desc)
     };
 
     local details = {};
+    local ignore = {};
+    local i = 0;
 
     for i = 1, MAX_RAID_MEMBERS do
         local name = GetRaidRosterInfo(i);
 
         if name then
-            local st = dt + i / 1000;
+            name = Ambiguate(name, 'all');
+            ignore[name] = true;
 
-            local info = ExG:GuildInfo(Ambiguate(name, 'all'));
+            local info = ExG:GuildInfo(name);
 
             if info.name then
+                local st = dt + i / 1000;
                 local old = ExG:GetEG(info.officerNote);
                 local new = ExG:SetEG(info, old.ep + ep, old.gp + gp);
 
@@ -1125,6 +1320,24 @@ function ExG.RosterFrame.AdjustDialog:RaidEG(ep, gp, desc)
                     dt = st,
                 };
             end
+        end
+    end
+
+    for name in pairs(store().raid.reserve) do
+        i = i + 1;
+
+        local info = ExG:GuildInfo(name);
+
+        if info and (not ignore[name]) then
+            local st = dt + i / 1000;
+            local old = self:GetEG(info.officerNote);
+            local new = self:SetEG(info, old.ep + boss.ep, old.gp);
+
+            details[st] = {
+                target = { name = name, class = class, },
+                ep = { before = old.ep, after = new.ep, },
+                dt = st,
+            };
         end
     end
 
@@ -1162,7 +1375,7 @@ function ExG.RosterFrame.AdjustDialog:UnitEG(unit, ep, gp, desc)
         return;
     end
 
-    local dt, offset = time(), 0;
+    local dt, offset = ExG:ServerTime(), 0;
 
     while store().history.data[dt + offset / 1000] do
         offset = offset + 1;
@@ -1214,7 +1427,7 @@ local function renderDecayDialog(self)
     self.cancel:SetWidth(120);
     self.cancel:SetHeight(25);
     self.cancel:SetText(L['Cancel']);
-    self.cancel:SetCallback('OnClick', function() self.frame:Hide(); end);
+    self.cancel:SetCallback('OnClick', function() self:Close(); end);
     self.frame:AddChild(self.cancel);
 
     self.cancel:SetPoint('BOTTOMRIGHT', self.frame.frame, 'BOTTOMRIGHT', -5, 5);
@@ -1234,13 +1447,20 @@ function ExG.RosterFrame.DecayDialog:Create()
     renderDecayDialog(self);
 end
 
-function ExG.RosterFrame.DecayDialog:Open()
+function ExG.RosterFrame.DecayDialog:Open(callback)
     self.frame:SetTitle(L['Guild Decay']);
+    self.callback = callback;
 
     self.frame:Show();
 end
 
 function ExG.RosterFrame.DecayDialog:Close()
+    if self.callback then
+        ExG:ScheduleTimer(self.callback, 0.5);
+    end
+
+    self.callback = nil;
+
     self.frame:Hide();
 end
 
@@ -1251,11 +1471,9 @@ function ExG.RosterFrame.DecayDialog:Adjust()
         return;
     end
 
-    print(percent);
-
     local decay = 1 - percent / 100;
 
-    local dt, offset = time(), 0;
+    local dt, offset = ExG:ServerTime(), 0;
 
     while store().history.data[dt + offset / 1000] do
         offset = offset + 1;
@@ -1297,7 +1515,7 @@ function ExG.RosterFrame.DecayDialog:Adjust()
 
     ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
 
-    self:Hide();
+    self:Close();
 end
 
 ExG.RosterFrame.VersionDialog = {
@@ -1347,7 +1565,7 @@ local function makeVersionDialog(self)
         self.group[i] = {};
 
         self.group[i].label = AceGUI:Create('Label');
-        self.group[i].label:SetText(L['Group'](i));
+        self.group[i].label:SetText(L['Group Title'](i));
         self.frame:AddChild(self.group[i].label);
 
         self.group[i].label:SetPoint(points[i].point, points[i].frame, points[i].rel, points[i].x, points[i].y);
@@ -1450,6 +1668,9 @@ function ExG.RosterFrame.VersionDialog:Open()
     renderVersionDialog(self);
 
     self.frame:Show();
+
+    self:Refresh();
+    ExG:ScanVersions({ event = 'request', });
 end
 
 function ExG.RosterFrame.VersionDialog:Close()

@@ -147,6 +147,8 @@ ExG.messages = {
         share = 'ExG_Share',
         options = 'ExG_Options',
         version = 'ExG_Version',
+        sync = 'ExG_Sync',
+        reserve = 'ExG_Reserve',
     },
     raid = 'RAID',
     warning = 'RAID_WARNING',
@@ -208,6 +210,9 @@ ExG.defaults = {
             ignore = {
                 [20725] = true,
                 [18562] = true,
+                [21218] = true,
+                [21324] = true,
+                [21323] = true,
             },
         },
         buttons = {
@@ -291,6 +296,7 @@ ExG.defaults = {
         },
         raid = {
             speedrun = false,
+            reserve = {},
         },
     },
 };
@@ -1112,6 +1118,7 @@ function ExG:HandleChatCommand(input)
 end
 
 function ExG:OnInitialize()
+    self:TimeOffset();
     self.state.version = GetAddOnMetadata(self.name, 'Version');
 
     self:RegisterChatCommand('exg', 'HandleChatCommand');
@@ -1129,6 +1136,8 @@ function ExG:OnInitialize()
     self:RegisterComm(self.messages.prefix.share, 'handleHistoryShare');
     self:RegisterComm(self.messages.prefix.options, 'handleOptionsShare');
     self:RegisterComm(self.messages.prefix.version, 'handleScanVersions');
+    self:RegisterComm(self.messages.prefix.sync, 'handleSync');
+    self:RegisterComm(self.messages.prefix.reserve, 'handleReserve');
 
     self.state.name = UnitName('player');
     self.state.class = select(2, UnitClass('player'));
@@ -1162,7 +1171,7 @@ function ExG:PostInit()
     GameTooltip:HookScript("OnTooltipSetItem", tooltipGp);
     hooksecurefunc("ChatFrame_OnHyperlinkShow", hyperlinkGp);
 
-    self:Print('|cff33ff99Version ', self.state.version, ' loaded!|r');
+    self:Print(format('|cff33ff99Version %s loaded! Server time offset is: %d.|r', self.state.version, self.state.offset / 60 / 60));
 end
 
 function ExG:AnnounceItems(ids)
@@ -1406,6 +1415,52 @@ function ExG:handleScanVersions(_, message, _, sender)
     end
 end
 
+function ExG:Sync(msg)
+    local data = Serializer:Serialize(msg);
+
+    self:SendCommMessage(self.messages.prefix.sync, data, self.messages.guild);
+end
+
+function ExG:handleSync(_, message, _, sender)
+    local success, data = Serializer:Deserialize(message);
+
+    if not success then
+        return
+    end
+end
+
+function ExG:Reserve(msg)
+    local data = Serializer:Serialize(msg);
+
+    self:SendCommMessage(self.messages.prefix.reserve, data, self.messages.guild);
+end
+
+function ExG:handleReserve(_, message, _, sender)
+    local success, data = Serializer:Deserialize(message);
+
+    if not success then
+        return
+    end
+
+    if data.action == 'claim' and self:IsMl() then
+        store().raid.reserve[sender] = true;
+
+        self:Reserve({ action = 'add', name = sender, });
+    elseif data.action == 'leave' and self:IsMl() then
+        store().raid.reserve[sender] = nil;
+
+        self:Reserve({ action = 'remove', name = sender, });
+    elseif data.action == 'add' then
+        store().raid.reserve[data.name] = true;
+
+        self.RosterFrame:Refresh();
+    elseif data.action == 'remove' then
+        store().raid.reserve[data.name] = nil;
+
+        self.RosterFrame:Refresh();
+    end
+end
+
 function ExG:ENCOUNTER_END(_, id, _, _, _, success)
     if success == 0 then
         return;
@@ -1421,7 +1476,7 @@ function ExG:ENCOUNTER_END(_, id, _, _, _, success)
         return;
     end
 
-    local dt, offset = time(), 0;
+    local dt, offset = ExG:ServerTime(), 0;
 
     while store().history.data[dt + offset / 1000] do
         offset = offset + 1;
@@ -1439,12 +1494,15 @@ function ExG:ENCOUNTER_END(_, id, _, _, _, success)
     };
 
     local details = {};
+    local ignore = {};
+    local i = 0;
 
     for i = 1, MAX_RAID_MEMBERS do
-        local name, _, _, _, _, class = GetRaidRosterInfo(i);
+        local name = GetRaidRosterInfo(i);
 
         if name then
             name = Ambiguate(name, 'all');
+            ignore[name] = true;
 
             local info = self:GuildInfo(name);
 
@@ -1459,6 +1517,24 @@ function ExG:ENCOUNTER_END(_, id, _, _, _, success)
                     dt = st,
                 };
             end
+        end
+    end
+
+    for name in pairs(store().raid.reserve) do
+        i = i + 1;
+
+        local info = ExG:GuildInfo(name);
+
+        if info and (not ignore[name]) then
+            local st = dt + i / 1000;
+            local old = self:GetEG(info.officerNote);
+            local new = self:SetEG(info, old.ep + boss.ep, old.gp);
+
+            details[st] = {
+                target = { name = name, class = class, },
+                ep = { before = old.ep, after = new.ep, },
+                dt = st,
+            };
         end
     end
 

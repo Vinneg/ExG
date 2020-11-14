@@ -30,7 +30,7 @@ local function scan(self)
             for j = 1, slots do
                 local info = ExG:ItemInfo(GetContainerItemLink(i, j));
 
-                if info and counter < 10 then
+                if info and counter < 20 then
                     local itemData = store().items.data[info.id];
 
                     if itemData then

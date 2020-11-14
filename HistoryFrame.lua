@@ -339,7 +339,7 @@ end
 function ExG:CopyHistory(settings)
     local res = {};
     local min, max, count = nil, nil, 0;
-    local limit = time() - settings.offset * 86400;
+    local limit = ExG:ServerTime() - settings.offset * 86400;
 
     for i, v in pairs(store().history.data) do
         if (i >= limit) then
