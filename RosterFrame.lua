@@ -1210,6 +1210,8 @@ function ExG.RosterFrame.AdjustDialog:Adjust()
         self:GuidEG(ep, gp, desc);
     elseif strlower(self.unit) == 'raid' then
         self:RaidEG(ep, gp, desc);
+    elseif strlower(self.unit) == 'reserve' then
+        self:ReserveEG(ep, gp, desc);
     else
         self:UnitEG(self.unit, ep, gp, desc);
     end
@@ -1323,19 +1325,20 @@ function ExG.RosterFrame.AdjustDialog:RaidEG(ep, gp, desc)
         end
     end
 
-    for name in pairs(store().raid.reserve) do
+    for name, v in pairs(store().raid.reserve) do
         i = i + 1;
 
         local info = ExG:GuildInfo(name);
 
-        if info and (not ignore[name]) then
+        if v and info and (not ignore[name]) then
             local st = dt + i / 1000;
-            local old = self:GetEG(info.officerNote);
-            local new = self:SetEG(info, old.ep + boss.ep, old.gp);
+            local old = ExG:GetEG(info.officerNote);
+            local new = ExG:SetEG(info, old.ep + ep, old.gp + gp);
 
             details[st] = {
-                target = { name = name, class = class, },
-                ep = { before = old.ep, after = new.ep, },
+                target = { name = info.name, class = info.class, },
+                ep = { before = old.ep, after = new.ep, };
+                gp = { before = old.gp, after = new.gp, };
                 dt = st,
             };
         end
@@ -1346,6 +1349,61 @@ function ExG.RosterFrame.AdjustDialog:RaidEG(ep, gp, desc)
     ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
 
     ExG:Report(L['ExG Report Raid EG'](ep, gp, desc));
+end
+
+function ExG.RosterFrame.AdjustDialog:ReserveEG(ep, gp, desc)
+    ep = (ep or 0);
+    gp = (gp or 0);
+
+    if (ep or 0) == 0 and (gp or 0) == 0 then
+        return;
+    end
+
+    local dt, offset = ExG:ServerTime(), 0;
+
+    while store().history.data[dt + offset / 1000] do
+        offset = offset + 1;
+    end
+
+    dt = dt + offset / 1000;
+
+    store().history.data[dt] = {
+        type = 'raid',
+        target = { name = L['ExG History RESERVE'], class = 'RESERVE', },
+        master = { name = ExG.state.name, class = ExG.state.class, },
+        desc = L['ExG Reserve EG'](ep, gp, desc);
+        dt = dt,
+        details = {},
+    };
+
+    local details = {};
+    local ignore = {};
+    local i = 0;
+
+    for name, v in pairs(store().raid.reserve) do
+        i = i + 1;
+
+        local info = ExG:GuildInfo(name);
+
+        if v and info.name then
+            local st = dt + i / 1000;
+            local old = ExG:GetEG(info.officerNote);
+            local new = ExG:SetEG(info, old.ep + ep, old.gp + gp);
+
+            details[st] = {
+                target = { name = info.name, class = info.class, },
+                ep = { before = old.ep, after = new.ep, };
+                gp = { before = old.gp, after = new.gp, };
+                dt = st,
+            };
+        end
+    end
+
+    store().history.data[dt].details = details;
+
+    ExG:HistoryShare({ data = { [dt] = store().history.data[dt] } });
+
+    ExG:Report(L['ExG Report Reserve EG'](ep, gp, desc));
 end
 
 function ExG.RosterFrame.AdjustDialog:UnitEG(unit, ep, gp, desc)

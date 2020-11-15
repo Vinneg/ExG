@@ -35,7 +35,9 @@ L['ExG Guid EG'] = function(ep, gp, desc) return format('Guild EPGP%s%s%s', eg(e
 L['ExG Report Guild EG'] = function(ep, gp, desc) return format('All guild members gain %s%s%s', eg(ep, 'EP'), eg(gp, 'GP'), (desc or '') == '' and '' or format(' (%s)', desc)); end;
 L['Change Raid EPGP'] = 'Raid EPGP';
 L['ExG Raid EG'] = function(ep, gp, desc) return format('Raid EPGP%s%s%s', eg(ep, 'EP'), eg(gp, 'GP'), (desc or '') == '' and '' or format(' (%s)', desc)); end;
+L['ExG Reserve EG'] = function(ep, gp, desc) return format('Reserve EPGP%s%s%s', eg(ep, 'EP'), eg(gp, 'GP'), (desc or '') == '' and '' or format(' (%s)', desc)); end;
 L['ExG Report Raid EG'] = function(ep, gp, desc) return format('All raid members gain %s%s%s', eg(ep, 'EP'), eg(gp, 'GP'), (desc or '') == '' and '' or format(' (%s)', desc)); end;
+L['ExG Report Reserve EG'] = function(ep, gp, desc) return format('All кeserve members gain %s%s%s', eg(ep, 'EP'), eg(gp, 'GP'), (desc or '') == '' and '' or format(' (%s)', desc)); end;
 L['Change Reserve EPGP'] = 'Reserve EPGP';
 L['Guild Decay'] = true;
 L['Guild Decay Desc'] = function(percent) return format('Guild EPGP Decay by %d%%', percent or 0); end;
@@ -142,6 +144,7 @@ L['ExG Bosses AK40'] = 'Ahn\'Qiraj';
 L['ExG Bosses NAXX'] = 'Naxxramas';
 L['ExG Bosses OTHER'] = 'Other';
 L['ExG History RAID'] = 'Raid';
+L['ExG History RESERVE'] = 'Reserve';
 L['ExG Raid'] = 'Raid';
 L['ExG Raid Speedrun'] = 'Speedrun';
 L['RAID'] = 'Raid';

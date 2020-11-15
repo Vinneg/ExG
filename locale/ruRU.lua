@@ -35,7 +35,10 @@ L['ExG Guid EG'] = function(ep, gp, desc) return format('EPGP Гильдии %s%
 L['ExG Report Guild EG'] = function(ep, gp, desc) return format('Все члены гильдии получают %s%s%s', eg(ep, 'EP'), eg(gp, 'GP'), (desc or '') == '' and '' or format(' (%s)', desc)); end;
 L['Change Raid EPGP'] = 'EPGP Рейду';
 L['ExG Raid EG'] = function(ep, gp, desc) return format('EPGP Рейда %s%s%s', eg(ep, 'EP'), eg(gp, 'GP'), (desc or '') == '' and '' or format(' (%s)', desc)); end;
+L['ExG Reserve EG'] = function(ep, gp, desc) return format('EPGP Резерва %s%s%s', eg(ep, 'EP'), eg(gp, 'GP'), (desc or '') == '' and '' or format(' (%s)', desc)); end;
 L['ExG Report Raid EG'] = function(ep, gp, desc) return format('Все члены рейда получают %s%s%s', eg(ep, 'EP'), eg(gp, 'GP'), (desc or '') == '' and '' or format(' (%s)', desc)); end;
+L['ExG Report Reserve EG'] = function(ep, gp, desc) return format('Все члены резерва получают %s%s%s', eg(ep, 'EP'), eg(gp, 'GP'), (desc or '') == '' and '' or format(' (%s)', desc)); end;
+L['Change Reserve EPGP'] = 'EPGP Резерва';
 L['Guild Decay'] = 'Понижение';
 L['Guild Decay Desc'] = function(percent) return format('Гильдейское понижение EPGP на %d%%', percent or 0); end;
 L['Percent'] = 'Процент';
@@ -138,6 +141,7 @@ L['ExG Bosses AK40'] = 'Ан\'Кираж';
 L['ExG Bosses NAXX'] = 'Наксрамас';
 L['ExG Bosses OTHER'] = 'Остальные';
 L['ExG History RAID'] = 'Рейд';
+L['ExG History RESERVE'] = 'Резерв';
 L['ExG Raid'] = 'Рейд';
 L['ExG Raid Speedrun'] = 'Спидран';
 L['RAID'] = 'Рейд';

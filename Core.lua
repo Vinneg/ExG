@@ -1512,7 +1512,7 @@ function ExG:ENCOUNTER_END(_, id, _, _, _, success)
                 local new = self:SetEG(info, old.ep + boss.ep, old.gp);
 
                 details[st] = {
-                    target = { name = name, class = class, },
+                    target = { name = info.name, class = info.class, },
                     ep = { before = old.ep, after = new.ep, },
                     dt = st,
                 };
@@ -1520,18 +1520,18 @@ function ExG:ENCOUNTER_END(_, id, _, _, _, success)
         end
     end
 
-    for name in pairs(store().raid.reserve) do
+    for name, v in pairs(store().raid.reserve) do
         i = i + 1;
 
-        local info = ExG:GuildInfo(name);
+        local info = self:GuildInfo(name);
 
-        if info and (not ignore[name]) then
+        if v and info and (not ignore[name]) then
             local st = dt + i / 1000;
             local old = self:GetEG(info.officerNote);
             local new = self:SetEG(info, old.ep + boss.ep, old.gp);
 
             details[st] = {
-                target = { name = name, class = class, },
+                target = { name = info.name, class = info.class, },
                 ep = { before = old.ep, after = new.ep, },
                 dt = st,
             };
