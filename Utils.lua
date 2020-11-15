@@ -847,3 +847,30 @@ end
 function ExG:Report(msg)
     SendChatMessage(msg, store().channel);
 end
+
+function ExG:TimeOffset()
+    local serverH, serverM = GetGameTime();
+
+    local localH, localM = strsplit(':', date('%H:%M'));
+    local localH, localM = tonumber(localH), tonumber(localM);
+
+    if localM ~= serverM and (serverM < 1 or serverM > 58) and (localM < 1 or localM > 58) then
+        self:ScheduleTimer('TimeOffset', 2);
+
+        return;
+    end
+
+    local diff = serverH - localH;
+
+    if diff > 12 then
+        diff = diff - 24;
+    elseif diff < -12 then
+        diff = diff + 24;
+    end
+
+    self.state.offset = diff * 60 * 60;
+end
+
+function ExG:ServerTime()
+    return time() + (self.state.offset or 0);
+end

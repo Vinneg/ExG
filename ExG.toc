@@ -1,5 +1,5 @@
 ## Interface: 11305
-## Version: 22.1
+## Version: 23
 ## Title: Extended EPGP (ExG)
 ## Author: Vinneg
 ## Notes: Extended EPGP system. Usage: /exg to see commands
