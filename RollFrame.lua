@@ -4,7 +4,6 @@ local AceGUI = LibStub('AceGUI-3.0');
 local LSM = LibStub('LibSharedMedia-3.0');
 local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 
-local state = function() return ExG.state; end;
 local store = function() return ExG.store.char; end;
 
 local btnRoll = function(self, pane, item, btn, info1, info2)
@@ -23,8 +22,10 @@ local btnRoll = function(self, pane, item, btn, info1, info2)
     end;
 end
 
-local btnPass = function(self, pane, btn)
+local btnPass = function(self, pane, item)
     return function()
+        item.rolled = true;
+
         ExG:RollItem({
             id = pane.itemId,
             class = ExG.state.class,
@@ -102,6 +103,22 @@ local MAX_ROLLS = 10;
 local PANE_WIDTH = 200;
 local PANE_HEIGH = 371;
 
+local points = {
+    button = {
+        { point = 'TOPLEFT', rel = 'BOTTOMLEFT', x = 5, y = -32 },
+        { point = 'TOPRIGHT', rel = 'BOTTOMRIGHT', x = -5, y = -32 },
+        { point = 'TOPLEFT', rel = 'BOTTOMLEFT', x = 5, y = -57 },
+        { point = 'TOPRIGHT', rel = 'BOTTOMRIGHT', x = -5, y = -57 },
+        { point = 'TOPLEFT', rel = 'BOTTOMLEFT', x = 5, y = -82 },
+        { point = 'TOPRIGHT', rel = 'BOTTOMRIGHT', x = -5, y = -82 },
+    },
+    disenchant = {
+        [1] = { point = 'TOPLEFT', rel = 'BOTTOMLEFT', x = 5, y = -57 },
+        [2] = { point = 'TOPLEFT', rel = 'BOTTOMLEFT', x = 5, y = -82 },
+        [3] = { point = 'TOPLEFT', rel = 'BOTTOMLEFT', x = 5, y = -107 },
+    },
+};
+
 ExG.RollFrame = {
     frame = nil,
     items = {},
@@ -172,63 +189,37 @@ local function makeTips(self, pane)
 end
 
 local function makeButtons(self, pane)
-    local points = {
-        button = {
-            { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -32 },
-            { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -32 },
-            { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -57 },
-            { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -57 },
-            { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -82 },
-            { point = 'TOPRIGHT', frame = pane.head.frame, rel = 'BOTTOMRIGHT', x = -5, y = -82 },
-        },
-        disenchant = {
-            [1] = { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -57 },
-            [2] = { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -82 },
-            [3] = { point = 'TOPLEFT', frame = pane.head.frame, rel = 'BOTTOMLEFT', x = 5, y = -107 },
-        },
-    };
-
-    local btns, last = {}, nil;
+    local btns = {};
 
     for _, btn in pairs(store().buttons.data) do
-        if btn.enabled then
-            tinsert(btns, btn);
-        end
+        tinsert(btns, btn);
     end
 
     sort(btns, function(a, b) return a.id < b.id; end);
 
     for i, btn in ipairs(btns) do
-        pane[btn.id] = AceGUI:Create('Button');
-        pane[btn.id]:SetText(btn.text);
-        pane[btn.id]:SetWidth((PANE_WIDTH - 15) / 2);
-        pane[btn.id]:SetDisabled(true);
-        pane:AddChild(pane[btn.id]);
+        pane[i] = AceGUI:Create('Button');
+        pane[i]:SetText(btn.text);
+        pane[i]:SetWidth((PANE_WIDTH - 15) / 2);
+        pane[i]:SetDisabled(true);
+        pane:AddChild(pane[i]);
 
         local point = points.button[i];
 
-        pane[btn.id]:SetPoint(point.point, point.frame, point.rel, point.x, point.y);
-
-        last = pane[btn.id];
+        pane[i]:SetPoint(point.point, pane.head.frame, point.rel, point.x, point.y);
     end
 
-    if ExG:IsMl() then
-        pane.dis = AceGUI:Create('Button');
-        pane.dis:SetText(L['Disenchant']);
-        pane.dis:SetWidth(PANE_WIDTH - 10);
-        pane.dis:SetCallback('OnClick', function() self.Dialog:GiveItem(self.items[pane.itemId], { name = ExG.state.name, class = ExG.state.class, }); end);
-        pane:AddChild(pane.dis);
+    pane.dis = AceGUI:Create('Button');
+    pane.dis:SetText(L['Disenchant']);
+    pane.dis:SetWidth(PANE_WIDTH - 10);
+    pane.dis:SetCallback('OnClick', function() self.Dialog:GiveItem(self.items[pane.itemId], { name = ExG.state.name, class = ExG.state.class, }); end);
+    pane:AddChild(pane.dis);
 
-        local point = points.disenchant[ceil(#btns / 2)];
+    local point = points.disenchant[ceil(#btns / 2)];
 
-        pane.dis:SetPoint(point.point, point.frame, point.rel, point.x, point.y);
+    pane.dis:SetPoint(point.point, pane.head.frame, point.rel, point.x, point.y);
 
-        last = pane.dis;
-    end
-
-    self.frame:SetHeight(PANE_HEIGH + 25 * ceil(#btns / 2) + (ExG:IsMl() and 25 or 0));
-
-    return last;
+    self.frame:SetHeight(PANE_HEIGH + 25 * ceil(#btns / 2) + 25);
 end
 
 local function makeRolls(pane)
@@ -266,7 +257,7 @@ local function makeRolls(pane)
         roll.name:SetPoint('BOTTOMRIGHT', -90, 0);
         roll.name:SetJustifyH('LEFT');
         roll.name:SetJustifyV('MIDDLE');
-        roll.name:SetText('Name');
+        roll.name:SetText(i);
 
         roll.option = roll.pane.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
         roll.option:SetFont(DEFAULT_FONT, 10);
@@ -336,14 +327,14 @@ local function makePane(self)
 
     makeTips(self, pane);
 
-    local last = makeButtons(self, pane);
+    makeButtons(self, pane);
 
     pane.accepted = AceGUI:Create('InteractiveLabel');
     pane.accepted:SetText('none');
     pane.accepted:SetCallback('OnLeave', onLeave);
     pane:AddChild(pane.accepted);
 
-    pane.accepted:SetPoint('TOP', last.frame, 'BOTTOM', 0, -5);
+    pane.accepted:SetPoint('TOP', pane.head.frame, 'BOTTOM', 0, -132);
     pane.accepted:SetPoint('LEFT', pane.frame, 'LEFT', 5, 0);
     pane.accepted:SetPoint('RIGHT', pane.frame, 'RIGHT', -5, 0);
 
@@ -469,15 +460,31 @@ local function renderTips(self, pane)
     end
 end
 
-local function renderButons(self, item)
-    local pane = findPane(self, item.id);
-
-    if not pane then
-        return
-    end
+local function renderButons(self, item, pane)
+    local btns = {};
 
     for _, btn in pairs(store().buttons.data) do
-        if pane[btn.id] then
+        tinsert(btns, btn);
+    end
+
+    sort(btns, function(a, b)
+        if a.enabled and b.enabled then
+            return a.id < b.id;
+        elseif a.enabled then
+            return true;
+        elseif b.enabled then
+            return false;
+        end
+
+        return a.id < b.id;
+    end);
+
+    local btnCount = 0;
+
+    for i, btn in ipairs(btns) do
+        if btn.enabled then
+            btnCount = btnCount + 1;
+
             local enabled = true;
 
             if btn.id ~= 'button6' and store().items.data[item.id] then
@@ -492,14 +499,36 @@ local function renderButons(self, item)
                 end
             end
 
-            pane[btn.id]:SetText(enabled and btn.text or '');
-            pane[btn.id]:SetDisabled(not enabled);
+            pane[i]:SetText(enabled and btn.text or '');
+            pane[i]:SetDisabled(not enabled);
 
             local info1, info2 = ExG:Equipped(item.slots);
 
-            pane[btn.id]:SetCallback('OnClick', btnRoll(self, pane, item, btn, info1, info2));
+            pane[i]:SetCallback('OnClick', btnRoll(self, pane, item, btn, info1, info2));
+
+            pane[i].frame:Show();
+        else
+            pane[i].frame:Hide();
         end
     end
+
+    local point = points.disenchant[ceil(btnCount / 2)];
+
+    pane.dis:SetPoint(point.point, pane.head.frame, point.rel, point.x, point.y);
+
+    local offset = point.y;
+
+    if ExG:IsMl() then
+        pane.dis.frame:Show();
+
+        offset = offset - 25;
+    else
+        pane.dis.frame:Hide();
+    end
+
+    pane.accepted:SetPoint('TOP', pane.head.frame, 'BOTTOM', 0, offset);
+
+    self.frame:SetHeight(PANE_HEIGH + 25 * ceil(btnCount / 2) + (ExG:IsMl() and 25 or 0));
 end
 
 local function renderAccepted(self, item, pane)
@@ -594,7 +623,7 @@ local function renderItem(self, item)
         pane.head:SetCallback('OnEnter', onEnter(pane.head.frame, item.link));
 
         renderTips(self, pane);
-        renderButons(self, item);
+        renderButons(self, item, pane);
         renderRolls(self, item, pane);
     else
         pane.itemId = nil;

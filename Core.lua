@@ -1153,9 +1153,13 @@ function ExG:OnInitialize()
     self:RegisterEvent('LOOT_CLOSED');
 
     self:ScheduleTimer('PostInit', 10);
+
+    self:ScheduleTimer('Sync', 20, { action = 'ask4buttons', });
 end
 
 function ExG:PostInit()
+    local debugTag = store().debug;
+
     store().debug = false; -- TODO remove after a while
     store().optionFilter = 2; -- TODO remove after a while
 
@@ -1171,7 +1175,7 @@ function ExG:PostInit()
     GameTooltip:HookScript("OnTooltipSetItem", tooltipGp);
     hooksecurefunc("ChatFrame_OnHyperlinkShow", hyperlinkGp);
 
-    self:Print(format('|cff33ff99Version %s loaded! Server time offset is: %d.|r', self.state.version, self.state.offset / 60 / 60));
+    self:Print(format('|cff33ff99Version %s loaded! Server time offset is: %d.%s|r', self.state.version, self.state.offset / 60 / 60, debugTag and (' ' .. L['Debug mode'](store().debug)) or ''));
 end
 
 function ExG:AnnounceItems(ids)
@@ -1415,10 +1419,14 @@ function ExG:handleScanVersions(_, message, _, sender)
     end
 end
 
-function ExG:Sync(msg)
+function ExG:Sync(msg, target)
     local data = Serializer:Serialize(msg);
 
-    self:SendCommMessage(self.messages.prefix.sync, data, self.messages.guild);
+    if target then
+        self:SendCommMessage(self.messages.prefix.sync, data, self.messages.whisper, target);
+    else
+        self:SendCommMessage(self.messages.prefix.sync, data, self.messages.guild);
+    end
 end
 
 function ExG:handleSync(_, message, _, sender)
@@ -1426,6 +1434,28 @@ function ExG:handleSync(_, message, _, sender)
 
     if not success then
         return
+    end
+
+    if sender == self.state.name then
+        return;
+    end
+
+    if data.action == 'ask4buttons' then
+        local info = self:GuildInfo(self.state.name);
+
+        if (info and info.rankId or 99) > store().optionFilter then
+            return;
+        end
+
+        self:Sync({ action = 'buttons', buttons = store().buttons, }, sender);
+    elseif data.action == 'buttons' then
+        local info = self:GuildInfo(sender);
+
+        if (info and info.rankId or 99) > store().optionFilter then
+            return;
+        end
+
+        store().buttons = data.buttons;
     end
 end
 
@@ -1442,20 +1472,16 @@ function ExG:handleReserve(_, message, _, sender)
         return
     end
 
-    if data.action == 'claim' and self:IsMl() then
+    if data.action == 'join' and self:IsMl() then
         store().raid.reserve[sender] = true;
 
-        self:Reserve({ action = 'add', name = sender, });
+        self:Reserve({ action = 'sync', reserve = store().raid.reserve, });
     elseif data.action == 'leave' and self:IsMl() then
         store().raid.reserve[sender] = nil;
 
-        self:Reserve({ action = 'remove', name = sender, });
-    elseif data.action == 'add' then
-        store().raid.reserve[data.name] = true;
-
-        self.RosterFrame:Refresh();
-    elseif data.action == 'remove' then
-        store().raid.reserve[data.name] = nil;
+        self:Reserve({ action = 'sync', reserve = store().raid.reserve, });
+    elseif data.action == 'sync' then
+        store().raid.reserve = data.reserve;
 
         self.RosterFrame:Refresh();
     end

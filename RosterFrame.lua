@@ -6,7 +6,7 @@ local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 
 local store = function() return ExG.store.char; end;
 
-local sort = function(self, field)
+local order = function(self, field)
     local tmp = {};
 
     tinsert(tmp, { name = field, dir = 1, });
@@ -26,21 +26,23 @@ local sort = function(self, field)
     local field1, field2, field3 = unpack(self.sort);
 
     sort(self.data, function(a, b)
-        local c1 = (field1 and a[field1.name] < b[field1.name]) and 1 or -1;
-        local c2 = (field2 and a[field2.name] < b[field2.name]) and 1 or -1;
-        local c3 = (field3 and a[field3.name] < b[field3.name]) and 1 or -1;
-
-        if field1 and a[field1.name] ~= b[field1.name] then
-            return c1 * field1.dir > 0;
-        else
-            if field2 and a[field2.name] ~= b[field2.name] then
-                return c2 * field2.dir > 0;
-            elseif field3 then
-                return c3 * field3.dir > 0;
-            else
-                return true;
+        local compare = function(field)
+            if not field or not a or not b then
+                return 0;
             end
+
+            if a[field.name] == b[field.name] then
+                return 0;
+            end
+
+            return (a[field.name] < b[field.name] and 1 or -1) * field.dir;
         end
+
+        local c1 = compare(field1);
+        local c2 = compare(field2);
+        local c3 = compare(field3);
+
+        return c1 == 0 and (c2 == 0 and c3 > 0 or c2 > 0) or c1 > 0;
     end);
 end
 
@@ -187,7 +189,7 @@ local function renderGuildItems(self)
         row.rank:SetText(item.rank);
 
         row.pr:SetVertexColor(ExG:ClassColor(item.class));
-        row.pr:SetText(item.pr);
+        row.pr:SetText(format('%.2f', item.pr));
 
         row.gp:SetVertexColor(ExG:ClassColor(item.class));
         row.gp:SetText(item.gp);
@@ -199,7 +201,7 @@ end
 
 local function sortGuildItems(self, field)
     return function()
-        sort(self, field);
+        order(self, field);
 
         renderGuildItems(self);
     end;
@@ -477,7 +479,7 @@ local function renderRaidItems(self)
         row.group:SetText(L['Group Title'](item.group));
 
         row.pr:SetVertexColor(ExG:ClassColor(item.class));
-        row.pr:SetText(item.pr);
+        row.pr:SetText(format('%.2f', item.pr));
 
         row.gp:SetVertexColor(ExG:ClassColor(item.class));
         row.gp:SetText(item.gp);
@@ -489,7 +491,7 @@ end
 
 local function sortRaidItems(self, field)
     return function()
-        sort(self, field);
+        order(self, field);
 
         renderRaidItems(self);
     end;
@@ -584,7 +586,7 @@ local function makeRaidHeaders(self)
     ep:SetJustifyV('MIDDLE');
     ep:SetColor(ExG:ClassColor('SYSTEM'));
     ep:SetText(L['EP']);
-    ep:SetCallback('OnClick', sortGuildItems(self, 'ep'));
+    ep:SetCallback('OnClick', sortRaidItems(self, 'ep'));
     self.frame:AddChild(ep);
 
     ep:SetPoint('TOPRIGHT', gp.frame, 'TOPLEFT');
@@ -791,7 +793,7 @@ local function renderReserveItems(self)
         row.rank:SetText(item.rank);
 
         row.pr:SetVertexColor(ExG:ClassColor(item.class));
-        row.pr:SetText(item.pr);
+        row.pr:SetText(format('%.2f', item.pr));
 
         row.gp:SetVertexColor(ExG:ClassColor(item.class));
         row.gp:SetText(item.gp);
@@ -801,14 +803,14 @@ local function renderReserveItems(self)
 
         row.remove:SetDisabled(not ExG:IsMl());
         if ExG:IsMl() then
-            row.remove:SetCallback('OnClick', function() ExG:Reserve({ action = 'remove', name = item.name, }); end);
+            row.remove:SetCallback('OnClick', function() store().raid.reserve[item.name] = nil; ExG:Reserve({ action = 'sync', reserve = store().raid.reserve, }); end);
         end
     end
 end
 
 local function sortReserveItems(self, field)
     return function()
-        sort(self, field);
+        order(self, field);
 
         renderReserveItems(self);
     end;
@@ -910,7 +912,7 @@ local function makeReserveButtons(self)
     self.join:SetWidth(120);
     self.join:SetHeight(25);
     self.join:SetText(L['Join Reserve']);
-    self.join:SetCallback('OnClick', function() ExG:Reserve({ action = 'claim', }); end);
+    self.join:SetCallback('OnClick', function() ExG:Reserve({ action = 'join', }); end);
     self.frame:AddChild(self.join);
 
     self.join:SetPoint('TOPRIGHT', self.frame.frame, 'TOPRIGHT', -5, -5);
@@ -929,7 +931,7 @@ local function makeReserveButtons(self)
     self.unit:SetWidth(150);
     self.unit:SetHeight(25);
     self.unit:SetText(nil);
-    self.unit:SetCallback('OnEnterPressed', function() local info = ExG:GuildInfo(self.unit:GetText()); if info then ExG:Reserve({ action = 'add', name = info.name, }); self.unit:SetText(''); end end);
+    self.unit:SetCallback('OnEnterPressed', function() local info = ExG:GuildInfo(self.unit:GetText()); if info then store().raid.reserve[info.name] = true; ExG:Reserve({ action = 'sync', reserve = store().raid.reserve, }); self.unit:SetText(''); end end);
     self.frame:AddChild(self.unit);
 
     self.unit:SetPoint('LEFT', self.label.frame, 'RIGHT', 5, 0);
