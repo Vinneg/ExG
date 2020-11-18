@@ -22,8 +22,10 @@ local btnRoll = function(self, pane, item, btn, info1, info2)
     end;
 end
 
-local btnPass = function(self, pane, btn)
+local btnPass = function(self, pane, item)
     return function()
+        item.rolled = true;
+
         ExG:RollItem({
             id = pane.itemId,
             class = ExG.state.class,
