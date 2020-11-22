@@ -108,7 +108,7 @@ local paneTimer = function(self, pane)
             end
         end
 
-        pane.left:SetText(L['Time left'](left));
+        pane.left:SetText(L['Time is out'](left));
     else
         ExG:CancelTimer(pane.timer);
     end
