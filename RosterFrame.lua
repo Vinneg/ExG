@@ -130,6 +130,8 @@ function ExG.RosterFrame:Create()
     self.AdjustDialog:Create();
     self.DecayDialog:Create();
     self.VersionDialog:Create();
+
+    ExG:RestorePoints(self.frame, 'RosterFrame');
 end
 
 function ExG.RosterFrame:Open()
@@ -145,6 +147,8 @@ function ExG.RosterFrame:Close()
 
     self.AdjustDialog:Close();
     self.DecayDialog:Close();
+
+    ExG:SavePoints(self.frame, 'RosterFrame');
 
     self.frame:Hide();
 end
@@ -1163,6 +1167,8 @@ function ExG.RosterFrame.AdjustDialog:Create()
     self.frame:Hide();
 
     renderAdjustDialog(self);
+
+    ExG:RestorePoints(self.frame, 'RosterFrame.AdjustDialog');
 end
 
 function ExG.RosterFrame.AdjustDialog:Open(unit, callback)
@@ -1189,6 +1195,8 @@ function ExG.RosterFrame.AdjustDialog:Close()
 
     self.unit = nil;
     self.callback = nil;
+
+    ExG:SavePoints(self.frame, 'RosterFrame.AdjustDialog');
 
     self.frame:Hide();
 end
@@ -1505,6 +1513,8 @@ function ExG.RosterFrame.DecayDialog:Create()
     self.frame:Hide();
 
     renderDecayDialog(self);
+
+    ExG:RestorePoints(self.frame, 'RosterFrame.DecayDialog');
 end
 
 function ExG.RosterFrame.DecayDialog:Open(callback)
@@ -1520,6 +1530,8 @@ function ExG.RosterFrame.DecayDialog:Close()
     end
 
     self.callback = nil;
+
+    ExG:SavePoints(self.frame, 'RosterFrame.DecayDialog');
 
     self.frame:Hide();
 end
@@ -1722,6 +1734,8 @@ function ExG.RosterFrame.VersionDialog:Create()
     self.frame:Hide();
 
     makeVersionDialog(self);
+
+    ExG:RestorePoints(self.frame, 'RosterFrame.VersionDialog');
 end
 
 function ExG.RosterFrame.VersionDialog:Open()
@@ -1734,6 +1748,8 @@ function ExG.RosterFrame.VersionDialog:Open()
 end
 
 function ExG.RosterFrame.VersionDialog:Close()
+    ExG:SavePoints(self.frame, 'RosterFrame.VersionDialog');
+
     self.frame:Hide();
 end
 

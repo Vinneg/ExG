@@ -179,6 +179,8 @@ ExG.defaults = {
             pageSize = 50,
             threshold = 4,
             closeOnPass = true,
+            announce = true,
+            passTimer = 60,
             formula = {
                 coef = 7,
                 base = 1.5,
@@ -298,6 +300,7 @@ ExG.defaults = {
             speedrun = false,
             reserve = {},
         },
+        frames = {},
     },
 };
 
@@ -451,6 +454,27 @@ ExG.options = {
                     width = 1.2,
                     get = function() return store().items.closeOnPass; end,
                     set = function(_, value) store().items.closeOnPass = value; end,
+                },
+                closeOnPassFiller = {
+                    type = 'description',
+                    name = '',
+                    order = 21,
+                    width = 'full',
+                },
+                passTimer = {
+                    type = 'input',
+                    name = L['Autopass timer'],
+                    order = 22,
+                    validate = isNumber,
+                    width = 1.2,
+                    get = function() return tostring(store().items.passTimer); end,
+                    set = function(_, value) store().items.passTimer = tonumber(value); end,
+                },
+                passTimerFiller = {
+                    type = 'description',
+                    name = '',
+                    order = 23,
+                    width = 'full',
                 },
                 itemsHeader2 = {
                     type = 'header',
@@ -1142,6 +1166,7 @@ function ExG:OnInitialize()
     self.state.name = UnitName('player');
     self.state.class = select(2, UnitClass('player'));
 
+    self.OptionsFrame:Create();
     self.RosterFrame:Create();
     self.RollFrame:Create();
     self.InventoryFrame:Create();
@@ -1175,7 +1200,7 @@ function ExG:PostInit()
     GameTooltip:HookScript("OnTooltipSetItem", tooltipGp);
     hooksecurefunc("ChatFrame_OnHyperlinkShow", hyperlinkGp);
 
-    self:Print(format('|cff33ff99Version %s loaded! Server time offset is: %d.%s|r', self.state.version, self.state.offset / 60 / 60, debugTag and (' ' .. L['Debug mode'](store().debug)) or ''));
+    self:Print(format('|cff33ff99Version %s loaded! Server time offset is: %d.%s|r', self.state.version, (self.state.offset or 0) / 60 / 60, debugTag and (' ' .. L['Debug mode'](store().debug)) or ''));
 end
 
 function ExG:AnnounceItems(ids)
@@ -1223,10 +1248,14 @@ function ExG:handleAnnounceItems(_, message, _, sender)
         return
     end
 
+    if store().items.announce and self:IsMl() then
+        SendChatMessage(format('ExG: Разыгрывается %s!', item.link), self.messages.raid);
+    end
+
     store().items.data[item.id] = settings;
 
     self.RollFrame:AddItem(item);
-    self.RollFrame:Show();
+    self.RollFrame:Open();
 end
 
 function ExG:AcceptItem(itemId)

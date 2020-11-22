@@ -874,3 +874,21 @@ end
 function ExG:ServerTime()
     return time() + (self.state.offset or 0);
 end
+
+function ExG:RestorePoints(frame, name)
+    local point = store().frames[name];
+
+    if not point then
+        return;
+    end
+
+    frame:SetPoint(point.point, point.frame, point.rel, point.x, point.y);
+end
+
+function ExG:SavePoints(frame, name)
+    local point, relativeTo, rel, x, y = frame:GetPoint(1);
+
+    if x ~= 0 or y ~= 0 then
+        store().frames[name] = { point = point, frame = relativeTo and relativeTo:GetName() or 'UIParent', rel = rel, x = x, y = y, };
+    end
+end
