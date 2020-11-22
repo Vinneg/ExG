@@ -33,9 +33,9 @@ local btnPass = function(self, pane, item)
             rnd = random(1, 100),
         });
 
-        if store().items.closeOnPass and not ExG:IsMl() then
-            self:RemoveItem(pane.itemId);
-        end
+--        if store().items.closeOnPass and not ExG:IsMl() then
+--            self:RemoveItem(pane.itemId);
+--        end
     end
 end
 
@@ -91,6 +91,27 @@ local onAccepted = function(owner, item)
 
         GameTooltip:Show();
     end;
+end;
+
+local paneTimer = function(self, pane)
+    if pane.itemId and self.items[pane.itemId] and self.items[pane.itemId].active then
+        local item = self.items[pane.itemId];
+
+        local left = item.till - ExG:ServerTime();
+
+        if left <= 0 then
+            ExG:CancelTimer(pane.timer);
+            left = 0;
+
+            if not item.rolled then
+                btnPass(self, pane, item)();
+            end
+        end
+
+        pane.left:SetText(L['Time left'](left));
+    else
+        ExG:CancelTimer(pane.timer);
+    end
 end;
 
 local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
@@ -332,6 +353,15 @@ local function makePane(self)
     pane.accepted = AceGUI:Create('InteractiveLabel');
     pane.accepted:SetText('none');
     pane.accepted:SetCallback('OnLeave', onLeave);
+
+    pane.left = pane.accepted.frame:CreateFontString(nil, 'BACKGROUND', 'GameFontHighlightSmall');
+    pane.left:SetFont(DEFAULT_FONT, 10);
+    pane.left:ClearAllPoints();
+    pane.left:SetPoint('TOPLEFT', 0, 0);
+    pane.left:SetPoint('BOTTOMRIGHT', 0, 0);
+    pane.left:SetJustifyH('RIGHT');
+    pane.left:SetJustifyV('MIDDLE');
+
     pane:AddChild(pane.accepted);
 
     pane.accepted:SetPoint('TOP', pane.head.frame, 'BOTTOM', 0, -132);
@@ -589,7 +619,7 @@ local function renderRolls(self, item, pane)
         if ExG:IsMl() then
             roll.pane.frame:SetScript('OnEnter', onRoll(roll.pane.frame, tmp.name, tmp.class, tmp.rank, tmp.rankId, tmp.pr, tmp.rnd));
             roll.pane.frame:SetScript('OnLeave', onLeave);
-            roll.pane.frame:SetScript('OnMouseDown', function() self.Dialog:Show(item, tmp); end);
+            roll.pane.frame:SetScript('OnMouseDown', function() self.Dialog:Open(item, tmp); end);
         end
 
         roll.pane.frame:Show();
@@ -635,7 +665,7 @@ local function renderItem(self, item)
     pane.frame:Show();
 
     if count(self) == 0 then
-        self.frame:Hide();
+        self.frame:Close();
     end
 end
 
@@ -731,7 +761,7 @@ function ExG.RollFrame:Create()
     self.frame = AceGUI:Create('Window');
     self.frame:SetTitle(L['Roll Frame']);
     self.frame:SetLayout(nil);
-    self.frame:SetCallback('OnClose', function() self:Hide(); end);
+    self.frame:SetCallback('OnClose', function() self:Close(); end);
     self.frame:SetHeight(471);
     self.frame:EnableResize(false);
 
@@ -741,17 +771,21 @@ function ExG.RollFrame:Create()
 
     self.Dialog:Create();
 
+    ExG:RestorePoints(self.frame, 'RollFrame');
+
     self.frame:Hide();
 end
 
-function ExG.RollFrame:Show()
+function ExG.RollFrame:Open()
     self.frame:Show();
 end
 
-function ExG.RollFrame:Hide()
-    if ExG:IsMl() then
+function ExG.RollFrame:Close(silent)
+    ExG:SavePoints(self.frame, 'RollFrame');
+
+    if not silent and ExG:IsMl() then
         ExG:CancelRolls();
-    else
+    elseif not silent then
         for id, item in pairs(self.items) do
             if not (item.rolled or false) then
                 ExG:RollItem({
@@ -769,40 +803,43 @@ function ExG.RollFrame:Hide()
         end
     end
 
-    self.Dialog:Hide();
+    self.Dialog:Close();
 
     self.frame:Hide();
 end
 
-function ExG.RollFrame:AddItem(item)
-    if not (item and item.id) then
+function ExG.RollFrame:AddItem(source)
+    if not (source and source.id) then
         return;
     end
 
-    self.items[item.id] = self.items[item.id] or { count = 1, accepted = {}, rolls = {}, };
+    self.items[source.id] = self.items[source.id] or { count = 1, accepted = {}, rolls = {}, };
 
-    local tmp = self.items[item.id];
+    local item = self.items[source.id];
 
-    tmp.active = true;
-    tmp.id = item.id;
-    tmp.count = item.count;
-    tmp.mode = item.mode;
-    tmp.name = item.name;
-    tmp.loc = item.loc;
-    tmp.slots = item.slots;
-    tmp.link = item.link;
-    tmp.texture = item.texture;
+    item.active = true;
+    item.id = source.id;
+    item.count = source.count;
+    item.mode = source.mode;
+    item.name = source.name;
+    item.loc = source.loc;
+    item.slots = source.slots;
+    item.link = source.link;
+    item.texture = source.texture;
+    item.till = ExG:ServerTime() + store().items.passTimer;
 
-    local settings = ExG:PullSettings(item.id);
+    local settings = ExG:PullSettings(source.id);
     local cost = settings and ((settings.spec and settings.spec.gp) or (settings.class and settings.class.gp) or (settings.def and settings.def.gp));
-    tmp.gp = cost or item.gp or 0;
+    item.gp = cost or source.gp or 0;
 
-    local pane = getPane(self, item.id);
+    local pane = getPane(self, source.id);
 
     if pane then
-        ExG:AcceptItem(tmp.id);
+        ExG:AcceptItem(item.id);
 
         renderItems(self);
+
+        pane.timer = ExG:ScheduleRepeatingTimer(paneTimer, 0.1, self, pane);
     end
 end
 
@@ -884,9 +921,7 @@ function ExG.RollFrame:CancelRolls()
         pane.frame:Hide();
     end
 
-    self.Dialog:Hide();
-
-    self.frame:Hide();
+    self:Close(true);
 end
 
 function ExG.RollFrame:RemoveItem(itemId)
@@ -923,7 +958,7 @@ function ExG.RollFrame:RemoveItem(itemId)
     renderItems(self);
 
     if count(self) == 0 then
-        self.frame:Hide();
+        self:Close();
     end
 
     if self.Dialog.item and self.Dialog.item.id == itemId then
@@ -971,10 +1006,11 @@ function ExG.RollFrame.Dialog:Create()
     self.frame = AceGUI:Create('Window');
     self.frame:SetTitle(L['Roll Dialog Frame']);
     self.frame:SetLayout('Flow');
-    self.frame:SetCallback('OnClose', function() end);
+    self.frame:SetCallback('OnClose', function() self:Close(); end);
     self.frame:SetWidth(310);
     self.frame:SetHeight(135);
     self.frame:EnableResize(false);
+    self.frame:Hide();
 
     self.frame.head = AceGUI:Create('Label');
     self.frame.head:SetFullWidth(true);
@@ -1002,12 +1038,12 @@ function ExG.RollFrame.Dialog:Create()
         end
     end
 
-    self.frame:Hide();
+    ExG:RestorePoints(self.frame, 'RollFrame.Dialog');
 end
 
-function ExG.RollFrame.Dialog:Show(item, roll)
+function ExG.RollFrame.Dialog:Open(item, roll)
     if not item or not roll then
-        self.frame:Hide();
+        self.frame:Close();
 
         return;
     end
@@ -1020,9 +1056,11 @@ function ExG.RollFrame.Dialog:Show(item, roll)
     self.frame:Show();
 end
 
-function ExG.RollFrame.Dialog:Hide()
+function ExG.RollFrame.Dialog:Close()
     self.item = nil;
     self.roll = nil;
+
+    ExG:SavePoints(self.frame, 'RollFrame.Dialog');
 
     self.frame:Hide();
 end
@@ -1074,5 +1112,5 @@ function ExG.RollFrame.Dialog:GiveItem(item, roll)
 
     ExG:DistributeItem(roll.name, item.id);
 
-    self:Hide();
+    self:Close();
 end

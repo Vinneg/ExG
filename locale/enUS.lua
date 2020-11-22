@@ -8,6 +8,7 @@ end
 
 L['ExG'] = "Extended EPGP";
 L['Roll Frame'] = 'Roll';
+L['Options Frame'] = 'Options';
 L['Roll Dialog Frame'] = 'Item transfer';
 L['Unit will receive item'] = function(name, link) return format('%s will receive %s', name, link); end;
 L['Inventory Frame'] = 'Inventory';
@@ -52,6 +53,8 @@ L['Items Loot Settings'] = 'Loot Settings';
 L['Loot Threshold'] = true;
 L['Loot Threshold Desc'] = 'Loot distribution threshold - selected quality and higher';
 L['Close item on pass'] = true;
+L['Autopass timer'] = true;
+L['Time left'] = function(left) if left > 0 then return format('|cff33ff99%d sec|r', left); else return '|cff33ff99Time left|r'; end end;
 L['Items Formula'] = 'GP formula';
 L['Items Formula Desc'] = '|cff33ff99COEF * BASE ^ [ (LEVEL / 26 + RARITY - 4) ] * SLOT * MOD|r';
 L['Items Formula Coef'] = 'Formula coefficients';

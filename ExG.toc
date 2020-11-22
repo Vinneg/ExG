@@ -1,5 +1,5 @@
 ## Interface: 11305
-## Version: 24
+## Version: 25
 ## Title: Extended EPGP (ExG)
 ## Author: Vinneg
 ## Notes: Extended EPGP system. Usage: /exg to see commands
@@ -9,6 +9,7 @@ embeds.xml
 locale\locale.xml
 Core.lua
 Utils.lua
+Options.lua
 RollFrame.lua
 RosterFrame.lua
 InventoryFrame.lua

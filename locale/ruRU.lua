@@ -8,6 +8,7 @@ end
 
 L['ExG'] = "Extended EPGP";
 L['Roll Frame'] = 'Розыгрыш';
+L['Options Frame'] = 'Настройки';
 L['Roll Dialog Frame'] = 'Передача предмета';
 L['Unit will receive item'] = function(name, link) return format('%s получит %s', name, link); end;
 L['Inventory Frame'] = 'Инвентарь';
@@ -52,6 +53,8 @@ L['Items Loot Settings'] = 'Настройки лута';
 L['Loot Threshold'] = 'Порог лута';
 L['Loot Threshold Desc'] = 'Порог для распределения лута - выбранное качество и выше';
 L['Close item on pass'] = 'Закрывать предметы при пасе';
+L['Autopass timer'] = 'Таймер автопаса';
+L['Time left'] = function(left) if left > 0 then return format('|cff33ff99%d сек|r', left); else return '|cff33ff99Время вышло|r'; end end;
 L['Items Formula'] = 'Формула GP';
 L['Items Formula Desc'] = '|cff33ff99КОЭФ * БАЗА ^ [ (УРОВЕНЬ / 26 + КАЧЕСТВО - 4) ] * СЛОТ * МОД|r';
 L['Items Formula Coef'] = 'Коэффициенты формулы';
