@@ -868,7 +868,14 @@ function ExG:TimeOffset()
         diff = diff + 24;
     end
 
-    self.state.offset = diff * 60 * 60;
+    diff = diff * 60 * 60;
+
+    if self.state.offset == diff then
+        return;
+    end
+
+    self.state.offset = diff;
+    self:ScheduleTimer('TimeOffset', 1);
 end
 
 function ExG:ServerTime()

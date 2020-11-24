@@ -48,6 +48,9 @@ end
 
 local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
 
+local PANE_WIDTH = 560;
+local PANE_HEIGH = 500;
+
 ExG.RosterFrame = {
     frame = nil,
     list = nil,
@@ -74,7 +77,7 @@ end
 
 local function makeTopLine(self)
     local guild = AceGUI:Create('Button');
-    guild:SetWidth(120);
+    guild:SetWidth(100);
     guild:SetHeight(25);
     guild:SetText(L['View Guild']);
     guild:SetCallback('OnClick', function() self.current = 'guild'; switchView(self); end);
@@ -83,7 +86,7 @@ local function makeTopLine(self)
     guild:SetPoint('TOPLEFT', self.frame.frame, 'TOPLEFT', 10, -30);
 
     local raid = AceGUI:Create('Button');
-    raid:SetWidth(120);
+    raid:SetWidth(100);
     raid:SetHeight(25);
     raid:SetText(L['View Raid']);
     raid:SetCallback('OnClick', function() self.current = 'raid'; switchView(self); end);
@@ -92,7 +95,7 @@ local function makeTopLine(self)
     raid:SetPoint('LEFT', guild.frame, 'RIGHT', 5, 0);
 
     local reserve = AceGUI:Create('Button');
-    reserve:SetWidth(120);
+    reserve:SetWidth(100);
     reserve:SetHeight(25);
     reserve:SetText(L['View Reserve']);
     reserve:SetCallback('OnClick', function() self.current = 'reserve'; switchView(self); end);
@@ -101,7 +104,7 @@ local function makeTopLine(self)
     reserve:SetPoint('LEFT', raid.frame, 'RIGHT', 5, 0);
 
     local options = AceGUI:Create('Button');
-    options:SetWidth(120);
+    options:SetWidth(100);
     options:SetHeight(25);
     options:SetText(L['View Options']);
     options:SetCallback('OnClick', function() InterfaceOptionsFrame_OpenToCategory(ExG.state.options); InterfaceOptionsFrame_OpenToCategory(ExG.state.options); end);
@@ -115,17 +118,17 @@ function ExG.RosterFrame:Create()
     self.frame:SetTitle(L['ExG']);
     self.frame:SetLayout(nil);
     self.frame:EnableResize(false);
-    self.frame:SetWidth(570);
-    self.frame:SetHeight(60);
+    self.frame:SetWidth(PANE_WIDTH);
+    self.frame:SetHeight(PANE_HEIGH + 60);
     self.frame:Hide();
 
     self.frame:SetCallback('OnClose', function() self:Close(); end);
 
     makeTopLine(self);
 
-    self.Guild:Create();
-    self.Raid:Create();
-    self.Reserve:Create();
+    self.Guild:Create(self);
+    self.Raid:Create(self);
+    self.Reserve:Create(self);
 
     self.AdjustDialog:Create();
     self.DecayDialog:Create();
@@ -385,14 +388,14 @@ local function makeGuildItems(self)
     end
 end
 
-function ExG.RosterFrame.Guild:Create()
+function ExG.RosterFrame.Guild:Create(parent)
     self.frame = AceGUI:Create('SimpleGroup');
     self.frame:SetLayout(nil);
-    self.frame:SetWidth(570);
-    self.frame:SetHeight(700);
-    self.frame.frame:Hide();
+    self.frame:SetWidth(PANE_WIDTH);
+    self.frame:SetHeight(PANE_HEIGH);
+    parent.frame:AddChild(self.frame);
 
-    self.frame:SetPoint('TOP', ExG.RosterFrame.frame.frame, 'BOTTOM', 0, -1);
+    self.frame:SetPoint('TOP', parent.frame.frame, 'TOP', 0, -60);
 
     makeGuildButtons(self);
     makeGuildHeaders(self);
@@ -413,6 +416,8 @@ function ExG.RosterFrame.Guild:Create()
     self.list:SetLayout('List');
 
     group:AddChild(self.list);
+
+    self.frame.frame:Hide();
 end
 
 function ExG.RosterFrame.Guild:Open()
@@ -698,14 +703,14 @@ local function makeRaidItems(self)
     end
 end
 
-function ExG.RosterFrame.Raid:Create()
+function ExG.RosterFrame.Raid:Create(parent)
     self.frame = AceGUI:Create('SimpleGroup');
     self.frame:SetLayout(nil);
-    self.frame:SetWidth(570);
-    self.frame:SetHeight(700);
-    self.frame.frame:Hide();
+    self.frame:SetWidth(PANE_WIDTH);
+    self.frame:SetHeight(PANE_HEIGH);
+    parent.frame:AddChild(self.frame);
 
-    self.frame:SetPoint('TOP', ExG.RosterFrame.frame.frame, 'BOTTOM', 0, -1);
+    self.frame:SetPoint('TOP', parent.frame.frame, 'TOP', 0, -60);
 
     makeRaidButtons(self);
     makeRaidHeaders(self);
@@ -726,6 +731,8 @@ function ExG.RosterFrame.Raid:Create()
     self.list:SetLayout('List');
 
     group:AddChild(self.list);
+
+    self.frame.frame:Hide();
 end
 
 function ExG.RosterFrame.Raid:Open()
@@ -1024,14 +1031,14 @@ local function makeReserveItems(self)
     end
 end
 
-function ExG.RosterFrame.Reserve:Create()
+function ExG.RosterFrame.Reserve:Create(parent)
     self.frame = AceGUI:Create('SimpleGroup');
     self.frame:SetLayout(nil);
-    self.frame:SetWidth(570);
-    self.frame:SetHeight(700);
-    self.frame.frame:Hide();
+    self.frame:SetWidth(PANE_WIDTH);
+    self.frame:SetHeight(PANE_HEIGH);
+    parent.frame:AddChild(self.frame);
 
-    self.frame:SetPoint('TOP', ExG.RosterFrame.frame.frame, 'BOTTOM', 0, -1);
+    self.frame:SetPoint('TOP', parent.frame.frame, 'TOP', 0, -60);
 
     makeReserveButtons(self);
     makeReserveHeaders(self);
@@ -1052,6 +1059,8 @@ function ExG.RosterFrame.Reserve:Create()
     self.list:SetLayout('List');
 
     group:AddChild(self.list);
+
+    self.frame.frame:Hide();
 end
 
 function ExG.RosterFrame.Reserve:Open()
