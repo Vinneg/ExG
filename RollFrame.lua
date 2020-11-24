@@ -104,7 +104,7 @@ local paneTimer = function(self, pane)
             left = 0;
 
             if not item.rolled then
-                btnPass(self, pane, item)();
+                btnPass(self, item)();
             end
         end
 
