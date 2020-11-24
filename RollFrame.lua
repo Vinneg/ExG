@@ -6,12 +6,12 @@ local L = LibStub('AceLocale-3.0'):GetLocale('ExG');
 
 local store = function() return ExG.store.char; end;
 
-local btnRoll = function(self, pane, item, btn, info1, info2)
+local btnRoll = function(self, item, btn, info1, info2)
     return function()
-        item.rolled = true;
+        item.rolled = btn.id;
 
         ExG:RollItem({
-            id = pane.itemId,
+            id = item.id,
             class = ExG.state.class,
             gp = item.gp,
             option = btn.id,
@@ -22,20 +22,20 @@ local btnRoll = function(self, pane, item, btn, info1, info2)
     end;
 end
 
-local btnPass = function(self, pane, item)
+local btnPass = function(self, item)
     return function()
-        item.rolled = true;
+        item.rolled = 'button6';
 
         ExG:RollItem({
-            id = pane.itemId,
+            id = item.id,
             class = ExG.state.class,
             option = 'button6',
             rnd = random(1, 100),
         });
 
---        if store().items.closeOnPass and not ExG:IsMl() then
---            self:RemoveItem(pane.itemId);
---        end
+        if store().items.closeOnPass and not ExG:IsMl() then
+            self:RemoveItem(item.id);
+        end
     end
 end
 
@@ -113,6 +113,14 @@ local paneTimer = function(self, pane)
         ExG:CancelTimer(pane.timer);
     end
 end;
+
+local colorButton = function(item, button)
+    if item.rolled == button.id then
+        return format('|cff33ff99%s|r', button.text);
+    end
+
+    return button.text;
+end
 
 local DEFAULT_FONT = LSM.MediaTable.font[LSM:GetDefault('font')];
 
@@ -529,12 +537,16 @@ local function renderButons(self, item, pane)
                 end
             end
 
-            pane[i]:SetText(enabled and btn.text or '');
+            pane[i]:SetText(enabled and colorButton(item, btn) or '');
             pane[i]:SetDisabled(not enabled);
 
             local info1, info2 = ExG:Equipped(item.slots);
 
-            pane[i]:SetCallback('OnClick', btnRoll(self, pane, item, btn, info1, info2));
+            if btn.id == 'button6' then
+                pane[i]:SetCallback('OnClick', btnPass(self, item));
+            else
+                pane[i]:SetCallback('OnClick', btnRoll(self, item, btn, info1, info2));
+            end
 
             pane[i].frame:Show();
         else
@@ -787,16 +799,8 @@ function ExG.RollFrame:Close(silent)
         ExG:CancelRolls();
     elseif not silent then
         for id, item in pairs(self.items) do
-            if not (item.rolled or false) then
-                ExG:RollItem({
-                    id = id,
-                    class = ExG.state.class,
-                    gp = item.gp,
-                    option = 'button6',
-                    slot1 = nil,
-                    slot2 = nil,
-                    rnd = random(1, 100),
-                });
+            if not item.rolled then
+                btnPass(self, item)();
             end
 
             self:RemoveItem(id);
@@ -886,6 +890,7 @@ function ExG.RollFrame:RollItem(data, unit)
     if pane then
         pane.accepted:SetText(L['Pretenders'](ExG:Size(item.rolls), ExG:Size(item.accepted)));
 
+        renderButons(self, item, pane);
         renderRolls(self, item, pane);
     end
 end
