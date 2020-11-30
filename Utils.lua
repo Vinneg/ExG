@@ -767,12 +767,22 @@ local CLASSES = {
             FERAL = {
                 id = 2,
                 name = 'FERAL',
-                icon = 132276,
+                icon = 625999,
             },
             RESTOR = {
                 id = 3,
                 name = 'RESTOR',
                 icon = 136041,
+            },
+            CAT = {
+                id = 4,
+                name = 'CAT',
+                icon = 132115,
+            },
+            BEAR = {
+                id = 5,
+                name = 'BEAR',
+                icon = 132276,
             },
         },
         scan = function()
@@ -787,11 +797,45 @@ local CLASSES = {
 
             if balance > feral then
                 return 'BALANCE';
-            elseif feral > balance then
-                return 'FERAL';
             end
 
-            return nil;
+            local match = function(ids)
+                local res = 0;
+
+                for _, v in ipairs(ids) do
+                    local name, _, _, _, currentRank, maxRank = GetTalentInfo(v.tab, v.id);
+
+                    print('name = ', name, ', spent = ', currentRank);
+
+                    res = res + (currentRank > 0 and 1 or 0);
+                end
+
+                print('res = ', res, ', #ids = ', #ids);
+
+                return res == #ids;
+            end;
+
+            -- CAT
+            local talents = {
+                taken = { { tab = 1, id = 7, }, { tab = 1, id = 9, }, { tab = 2, id = 2, }, { tab = 2, id = 9, }, { tab = 2, id = 11, }, { tab = 3, id = 2, }, },
+                missed = { { tab = 2, id = 3, }, { tab = 2, id = 5, }, { tab = 2, id = 12, }, },
+            };
+
+            if match(talents.taken) and match(talents.missed) then
+                return 'CAT';
+            end
+
+            -- BEAR
+            local talents = {
+                taken = { { tab = 1, id = 9, }, { tab = 2, id = 3, }, { tab = 2, id = 5, }, { tab = 2, id = 12, }, },
+                missed = { { tab = 2, id = 9, }, { tab = 2, id = 11, }, },
+            };
+
+            if match(talents.taken) and match(talents.missed) then
+                return 'BEAR';
+            end
+
+            return 'FERAL';
         end,
     },
     DEMONHUNTER = {
