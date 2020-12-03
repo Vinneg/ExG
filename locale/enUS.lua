@@ -195,6 +195,7 @@ L['Report'] = true;
 L['Need to update ExG version'] = function(version) return format('You need to update your ExG addon to %s', version and ('version ' .. version) or 'latest version'); end;
 L['Undecided yet'] = true;
 L['Critical error occurs'] = function(module, method, message) return format('|cffC41F3BCritical error occurs in |r%s:%s|cffC41F3B. Details: |r%s|cffC41F3B.\nGet options from masterlooter and |r/reload ui', module, method, message); end;
+L['New Version available'] = function(version) return format('|cff33ff99New ExG %s is available! Get it on curseforge.com/wow/addons/exg or via your addon manager!|r', version or 'Unknown'); end;
 
 L['Poor'] = '|cff9d9d9dPoor|r';
 L['Common'] = '|cffffffffCommon|r';

@@ -191,6 +191,7 @@ L['Report'] = 'Сообщить';
 L['Need to update ExG version'] = function(version) return format('Нужно обновить аддон ExG до %s', version and ('версии ' .. version) or 'последней версии'); end;
 L['Undecided yet'] = 'Не определились';
 L['Critical error occurs'] = function(module, method, message) return format('|cffC41F3BКритическая ошибка в |r%s:%s|cffC41F3B. Детали: |r%s|cffC41F3B.\nПолучите настройки от мастерлутера и |r/reload ui', module, method, message); end;
+L['New Version available'] = function(version) return format('|cff33ff99Доступен новый ExG %s! Скачай с curseforge.com/wow/addons/exg или через менеджер аддонов!|r', version or 'Неизвестно'); end;
 
 L['ExG Boss 785'] = 'Верховная жрица Джеклик';
 L['ExG Boss 784'] = 'Верховный жрец Веноксис';

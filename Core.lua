@@ -215,6 +215,10 @@ ExG.defaults = {
                 [21218] = true,
                 [21324] = true,
                 [21323] = true,
+                [22726] = true,
+                [22727] = true,
+                [22733] = true,
+                [22734] = true,
             },
         },
         buttons = {
@@ -1144,6 +1148,7 @@ end
 function ExG:OnInitialize()
     self:TimeOffset();
     self.state.version = GetAddOnMetadata(self.name, 'Version');
+    self.state.latestVersion = self.state.version;
 
     self:RegisterChatCommand('exg', 'HandleChatCommand');
 
@@ -1179,7 +1184,8 @@ function ExG:OnInitialize()
 
     self:ScheduleTimer('PostInit', 10);
 
-    self:ScheduleTimer('Sync', 20, { action = 'ask4buttons', });
+    self:ScheduleTimer('Sync', 20, { type = 'buttons', action = 'request', });
+    self:ScheduleTimer('Sync', 22, { type = 'version', action = 'request', version = self.state.version, });
 end
 
 function ExG:PostInit()
@@ -1448,6 +1454,45 @@ function ExG:handleScanVersions(_, message, _, sender)
     end
 end
 
+local syncHandlers = {
+    version = function(self, data, sender)
+        if data.action == 'request' then
+            if self.state.latestVersion > data.version then
+                self:Sync({ type = 'version', action = 'response', version = self.state.latestVersion, }, sender);
+            elseif self.state.latestVersion < data.version then
+                self.state.latestVersion = data.version;
+
+                self:Print(L['New Version available'](self.state.latestVersion));
+            end
+        elseif data.action == 'response' then
+            if self.state.latestVersion < data.version then
+                self.state.latestVersion = data.version;
+
+                self:Print(L['New Version available'](self.state.latestVersion));
+            end
+        end
+    end,
+    buttons = function(self, data, sender)
+        if data.action == 'request' then
+            local info = self:GuildInfo();
+
+            if (info and info.rankId or 99) > store().optionFilter then
+                return;
+            end
+
+            self:Sync({ type = 'buttons', action = 'response', buttons = store().buttons, }, sender);
+        elseif data.action == 'response' then
+            local info = self:GuildInfo(sender);
+
+            if (info and info.rankId or 99) > store().optionFilter then
+                return;
+            end
+
+            store().buttons = data.buttons;
+        end
+    end
+};
+
 function ExG:Sync(msg, target)
     local data = Serializer:Serialize(msg);
 
@@ -1469,22 +1514,8 @@ function ExG:handleSync(_, message, _, sender)
         return;
     end
 
-    if data.action == 'ask4buttons' then
-        local info = self:GuildInfo(self.state.name);
-
-        if (info and info.rankId or 99) > store().optionFilter then
-            return;
-        end
-
-        self:Sync({ action = 'buttons', buttons = store().buttons, }, sender);
-    elseif data.action == 'buttons' then
-        local info = self:GuildInfo(sender);
-
-        if (info and info.rankId or 99) > store().optionFilter then
-            return;
-        end
-
-        store().buttons = data.buttons;
+    if data.type and syncHandlers[data.type] then
+        syncHandlers[data.type](self, data, sender);
     end
 end
 
