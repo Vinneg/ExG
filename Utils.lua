@@ -204,6 +204,10 @@ function ExG:IsMl(unit)
 end
 
 function ExG:GuildInfo(unit)
+    if not unit then
+        unit = self.state.name;
+    end
+
     for i = 1, GetNumGuildMembers() do
         local name, rank, rankId, level, classLoc, zone, publicNote, officerNote, online, status, class, achievementPoints, achievementRank, isMobile, canSoR, repStanding, GUID = GetGuildRosterInfo(i);
 
@@ -812,7 +816,7 @@ local CLASSES = {
 
                 print('res = ', res, ', #ids = ', #ids);
 
-                return res == #ids;
+                return res;
             end;
 
             -- CAT
@@ -821,7 +825,7 @@ local CLASSES = {
                 missed = { { tab = 2, id = 3, }, { tab = 2, id = 5, }, { tab = 2, id = 12, }, },
             };
 
-            if match(talents.taken) and match(talents.missed) then
+            if match(talents.taken) == #talents.taken and match(talents.missed) == 0 then
                 return 'CAT';
             end
 
@@ -831,7 +835,7 @@ local CLASSES = {
                 missed = { { tab = 2, id = 9, }, { tab = 2, id = 11, }, },
             };
 
-            if match(talents.taken) and match(talents.missed) then
+            if match(talents.taken) == talents.taken and match(talents.missed) == 0 then
                 return 'BEAR';
             end
 
