@@ -809,12 +809,8 @@ local CLASSES = {
                 for _, v in ipairs(ids) do
                     local name, _, _, _, currentRank, maxRank = GetTalentInfo(v.tab, v.id);
 
-                    print('name = ', name, ', spent = ', currentRank);
-
                     res = res + (currentRank > 0 and 1 or 0);
                 end
-
-                print('res = ', res, ', #ids = ', #ids);
 
                 return res;
             end;
