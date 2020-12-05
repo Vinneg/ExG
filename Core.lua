@@ -1456,17 +1456,19 @@ end
 
 local syncHandlers = {
     version = function(self, data, sender)
+        local sideVersion = strsub(data.version, 1, 2) == '1.' and data.version or ('1.' .. data.version); -- TODO remove ASAP
+
         if data.action == 'request' then
-            if self.state.latestVersion > data.version then
+            if self.state.latestVersion > sideVersion then
                 self:Sync({ type = 'version', action = 'response', version = self.state.latestVersion, }, sender);
-            elseif self.state.latestVersion < data.version then
-                self.state.latestVersion = data.version;
+            elseif self.state.latestVersion < sideVersion then
+                self.state.latestVersion = sideVersion;
 
                 self:Print(L['New Version available'](self.state.latestVersion));
             end
         elseif data.action == 'response' then
-            if self.state.latestVersion < data.version then
-                self.state.latestVersion = data.version;
+            if self.state.latestVersion < sideVersion then
+                self.state.latestVersion = sideVersion;
 
                 self:Print(L['New Version available'](self.state.latestVersion));
             end

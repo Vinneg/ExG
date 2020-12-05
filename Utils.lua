@@ -817,8 +817,8 @@ local CLASSES = {
 
             -- CAT
             local talents = {
-                taken = { { tab = 1, id = 7, }, { tab = 1, id = 9, }, { tab = 2, id = 2, }, { tab = 2, id = 9, }, { tab = 2, id = 11, }, { tab = 3, id = 2, }, },
-                missed = { { tab = 2, id = 3, }, { tab = 2, id = 5, }, { tab = 2, id = 12, }, },
+                taken = { { tab = 2, id = 16, }, },
+                missed = { { tab = 2, id = 12, }, },
             };
 
             if match(talents.taken) == #talents.taken and match(talents.missed) == 0 then
@@ -827,8 +827,8 @@ local CLASSES = {
 
             -- BEAR
             local talents = {
-                taken = { { tab = 1, id = 9, }, { tab = 2, id = 3, }, { tab = 2, id = 5, }, { tab = 2, id = 12, }, },
-                missed = { { tab = 2, id = 9, }, { tab = 2, id = 11, }, },
+                taken = { { tab = 2, id = 12, }, { tab = 2, id = 16, }, },
+                missed = { { tab = 2, id = 6, }, },
             };
 
             if match(talents.taken) == talents.taken and match(talents.missed) == 0 then
