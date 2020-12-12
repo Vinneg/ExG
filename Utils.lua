@@ -203,6 +203,28 @@ function ExG:IsMl(unit)
     return false;
 end
 
+function ExG:IsAssist(unit)
+    if store().debug then
+        return true;
+    end
+
+    if not IsInRaid() then
+        return false;
+    end
+
+    if not unit then
+        unit = self.state.name;
+    end
+
+    local info = self:RaidInfo(unit);
+
+    if info and info.role then
+        return info.isMl;
+    end
+
+    return false;
+end
+
 function ExG:GuildInfo(unit)
     if not unit then
         unit = self.state.name;
@@ -398,7 +420,7 @@ function ExG:GetEG(offNote)
         return { ep = ep, gp = gp, pr = floor(100 * ep / gp) / 100, };
     end
 
-    local ep, gp = string.match(offNote or '', 'cep{(-?%d+%.?%d*),(-?%d+%.?%d*)}');
+    local ep, gp = strmatch(offNote or '', 'cep{(-?%d+%.?%d*),(-?%d+%.?%d*)}');
 
     ep, gp = getEG(ep, gp);
 
@@ -888,8 +910,13 @@ function ExG:PullSettings(id, defNil)
     return { spec = spec, class = class, def = def };
 end
 
-function ExG:Report(msg)
-    SendChatMessage(msg, store().channel);
+function ExG:Report(msg, channel)
+--    local info = self:RaidInfo();
+--
+--    print('role = ', info.role);
+    channel = channel or store().channel;
+
+    SendChatMessage(msg, channel);
 end
 
 function ExG:TimeOffset()
@@ -941,5 +968,41 @@ function ExG:SavePoints(frame, name)
 
     if x ~= 0 or y ~= 0 then
         store().frames[name] = { point = point, frame = relativeTo and relativeTo:GetName() or 'UIParent', rel = rel, x = x, y = y, };
+    end
+end
+
+function ExG:GiveItems(items, unit)
+    if not ExG.state.looting then
+        return;
+    end
+
+    if not unit then
+        unit = self.state.name;
+    end
+
+    for id, info in pairs(items) do
+        local lootIndex, unitIndex
+
+        for i = 1, GetNumLootItems() do
+            local tmp = ExG:LinkInfo(GetLootSlotLink(i));
+
+            lootIndex = tmp and id == tmp.id and i or lootIndex;
+        end
+
+        if not lootIndex then
+            return;
+        end
+
+        for i = 1, MAX_RAID_MEMBERS do
+            local name = GetMasterLootCandidate(lootIndex, i);
+
+            unitIndex = name and unit == Ambiguate(name, 'all') and i or unitIndex;
+        end
+
+        if not unitIndex then
+            return;
+        end
+
+        GiveMasterLoot(lootIndex, unitIndex);
     end
 end
