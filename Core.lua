@@ -180,6 +180,8 @@ ExG.defaults = {
             threshold = 4,
             closeOnPass = true,
             announce = true,
+            autoLoot = true,
+            trackLoot = true,
             passTimer = 60,
             formula = {
                 coef = 7,
@@ -219,6 +221,13 @@ ExG.defaults = {
                 [22727] = true,
                 [22733] = true,
                 [22734] = true,
+            },
+            track = {
+                [23055] = true,
+                [22682] = true,
+                [19183] = true,
+                [21761] = true,
+                [21762] = true,
             },
         },
         buttons = {
@@ -478,6 +487,34 @@ ExG.options = {
                     type = 'description',
                     name = '',
                     order = 23,
+                    width = 'full',
+                },
+                autoLoot = {
+                    type = 'toggle',
+                    name = L['Auto loot items'],
+                    order = 24,
+                    width = 1.2,
+                    get = function() return store().items.autoLoot; end,
+                    set = function(_, value) store().items.autoLoot = value; end,
+                },
+                autoLootFiller = {
+                    type = 'description',
+                    name = '',
+                    order = 25,
+                    width = 'full',
+                },
+                trackLoot = {
+                    type = 'toggle',
+                    name = L['Track loot'],
+                    order = 26,
+                    width = 1.2,
+                    get = function() return store().items.trackLoot; end,
+                    set = function(_, value) store().items.trackLoot = value; end,
+                },
+                trackLootFiller = {
+                    type = 'description',
+                    name = '',
+                    order = 27,
                     width = 'full',
                 },
                 itemsHeader2 = {
@@ -1181,6 +1218,7 @@ function ExG:OnInitialize()
     self:RegisterEvent('ENCOUNTER_END');
     self:RegisterEvent('LOOT_OPENED');
     self:RegisterEvent('LOOT_CLOSED');
+    self:RegisterEvent('CHAT_MSG_LOOT');
 
     self:ScheduleTimer('PostInit', 10);
 
@@ -1234,9 +1272,8 @@ function ExG:AnnounceItems(ids)
 
     for id, item in pairs(ids) do
         local hasOne = self.RollFrame.items[id] and self.RollFrame.items[id].active;
-        local ignoreOne = store().items.ignore[id];
 
-        if not hasOne and not ignoreOne then
+        if not hasOne then
             local obj = Item:CreateFromItemID(id);
             obj:ContinueOnItemLoad(handler(id, item));
         end
@@ -1645,6 +1682,7 @@ function ExG:LOOT_OPENED()
     end
 
     local ids = {};
+    local list = {};
 
     for i = 1, GetNumLootItems() do
         if LootSlotHasItem(i) then
@@ -1652,22 +1690,58 @@ function ExG:LOOT_OPENED()
 
             if info then
                 local itemData = store().items.data[info.id];
+                local ignoreOne = store().items.ignore[info.id];
 
-                if info.rarity >= store().items.threshold or itemData then
+                if (info.rarity >= store().items.threshold or itemData) and not ignoreOne then
                     ids[info.id] = (ids[info.id] or { count = 0, mode = 'loot', });
                     ids[info.id].count = ids[info.id].count + 1;
+                elseif store().items.autoLoot then
+                    list[info.id] = info;
                 end
             end
         end
     end
 
-    if self:Size(ids) == 0 then
-        return;
+    if self:Size(ids) ~= 0 then
+        self:AnnounceItems(ids);
     end
 
-    self:AnnounceItems(ids);
+    if self:Size(list) ~= 0 then
+        self:GiveItems(list);
+    end
 end
 
 function ExG:LOOT_CLOSED()
     self.state.looting = false;
+end
+
+function ExG:CHAT_MSG_LOOT(_, text, playerName, _, _, playerName2)
+    if not store().items.trackLoot or self:Size(store().items.track) == 0 then
+        return;
+    end
+
+    if not self:IsMl() then
+        return;
+    end
+
+    local name, link = strmatch(text, L['Loot pattern']);
+
+    name = name or playerName or playerName2;
+
+    if name == self.state.name then
+        return;
+    end
+
+    if not link then
+        return;
+    end
+
+    local info = self:LinkInfo(link);
+
+    if not store().items.track[info.id] then
+        return;
+    end
+
+    SendChatMessage(L['Loot tracker message'](link), self.messages.whisper, nil, name);
+    --    self:Print(L['Loot tracker message'](link));
 end

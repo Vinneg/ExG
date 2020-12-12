@@ -1,5 +1,5 @@
 ## Interface: 11306
-## Version: 1.30
+## Version: 1.31
 ## Title: Extended EPGP (ExG)
 ## Author: Vinneg
 ## Notes: Extended EPGP system. Usage: /exg to see commands

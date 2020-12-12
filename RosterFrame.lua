@@ -1068,7 +1068,13 @@ function ExG.RosterFrame.Reserve:Open()
 
     for name in pairs(store().raid.reserve) do
         local info = ExG:GuildInfo(name);
-        local eg = ExG:GetEG(info.officerNote);
+        local eg = { ep = 0, gp = 0, pr = 0, };
+
+        if info then
+            eg = ExG:GetEG(info.officerNote);
+        else
+            info = { name = name, rank = L['Not in Guild'], rankId = 99, level = 60, class = 'DEFAULT', classLoc = 'DEFAULT', officerNote = '', isOnline = false };
+        end
 
         tinsert(self.data, { name = name, rank = info.rank, rankId = info.rankId, level = info.level, class = info.class, classLoc = info.classLoc, offNote = info.officerNote, isOnline = info.isOnline, ep = eg.ep, gp = eg.gp, pr = eg.pr, });
     end
@@ -1777,7 +1783,14 @@ function ExG.RosterFrame.VersionDialog:Update(status)
         return;
     end
 
-    if status.version == ExG.state.version then
+    local info = ExG:GuildInfo(status.name);
+
+    if not info or info.rank == L['Not in Guild'] then
+        unit.old = false;
+
+        pane.status:SetText(L['Not in Guild']);
+        pane.status:SetVertexColor(unpack(self.colors.normal));
+    elseif status.version == ExG.state.version then
         pane.status:SetText(status.version);
         pane.status:SetVertexColor(unpack(self.colors.normal));
     elseif status.version then
